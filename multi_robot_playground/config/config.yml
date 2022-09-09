@@ -2,8 +2,17 @@ world:
   package: multi_robot_playground
   path: worlds/empty.world
 
+map:
+  min_x: -1
+  max_x: 1
+  min_y: -1
+  max_y: 1
+
 robots:
   randomise_pose: false
+  # Choose among one of these global planner:
+  # - hungarian
+  global_planner: hungarian
   models:
     - name: robot0
       namespace: robot0
@@ -12,3 +21,4 @@ robots:
       yaw: 0
       model_package: modified_turtlebot3_gazebo
       path_to_model: models/turtlebot3_burger/model.sdf
+      local_planner: dynamic_window
