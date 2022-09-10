@@ -1,0 +1,7 @@
+# goal definition
+TaskGroup task_group
+---
+# result definition
+builtin_interfaces/Duration plan_duration
+---
+# feedback definition

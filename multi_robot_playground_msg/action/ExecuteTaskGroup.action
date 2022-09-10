@@ -1,0 +1,9 @@
+# goal definition
+uint8 task_group_id
+---
+# result definition
+uint8[] missed_task_id
+builtin_interfaces/Duration duration
+---
+# feedback definition
+uint8[] remaining_task_id
