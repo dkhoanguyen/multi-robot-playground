@@ -8,6 +8,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 
+from multi_robot_playground.launch_file_generator.launch_file_generator import LaunchFileGenerator
 
 def generate_launch_description():
     ld = LaunchDescription()
@@ -42,43 +43,17 @@ def generate_launch_description():
 
     ld.add_action(gazebo_server)
     ld.add_action(gazebo_client)
+    
+    if LaunchFileGenerator.robot_postions_valid(launch_args['robots']['models']):
+        for robot_config in launch_args['robots']['models']:
+            # Spawn gazebo robot
+            robot_node = LaunchFileGenerator.prepare_simulated_robot(robot_config)
+            ld.add_action(robot_node)
 
-    urdf_file_name = 'turtlebot3_burger.urdf'
-    urdf_file = os.path.join(get_package_share_directory(
-        'turtlebot3_description'), 'urdf', urdf_file_name)
+            # Robot state publisher
+            state_pub_node = LaunchFileGenerator.prepare_robot_state_publisher(robot_config)
+            ld.add_action(state_pub_node)
 
-    use_sim_time = LaunchConfiguration('use_sim_time', default='True')
-
-    for robot in launch_args['robots']['models']:
-        # Spawn gazebo robot
-        robot_node = launch_ros.actions.Node(
-            package='multi_robot_playground',
-            executable='spawn_robot',
-            namespace=f'namespace_{robot["name"]}',
-            name=f'gazebo_spawn_{robot["name"]}',
-            output='screen',
-            arguments=[
-                    '--name', f'{robot["name"]}',
-                    '--namespace', f'{robot["namespace"]}',
-                    '-x', f'{robot["x"]}',
-                    '-y', f'{robot["y"]}',
-                    '-yaw', f'{robot["yaw"]}',
-                    '--model_package_name', f'{robot["model_package"]}',
-                    '--path_to_model', f'{robot["path_to_model"]}'
-            ]
-        )
-        ld.add_action(robot_node)
-
-        # Robot state publisher
-        state_pub_node = launch_ros.actions.Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            namespace=f'{robot["namespace"]}',
-            output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
-            arguments=[urdf_file],
-            remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')]
-        )
-        ld.add_action(state_pub_node)
+            # Local Planner
 
     return ld

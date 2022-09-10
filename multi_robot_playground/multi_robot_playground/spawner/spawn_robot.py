@@ -54,6 +54,9 @@ class SpawnRobot(object):
         self._req.initial_pose.orientation.w = q[3]
 
     def send_request(self):
+        if not self._client:
+            # Should log error here
+            return
         self._node.get_logger().debug("Sending service request to `/spawn_entity`")
         future = self._client.call_async(self._req)
         rclpy.spin_until_future_complete(self._node, future)

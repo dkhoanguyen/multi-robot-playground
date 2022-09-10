@@ -25,7 +25,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'spawn_robot = multi_robot_playground.spawn_robot:main'
+            'spawn_robot = multi_robot_playground.spawner.spawn_robot:main'
         ],
     },
 )

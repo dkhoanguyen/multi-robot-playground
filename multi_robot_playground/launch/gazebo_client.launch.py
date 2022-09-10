@@ -4,17 +4,10 @@ from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
+from multi_robot_playground.launch_file_generator.launch_file_generator import LaunchFileGenerator
+
 def generate_launch_description():
     # Launch Description
     ld = LaunchDescription()
-
-    pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
-
-    gazebo_client = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_gazebo_ros, 'launch', 'gzclient.launch.py')
-        ),
-    )
-
-    ld.add_action(gazebo_client)
+    ld.add_action(LaunchFileGenerator.prepare_gazebo_client())
     return ld

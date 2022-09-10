@@ -7,9 +7,10 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
 
+from multi_robot_playground.launch_file_generator.launch_file_generator import LaunchFileGenerator
 
 def prepare_launch(context):
-    # Launch arguments
+    # Launch argument
     world_package_arg = DeclareLaunchArgument(
         'world_package', default_value='multi_robot_playground')
     world_path_arg = DeclareLaunchArgument(
@@ -18,17 +19,9 @@ def prepare_launch(context):
     world_package = LaunchConfiguration('world_package')
     world_path = LaunchConfiguration('world_path')
 
-    # Prepare gazebo server
-    world = os.path.join(get_package_share_directory(
-        world_package.perform(context)), world_path.perform(context))
-    pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
-    gazebo_server = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_gazebo_ros, 'launch', 'gzserver.launch.py')
-        ),
-        launch_arguments={'world': world}.items(),
-    )
-
+    # Local gazebo_server
+    gazebo_server = LaunchFileGenerator.prepare_local_gazebo_server(
+        world_package.perform(context), world_path.perform(context))
     return [
         world_package_arg,
         world_path_arg,
