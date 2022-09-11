@@ -1,0 +1,7 @@
+<class_libraries>
+    <library path="mrp_hungarian">
+        <class type="mrp_hungarian::MRPHungarian" base_class_type="global_centralised_server_core::GlobalTaskPlannerCore">
+            <description></description>
+        </class>
+    </library>
+</class_libraries>
