@@ -4,7 +4,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, Command
 from launch.actions import DeclareLaunchArgument
 
 
@@ -85,7 +85,7 @@ class LaunchFileGenerator(object):
     @staticmethod
     def prepare_robot_state_publisher(robot_config: dict):
         urdf_file = os.path.join(get_package_share_directory(
-            robot_config['urdf_package']),robot_config['urdf_path'])
+            robot_config['urdf_package']), robot_config['urdf_path'])
 
         use_sim_time = LaunchConfiguration('use_sim_time', default='True')
 
@@ -95,8 +95,8 @@ class LaunchFileGenerator(object):
             executable='robot_state_publisher',
             namespace=f'{robot_config["namespace"]}',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time}],
-            arguments=[urdf_file],
+            parameters=[{'use_sim_time': use_sim_time,
+                        'robot_description': Command(['xacro ', urdf_file])}],
             remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')]
         )
 

@@ -5,7 +5,7 @@ import os
 
 def generate_launch_description():
     pkg_share = launch_ros.substitutions.FindPackageShare(package='rock_commander_robot_description').find('rock_commander_robot_description')
-    default_model_path = os.path.join(pkg_share, 'urdf/rock_commander_base.urdf')
+    default_model_path = os.path.join(pkg_share, 'urdf/rock_commander_base.urdf.xacro')
     default_rviz_config_path = os.path.join(pkg_share, 'rviz/urdf_config.rviz')
     world_path=os.path.join(pkg_share, 'worlds/empty.world')
 
@@ -18,13 +18,6 @@ def generate_launch_description():
         package='joint_state_publisher',
         executable='joint_state_publisher',
         name='joint_state_publisher'
-    )
-    rviz_node = launch_ros.actions.Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        output='screen',
-        arguments=['-d', LaunchConfiguration('rvizconfig')],
     )
 
     spawn_entity = launch_ros.actions.Node(

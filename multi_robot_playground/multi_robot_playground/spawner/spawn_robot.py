@@ -5,6 +5,7 @@ import argparse
 import tf_transformations
 from ament_index_python.packages import get_package_share_directory
 from gazebo_msgs.srv import SpawnEntity
+import xacro
 
 
 class SpawnRobot(object):
@@ -41,7 +42,11 @@ class SpawnRobot(object):
         self._req = SpawnEntity.Request()
         self._req.name = self._name
         self._req.robot_namespace = self._namespace
-        self._req.xml = open(self._model_path, 'r').read()
+        
+        if 'xacro' in self._model_path:
+            self._req.xml = xacro.process_file(self._model_path).toprettyxml(indent='  ')
+        else:
+            self._req.xml = open(self._model_path, 'r').read()
         self._req.initial_pose.position.x = float(self._x)
         self._req.initial_pose.position.y = float(self._y)
         self._req.initial_pose.position.z = 0.0

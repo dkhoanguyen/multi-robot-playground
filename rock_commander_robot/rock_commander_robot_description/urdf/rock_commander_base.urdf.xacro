@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="sam_bot" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rock_commander_robot">
 
   <!-- Define robot constants -->
   <xacro:property name="base_width" value="0.31" />
@@ -42,7 +42,8 @@
   <link name="base_link">
     <visual>
       <geometry>
-        <box size="${base_length} ${base_width} ${base_height}" />
+        <!-- <box size="${base_length} ${base_width} ${base_height}" /> -->
+        <mesh filename="/home/khoa/multi_robot_playground2/install/rock_commander_robot_description/share/rock_commander_robot_description/meshes/base/another_base.dae" scale="1 1 1" />
       </geometry>
       <material name="Cyan">
         <color rgba="0 1.0 1.0 1.0" />
@@ -103,6 +104,35 @@
   <xacro:wheel prefix="drivewhl_l" x_reflect="-1" y_reflect="1" />
   <xacro:wheel prefix="drivewhl_r" x_reflect="-1" y_reflect="-1" />
 
+  <gazebo>
+    <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+      <!-- <ros>
+        <namespace>/demo</namespace>
+      </ros> -->
+
+      <!-- wheels -->
+      <left_joint>drivewhl_l_joint</left_joint>
+      <right_joint>drivewhl_r_joint</right_joint>
+
+      <!-- kinematics -->
+      <wheel_separation>0.4</wheel_separation>
+      <wheel_diameter>0.2</wheel_diameter>
+
+      <!-- limits -->
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>1.0</max_wheel_acceleration>
+
+      <!-- output -->
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>false</publish_odom_tf>
+      <publish_wheel_tf>true</publish_wheel_tf>
+
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+  <!-- CASTER_LINK -->
   <link name="front_caster">
     <visual>
       <geometry>
@@ -129,6 +159,7 @@
     <origin xyz="${caster_xoff} 0.0 ${-(base_height/2)}" rpy="0 0 0" />
   </joint>
 
+  <!-- IMU_LINK -->
   <link name="imu_link">
     <visual>
       <geometry>
@@ -155,7 +186,7 @@
     <sensor name="imu_sensor" type="imu">
       <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
         <ros>
-          <namespace>/demo</namespace>
+          <!-- <namespace>/demo</namespace> -->
           <remapping>~/out:=imu</remapping>
         </ros>
         <initial_orientation_as_reference>false</initial_orientation_as_reference>
@@ -220,35 +251,8 @@
     </sensor>
   </gazebo>
 
-  <gazebo>
-    <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
-      <ros>
-        <namespace>/demo</namespace>
-      </ros>
-
-      <!-- wheels -->
-      <left_joint>drivewhl_l_joint</left_joint>
-      <right_joint>drivewhl_r_joint</right_joint>
-
-      <!-- kinematics -->
-      <wheel_separation>0.4</wheel_separation>
-      <wheel_diameter>0.2</wheel_diameter>
-
-      <!-- limits -->
-      <max_wheel_torque>20</max_wheel_torque>
-      <max_wheel_acceleration>1.0</max_wheel_acceleration>
-
-      <!-- output -->
-      <publish_odom>true</publish_odom>
-      <publish_odom_tf>false</publish_odom_tf>
-      <publish_wheel_tf>true</publish_wheel_tf>
-
-      <odometry_frame>odom</odometry_frame>
-      <robot_base_frame>base_link</robot_base_frame>
-    </plugin>
-  </gazebo>
-
-  <link name="lidar_link">
+  <!-- LIDAR_LINK -->
+  <!-- <link name="lidar_link">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <mass value="0.125" />
@@ -309,9 +313,10 @@
         <frame_name>lidar_link</frame_name>
       </plugin>
     </sensor>
-  </gazebo>
+  </gazebo> -->
 
-  <link name="camera_link">
+  <!-- CAMERA_LINK -->
+  <!-- <link name="camera_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
@@ -382,5 +387,5 @@
         <hackBaseline>0</hackBaseline>
       </plugin>
     </sensor>
-  </gazebo>
+  </gazebo> -->
 </robot>
