@@ -1,0 +1,7 @@
+<class_libraries>
+    <library path="spotturn_controller">
+        <class type="spotturn_controller::SpotturnController" base_class_type="local_server_core::LocalController">
+            <description></description>
+        </class>
+    </library>
+</class_libraries>
