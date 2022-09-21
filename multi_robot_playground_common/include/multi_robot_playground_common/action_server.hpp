@@ -29,6 +29,18 @@ namespace mrp_common
     // ExecuteCallback.
     typedef std::function<void()> CompletionCallback;
 
+    explicit ActionServer(
+        rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
+        rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
+        rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
+        rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
+        const std::string &action_name,
+        ExecuteCallback execute_callback,
+        CompletionCallback completion_callback,
+        std::chrono::milliseconds server_timeout,
+        bool spin_thread,
+        const rcl_action_server_options_t &options);
+
     template <typename NodeType>
     explicit ActionServer(
         NodeType &node,
@@ -41,28 +53,15 @@ namespace mrp_common
               node->get_node_clock_interface(),
               node->get_node_logging_interface(),
               node->get_node_waitables_interface(),
-              action_name, execute_callback, completion_callback){};
+              action_name, execute_callback, completion_callback) {}
 
-    explicit ActionServer(
-        rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
-        rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
-        rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
-        rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
-        const std::string &action_name,
-        ExecuteCallback execute_callback,
-        CompletionCallback completion_callback = nullptr,
-        std::chrono::milliseconds server_timeout = std::chrono::milliseconds(500),
-        bool spin_thread = false,
-        const rcl_action_server_options_t &options = rcl_action_server_get_default_options());
+    rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID &uuid,
+                                           std::shared_ptr<const typename ActionType::Goal> goal);
 
-    rclcpp_action::GoalResponse handle_goal(
-        const rclcpp_action::GoalUUID &uuid,
-        std::shared_ptr<const typename ActionType::Goal> goal);
-
-    rclcpp_action::CancelResponse handle_cancel(
+    rclcpp_action::CancelResponse handleCancel(
         const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle);
 
-    void handle_accepted(
+    void handleAccepted(
         const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle);
 
     void execute();
