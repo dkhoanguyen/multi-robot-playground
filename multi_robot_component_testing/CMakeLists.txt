@@ -19,6 +19,8 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(turtlesim REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(multi_robot_playground_common REQUIRED)
 
@@ -33,7 +35,9 @@ find_package(multi_robot_playground_common REQUIRED)
 set(dependencies
   rclcpp
   rclcpp_components
+  rclcpp_action
   std_srvs
+  turtlesim
   multi_robot_playground_common
 )
 

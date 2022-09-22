@@ -16,7 +16,14 @@ namespace mrp_common
         rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
         rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
         const std::string &client_name,
-        const rcl_action_server_options_t &options);
+        const rcl_action_server_options_t &options)
+        : node_base_interface_(node_base_interface),
+          node_clock_interface_(node_clock_interface),
+          node_logging_interface_(node_logging_interface),
+          node_waitables_interface_(node_waitables_interface),
+          client_name_(client_name)
+    {
+    }
 
     template <typename NodeType>
     ActionClient(NodeType node,
@@ -27,7 +34,13 @@ namespace mrp_common
               node->get_node_clock_interface(),
               node->get_node_logging_interface(),
               node->get_node_waitables_interface(),
-              client_name, options) {}
+              client_name, options)
+    {
+    }
+
+    virtual ~ActionClient()
+    {
+    }
 
   protected:
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_;

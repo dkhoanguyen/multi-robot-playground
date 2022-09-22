@@ -40,8 +40,6 @@ set(HEADER_FILES
 set(library_name multi_robot_playground_common)
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
-  src/action_server.cpp
-  src/action_client.cpp
   ${HEADER_FILES}
 )
 
