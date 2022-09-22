@@ -29,22 +29,20 @@ set(dependencies
   rclcpp_components
 )
 
-# set(HEADER_FILES 
-#   include/multi_robot_playground_common/action_client.hpp
-#   include/multi_robot_playground_common/action_server.hpp
-#   include/multi_robot_playground_common/lifecycle_node.hpp
-#   include/multi_robot_playground_common/service_client.hpp
-#   include/multi_robot_playground_common/service_server.hpp
-# )
+set(HEADER_FILES 
+  include/multi_robot_playground_common/action_client.hpp
+  include/multi_robot_playground_common/action_server.hpp
+  include/multi_robot_playground_common/lifecycle_node.hpp
+  include/multi_robot_playground_common/service_client.hpp
+  include/multi_robot_playground_common/service_server.hpp
+)
 
 set(library_name multi_robot_playground_common)
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
   src/action_server.cpp
   src/action_client.cpp
-  src/service_server.cpp
-  src/service_client.cpp
-  # ${HEADER_FILES}
+  ${HEADER_FILES}
 )
 
 target_include_directories(${library_name} PUBLIC

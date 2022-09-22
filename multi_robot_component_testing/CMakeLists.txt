@@ -26,6 +26,10 @@ find_package(multi_robot_playground_common REQUIRED)
 #   include
 # )
 
+#############################
+# COMPONENT TESTING LIBRARY #
+#############################
+
 set(dependencies
   rclcpp
   rclcpp_components
@@ -36,6 +40,7 @@ set(dependencies
 set(library_name multi_robot_component_testing)
 add_library(${library_name} SHARED
   src/minimal_service_server.cpp
+  src/minimal_service_client.cpp
 )
 
 target_include_directories(${library_name} PUBLIC
@@ -43,22 +48,6 @@ $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 $<INSTALL_INTERFACE:include>)
 
 ament_target_dependencies(${library_name} ${dependencies})
-
-set(executable_name minimal_service_server)
-add_executable(${executable_name}
-  src/main.cpp
-)
-
-target_link_libraries(${executable_name} 
-  ${library_name}
-  # multi_robot_playground_common::multi_robot_playground_common
-)
-
-target_include_directories(${executable_name} PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-$<INSTALL_INTERFACE:include>)
-
-ament_target_dependencies(${executable_name} ${dependencies})
 
 install(
   TARGETS ${library_name}
@@ -72,8 +61,53 @@ install(
   DESTINATION include
 )
 
-install(TARGETS ${executable_name}
+##########################
+# MINIMAL SERVICE SERVER #
+##########################
+
+set(minimal_service_server minimal_service_server)
+add_executable(${minimal_service_server}
+  exec/minimal_service_server.cpp
+)
+
+target_link_libraries(${minimal_service_server} 
+  ${library_name}
+)
+
+target_include_directories(${minimal_service_server} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(${minimal_service_server} ${dependencies})
+
+install(TARGETS ${minimal_service_server}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+##########################
+# MINIMAL SERVICE CLIENT #
+##########################
+
+set(minimal_service_client minimal_service_client)
+add_executable(${minimal_service_client}
+  exec/minimal_service_client.cpp
+)
+
+target_link_libraries(${minimal_service_client} 
+  ${library_name}
+)
+
+target_include_directories(${minimal_service_client} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(${minimal_service_client} ${dependencies})
+
+install(TARGETS ${minimal_service_client}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+################
+# UNIT TESTING #
+################
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

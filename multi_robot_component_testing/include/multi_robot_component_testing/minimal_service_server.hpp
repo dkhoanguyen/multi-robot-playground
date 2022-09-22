@@ -16,11 +16,8 @@ namespace mrp_component_testing
                          std::string service_name = "minimal_service");
     ~MinimalServiceServer();
 
-    void handleRequest(std::shared_ptr<std_srvs::srv::SetBool::Request> &request,
-                       std::shared_ptr<std_srvs::srv::SetBool::Response> &response);
-
-    void execute(std::shared_ptr<std_srvs::srv::SetBool::Request> request,
-                 std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+    void execute(std::shared_ptr<std_srvs::srv::SetBool::Request> &request,
+                 std::shared_ptr<std_srvs::srv::SetBool::Response> &response);
   };
 }
 

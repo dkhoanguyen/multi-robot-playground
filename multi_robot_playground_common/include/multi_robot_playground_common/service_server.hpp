@@ -2,6 +2,7 @@
 #define MULTI_ROBOT_PLAYGROUND_COMMON__SERVICE_SERVER_HPP_
 
 #include "rclcpp/rclcpp.hpp"
+#include "logging.hpp"
 
 namespace mrp_common
 {
@@ -20,9 +21,13 @@ namespace mrp_common
               node->get_node_logging_interface(),
               service_name, options)
     {
+      MRPLogging::basicInfo(node_logging_interface_, "Creating Callback Group");
       callback_group_ = node->create_callback_group(
           rclcpp::CallbackGroupType::MutuallyExclusive);
+      callback_group_executor_.add_node(node);
+      MRPLogging::basicInfo(node_logging_interface_, "Creating Service");
       using namespace std::placeholders;
+      // Create service and resgister callback
       service_server_ = rclcpp::create_service<ServiceType>(
           node_base_interface_,
           node_services_interface_,
@@ -45,14 +50,23 @@ namespace mrp_common
 
     virtual ~ServiceServer() {}
 
+    void start()
+    {
+      callback_group_executor_.spin();
+    }
+
     void handleRequest(std::shared_ptr<typename ServiceType::Request> request,
                        std::shared_ptr<typename ServiceType::Response> response)
     {
-      std::cout << "mrp_common::ServiceServer" << std::endl;
+      std::cout << request->data << std::endl;
+      this->execute(request, response);
     }
 
-    void execute(std::shared_ptr<typename ServiceType::Request> request,
-                 std::shared_ptr<typename ServiceType::Response> response) {}
+    virtual void execute(std::shared_ptr<typename ServiceType::Request> &request,
+                         std::shared_ptr<typename ServiceType::Response> &response)
+    {
+      std::cout << "ServiceServerBase" << std::endl;
+    }
 
   protected:
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_;
@@ -63,7 +77,7 @@ namespace mrp_common
     std::future<void> execution_future_;
 
     typename rclcpp::Service<ServiceType>::SharedPtr service_server_;
-
+    rclcpp::executors::MultiThreadedExecutor callback_group_executor_;
     rclcpp::CallbackGroup::SharedPtr callback_group_;
   };
 }
