@@ -120,11 +120,52 @@ namespace mrp_common
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
       MRPLogging::basicInfo("Receiving a new goal");
 
-      execution_future_ = std::async(std::launch::async, [this]() {execute();});
+      if (isActive(current_handle_) || isRunning())
+      {
+        MRPLogging::basicInfo("An older goal is active, moving the new goal to a pending slot.");
+        if (isActive(pending_handle_))
+        {
+          MRPLogging::basicInfo(
+              "The pending slot is occupied."
+              " The previous pending goal will be terminated and replaced.");
+          terminate(pending_handle_);
+        }
+        pending_handle_ = handle;
+        preempt_requested_ = true;
+      }
+      else
+      {
+        if (isActive(pending_handle_))
+        {
+          // Shouldn't reach a state with a pending goal but no current one.
+          MRPLogging::basicError("Forgot to handle a preemption. Terminating the pending goal.");
+          terminate(pending_handle_);
+          preempt_requested_ = false;
+        }
+
+        current_handle_ = handle;
+        MRPLogging::basicInfo("Executing goal asynchronously.");
+        execution_future_ = std::async(std::launch::async, [this]()
+                                       { execute(); });
+      }
     }
 
     void execute()
     {
+      while (rclcpp::ok() && !stop_execution_ && isActive(current_handle_))
+      {
+        MRPLogging::basicInfo("Executing the goal...");
+        try
+        {
+          execute_callback_();
+        }
+        catch(const std::exception& e)
+        {
+          completion_callback_();
+          return;
+        }
+        
+      }
     }
 
     void activate()
@@ -137,6 +178,13 @@ namespace mrp_common
     {
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
       server_active_ = false;
+    }
+
+    bool isRunning()
+    {
+      return execution_future_.valid() &&
+             (execution_future_.wait_for(std::chrono::milliseconds(0)) ==
+              std::future_status::timeout);
     }
 
   protected:
