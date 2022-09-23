@@ -159,12 +159,11 @@ namespace mrp_common
         {
           execute_callback_();
         }
-        catch(const std::exception& e)
+        catch (const std::exception &e)
         {
           completion_callback_();
           return;
         }
-        
       }
     }
 
