@@ -31,27 +31,24 @@ namespace mrp_common
     // ExecuteCallback.
     typedef std::function<void()> CompletionCallback;
 
+    template <typename NodeSharedPtrType>
     explicit ActionServer(
-        rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
-        rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
-        rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
-        rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
+        NodeSharedPtrType &node,
         const std::string &action_name,
         ExecuteCallback execute_callback,
         CompletionCallback completion_callback,
         std::chrono::milliseconds server_timeout,
-        bool spin_thread,
         const rcl_action_server_options_t &options)
-        : node_base_interface_(node_base_interface),
-          node_clock_interface_(node_clock_interface),
-          node_logging_interface_(node_logging_interface),
-          node_waitables_interface_(node_waitables_interface),
+        : node_base_interface_(node->get_node_base_interface()),
+          node_clock_interface_(node->get_node_clock_interface()),
+          node_logging_interface_(node->get_node_logging_interface()),
+          node_waitables_interface_(node->get_node_waitables_interface()),
           action_name_(action_name),
           execute_callback_(execute_callback),
           completion_callback_(completion_callback),
           server_active_(false),
           stop_execution_(false),
-          preempt_requested_(false);
+          preempt_requested_(false)
     {
       using namespace std::placeholders;
       action_server_ = rclcpp_action::create_server<ActionType>(
@@ -62,70 +59,64 @@ namespace mrp_common
           action_name_,
           std::bind(&ActionServer::handleGoal, this, _1, _2),
           std::bind(&ActionServer::handleCancel, this, _1),
-          std::bind(&ActionServer::handleAccepted, this, _1),
-          options);
-    }
-
-    template <typename NodeType>
-    explicit ActionServer(
-        NodeType &node,
-        const std::string &action_name,
-        ExecuteCallback execute_callback,
-        CompletionCallback completion_callback = nullptr,
-        const rcl_action_server_options_t &options = rcl_action_server_get_default_options())
-        : ActionServer(
-              node->get_node_base_interface(),
-              node->get_node_clock_interface(),
-              node->get_node_logging_interface(),
-              node->get_node_waitables_interface(),
-              action_name, execute_callback, completion_callback)
-    {
+          std::bind(&ActionServer::handleAccepted, this, _1), options);
     }
 
     virtual ~ActionServer()
     {
     }
 
-    rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID &uuid,
+    rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID uuid,
                                            std::shared_ptr<const typename ActionType::Goal> goal)
     {
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
       if (!server_active_)
       {
-        MRPLogging::basicWarn("Received goal but server is inactive, so reject this goal.");
+        MRPLogging::basicWarn(
+            node_logging_interface_,
+            "Received goal but server is inactive, so reject this goal.");
         return rclcpp_action::GoalResponse::REJECT;
       }
 
-      MRPLogging::basicInfo("Received request for goal acceptance.");
+      MRPLogging::basicInfo(
+          node_logging_interface_,
+          "Received request for goal acceptance.");
       return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
     }
 
-    rclcpp_action::CancelResponse handleCancel(
-        const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
+    rclcpp_action::CancelResponse handleCancel(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
     {
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
       if (!handle->is_active())
       {
-        MRPLogging::basicWarn("Received request for goal cancellation,"
-                              "but the handle is inactive, so reject the request");
+        MRPLogging::basicWarn(
+            node_logging_interface_,
+            "Received request for goal cancellation,"
+            "but the handle is inactive, so reject the request");
         return rclcpp_action::CancelResponse::REJECT;
       }
-      MRPLogging::basicInfo("Received request for goal cancellation");
+      MRPLogging::basicInfo(
+          node_logging_interface_,
+          "Received request for goal cancellation");
       return rclcpp_action::CancelResponse::ACCEPT;
     }
 
-    void handleAccepted(
-        const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
+    void handleAccepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
     {
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
-      MRPLogging::basicInfo("Receiving a new goal");
+      MRPLogging::basicInfo(
+          node_logging_interface_,
+          "Receiving a new goal");
 
       if (isActive(current_handle_) || isRunning())
       {
-        MRPLogging::basicInfo("An older goal is active, moving the new goal to a pending slot.");
+        MRPLogging::basicInfo(
+            node_logging_interface_,
+            "An older goal is active, moving the new goal to a pending slot.");
         if (isActive(pending_handle_))
         {
           MRPLogging::basicInfo(
+              node_logging_interface_,
               "The pending slot is occupied."
               " The previous pending goal will be terminated and replaced.");
           terminate(pending_handle_);
@@ -138,13 +129,17 @@ namespace mrp_common
         if (isActive(pending_handle_))
         {
           // Shouldn't reach a state with a pending goal but no current one.
-          MRPLogging::basicError("Forgot to handle a preemption. Terminating the pending goal.");
+          MRPLogging::basicError(
+              node_logging_interface_,
+              "Forgot to handle a preemption. Terminating the pending goal.");
           terminate(pending_handle_);
           preempt_requested_ = false;
         }
 
         current_handle_ = handle;
-        MRPLogging::basicInfo("Executing goal asynchronously.");
+        MRPLogging::basicInfo(
+            node_logging_interface_,
+            "Executing goal asynchronously.");
         execution_future_ = std::async(std::launch::async, [this]()
                                        { execute(); });
       }
@@ -154,7 +149,9 @@ namespace mrp_common
     {
       while (rclcpp::ok() && !stop_execution_ && isActive(current_handle_))
       {
-        MRPLogging::basicInfo("Executing the goal...");
+        MRPLogging::basicInfo(
+            node_logging_interface_,
+            "Executing the goal...");
         try
         {
           execute_callback_();
@@ -182,8 +179,175 @@ namespace mrp_common
     bool isRunning()
     {
       return execution_future_.valid() &&
-             (execution_future_.wait_for(std::chrono::milliseconds(0)) ==
-              std::future_status::timeout);
+             (execution_future_.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout);
+    }
+
+    bool isServerActive()
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      return server_active_;
+    }
+
+    bool isPreemptRequested() const
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      return preempt_requested_;
+    }
+
+    const std::shared_ptr<const typename ActionType::Goal> acceptPendingGoal()
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (!pending_handle_ || !pending_handle_->is_active())
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "Attempting to get pending goal when not available");
+        return std::shared_ptr<const typename ActionType::Goal>();
+      }
+
+      if (isActive(current_handle_) && current_handle_ != pending_handle_)
+      {
+        MRPLogging::basicDebug(
+            node_logging_interface_,
+            "Cancelling the previous goal");
+        current_handle_->abort(this->emptyResult());
+      }
+
+      current_handle_ = pending_handle_;
+      pending_handle_.reset();
+      preempt_requested_ = false;
+
+      MRPLogging::basicDebug(
+          node_logging_interface_,
+          "Preempted goal");
+
+      return current_handle_->get_goal();
+    }
+
+    void terminatePendingGoal()
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (!pending_handle_ || !pending_handle_->is_active())
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "Attempting to terminate pending goal when not available");
+        return;
+      }
+
+      this->terminate(pending_handle_);
+      preempt_requested_ = false;
+
+      MRPLogging::basicDebug(
+          node_logging_interface_,
+          "Pending goal terminated");
+    }
+
+    const std::shared_ptr<const typename ActionType::Goal> getCurrentGoal() const
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (!isActive(current_handle_))
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "A goal is not available or has reached a final state");
+        return std::shared_ptr<const typename ActionType::Goal>();
+      }
+
+      return current_handle_->get_goal();
+    }
+
+    const rclcpp_action::GoalUUID getCurrentGoalID() const
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (!this->isActive(current_handle_))
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "A goal is not available or has reached a final state");
+        return rclcpp_action::GoalUUID();
+      }
+
+      return current_handle_->get_goal_id();
+    }
+
+    const std::shared_ptr<const typename ActionType::Goal> getPendingGoal() const
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (!pending_handle_ || !pending_handle_->is_active())
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "Attempting to get pending goal when not available");
+        return std::shared_ptr<const typename ActionType::Goal>();
+      }
+
+      return pending_handle_->get_goal();
+    }
+
+    bool isCancelRequested() const
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      // A cancel request is assumed if either handle is canceled by the client.
+
+      if (current_handle_ == nullptr)
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "Checking for cancel but current goal is not available");
+        return false;
+      }
+
+      if (pending_handle_ != nullptr)
+      {
+        return pending_handle_->is_canceling();
+      }
+
+      return current_handle_->is_canceling();
+    }
+
+    void terminateCurrent(
+        typename std::shared_ptr<typename ActionType::Result> result =
+            std::make_shared<typename ActionType::Result>())
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      terminate(current_handle_, result);
+    }
+
+    void succeededCurrent(
+        typename std::shared_ptr<typename ActionType::Result> result =
+            std::make_shared<typename ActionType::Result>())
+    {
+      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+
+      if (this->isActive(current_handle_))
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "Setting succeed on current goal.");
+        current_handle_->succeed(result);
+        current_handle_.reset();
+      }
+    }
+
+    void publishFeedback(
+        typename std::shared_ptr<typename ActionType::Feedback> feedback)
+    {
+      if (!this->isActive(current_handle_))
+      {
+        MRPLogging::basicError(
+            node_logging_interface_,
+            "Trying to publish feedback when the current goal handle is not active");
+        return;
+      }
+
+      current_handle_->publish_feedback(feedback);
     }
 
   protected:
@@ -193,14 +357,13 @@ namespace mrp_common
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface_;
     std::string action_name_;
 
-    typename rclcpp_action::Server<ActionType>::SharedPtr action_server_;
-
     ExecuteCallback execute_callback_;
     CompletionCallback completion_callback_;
     std::future<void> execution_future_;
 
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> current_handle_;
-    std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> pending_handle_;
+    typename rclcpp_action::Server<ActionType>::SharedPtr action_server_;
+    typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> current_handle_;
+    typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> pending_handle_;
 
     mutable std::recursive_mutex update_mutex_;
     bool server_active_;
@@ -208,15 +371,19 @@ namespace mrp_common
     bool preempt_requested_;
     std::chrono::milliseconds server_timeout_;
 
-    constexpr bool isActive(
-        const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle) const
+    bool isActive(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle) const
     {
       return handle != nullptr && handle->is_active();
     }
 
-    void terminate(std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle,
-                   typename std::shared_ptr<typename ActionType::Result> result =
-                       std::make_shared<typename ActionType::Result>())
+    constexpr auto emptyResult() const
+    {
+      return std::make_shared<typename ActionType::Result>();
+    }
+
+    void terminate(
+        std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle,
+        typename std::shared_ptr<typename ActionType::Result> result = std::make_shared<typename ActionType::Result>())
     {
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
 
@@ -224,18 +391,22 @@ namespace mrp_common
       {
         if (handle->is_canceling())
         {
-          MRPLogging::basicWarn("Client requested to cancel the goal. Cancelling.");
+          MRPLogging::basicWarn(
+              node_logging_interface_,
+              "Client requested to cancel the goal. Cancelling.");
           handle->canceled(result);
         }
         else
         {
-          MRPLogging::basicWarn("Aborting handle.");
+          MRPLogging::basicWarn(
+              node_logging_interface_,
+              "Aborting handle.");
           handle->abort(result);
         }
         handle.reset();
       }
     }
   };
-}
+} // namespace mrp_common
 
 #endif

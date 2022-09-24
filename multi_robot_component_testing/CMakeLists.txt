@@ -45,6 +45,7 @@ set(library_name multi_robot_component_testing)
 add_library(${library_name} SHARED
   src/minimal_service_server.cpp
   src/minimal_service_client.cpp
+  src/minimal_action_server.cpp
 )
 
 target_include_directories(${library_name} PUBLIC

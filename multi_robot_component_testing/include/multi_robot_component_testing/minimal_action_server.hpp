@@ -11,19 +11,18 @@ namespace mrp_component_testing
 {
   class MinimalActionServer : public mrp_common::ActionServer<turtlesim::action::RotateAbsolute>
   {
-    public:
-      MinimalActionServer(
-        rclcpp::Node::SharedPtr node,
-        std::string action_name,
-        mrp_common::ActionServer<turtlesim::action::RotateAbsolute>::ExecuteCallback execution_callback,
-        mrp_common::ActionServer<turtlesim::action::RotateAbsolute>::CompletionCallback completion_callback);
-      ~MinimalActionServer();
+  public:
+    MinimalActionServer(
+        rclcpp::Node::SharedPtr &node,
+        std::string action_name);
+    ~MinimalActionServer();
 
-      void executionCallback();
-      void completionCallback();
+    void executionCallback();
+    void completionCallback();
 
-    protected:
-    
+  protected:
+    double server_frequency_;
+    // rclcpp::WallRate loop_rate_;
   };
 } // namespace mrp_common
 
