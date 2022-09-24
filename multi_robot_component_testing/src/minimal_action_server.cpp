@@ -9,6 +9,7 @@ namespace mrp_component_testing
             std::bind(&MinimalActionServer::executionCallback, this),
             std::bind(&MinimalActionServer::completionCallback, this),
             std::chrono::milliseconds(500),
+            true,
             rcl_action_server_get_default_options()),
         server_frequency_(1)
   {
@@ -34,20 +35,22 @@ namespace mrp_component_testing
     rclcpp::WallRate loop_rate(server_frequency_);
     while (rclcpp::ok())
     {
-      if(current_handle_->is_canceling())
+      if(this->isCancelRequested())
       {
-        
+        terminateCurrent(result);
+        return;
       }
       if(counter < target)
       {
         counter++;
         feedback->remaining = target - counter;
-        current_handle_->publish_feedback(feedback);
+        this->publishFeedback(feedback);
       }
       else
       {
         result->delta = target - counter;
-        current_handle_->succeed(result);
+        this->succeededCurrent();
+        return;
       }
 
       if (!loop_rate.sleep())

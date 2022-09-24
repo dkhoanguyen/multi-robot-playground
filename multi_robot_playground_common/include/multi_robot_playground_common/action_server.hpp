@@ -38,6 +38,7 @@ namespace mrp_common
         ExecuteCallback execute_callback,
         CompletionCallback completion_callback,
         std::chrono::milliseconds server_timeout,
+        bool spin_thread,
         const rcl_action_server_options_t &options)
         : node_base_interface_(node->get_node_base_interface()),
           node_clock_interface_(node->get_node_clock_interface()),
@@ -46,11 +47,19 @@ namespace mrp_common
           action_name_(action_name),
           execute_callback_(execute_callback),
           completion_callback_(completion_callback),
+          spin_thread_(spin_thread),
           server_active_(false),
           stop_execution_(false),
           preempt_requested_(false)
     {
       using namespace std::placeholders;
+      if (spin_thread_)
+      {
+        callback_group_ = node_base_interface_->create_callback_group(
+            rclcpp::CallbackGroupType::MutuallyExclusive);
+        callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        callback_group_executor_->add_node(node_base_interface_);
+      }
       action_server_ = rclcpp_action::create_server<ActionType>(
           node_base_interface_,
           node_clock_interface_,
@@ -59,7 +68,9 @@ namespace mrp_common
           action_name_,
           std::bind(&ActionServer::handleGoal, this, _1, _2),
           std::bind(&ActionServer::handleCancel, this, _1),
-          std::bind(&ActionServer::handleAccepted, this, _1), options);
+          std::bind(&ActionServer::handleAccepted, this, _1),
+          options,
+          callback_group_);
     }
 
     virtual ~ActionServer()
@@ -168,6 +179,11 @@ namespace mrp_common
     {
       std::lock_guard<std::recursive_mutex> lock(update_mutex_);
       server_active_ = true;
+      if (spin_thread_)
+      {
+        std::async(std::launch::async, [this]()
+                   { callback_group_executor_->spin(); });
+      }
     }
 
     void deactivate()
@@ -365,7 +381,11 @@ namespace mrp_common
     typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> current_handle_;
     typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> pending_handle_;
 
+    rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
+    rclcpp::executors::SingleThreadedExecutor::SharedPtr callback_group_executor_;
+
     mutable std::recursive_mutex update_mutex_;
+    bool spin_thread_;
     bool server_active_;
     bool stop_execution_;
     bool preempt_requested_;

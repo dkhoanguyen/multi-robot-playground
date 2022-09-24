@@ -77,7 +77,7 @@ namespace mrp_common
     std::future<void> execution_future_;
 
     typename rclcpp::Service<ServiceType>::SharedPtr service_server_;
-    rclcpp::executors::MultiThreadedExecutor callback_group_executor_;
+    rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
     rclcpp::CallbackGroup::SharedPtr callback_group_;
   };
 }

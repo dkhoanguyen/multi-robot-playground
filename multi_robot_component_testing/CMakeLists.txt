@@ -110,6 +110,28 @@ ament_target_dependencies(${minimal_service_client} ${dependencies})
 install(TARGETS ${minimal_service_client}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
+##########################
+# MINIMAL ACTION SERVER #
+##########################
+
+set(minimal_action_server minimal_action_server)
+add_executable(${minimal_action_server}
+  exec/minimal_action_server.cpp
+)
+
+target_link_libraries(${minimal_action_server} 
+  ${library_name}
+)
+
+target_include_directories(${minimal_action_server} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(${minimal_action_server} ${dependencies})
+
+install(TARGETS ${minimal_action_server}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
 ################
 # UNIT TESTING #
 ################

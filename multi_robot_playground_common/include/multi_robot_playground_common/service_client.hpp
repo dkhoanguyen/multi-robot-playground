@@ -88,7 +88,7 @@ namespace mrp_common
     typename rclcpp::Client<ServiceType>::SharedPtr service_client_;
 
     rclcpp::CallbackGroup::SharedPtr callback_group_;
-    rclcpp::executors::MultiThreadedExecutor callback_group_executor_;
+    rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
   };
 }
 
