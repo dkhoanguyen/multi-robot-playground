@@ -77,10 +77,10 @@ namespace mrp_common
     {
     }
 
-    rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID uuid,
+    rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID &uuid,
                                            std::shared_ptr<const typename ActionType::Goal> goal)
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       if (!server_active_)
       {
         MRPLogging::basicWarn(
@@ -97,7 +97,7 @@ namespace mrp_common
 
     rclcpp_action::CancelResponse handleCancel(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       if (!handle->is_active())
       {
         MRPLogging::basicWarn(
@@ -114,7 +114,7 @@ namespace mrp_common
 
     void handleAccepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       MRPLogging::basicInfo(
           node_logging_interface_,
           "Receiving a new goal");
@@ -167,52 +167,91 @@ namespace mrp_common
         {
           execute_callback_();
         }
-        catch (const std::exception &e)
+        catch (const std::exception &ex)
         {
+          MRPLogging::basicError(
+              node_logging_interface_,
+              "Action server failed while executing action callback");
           completion_callback_();
           return;
         }
+
+        MRPLogging::basicDebug(node_logging_interface_,
+                               "Blocking process for new goal handle.");
+        if(stop_execution_)
+        {
+          MRPLogging::basicWarn(node_logging_interface_,
+                                "Stoping the thread as requested");
+          this->terminateAll();
+          completion_callback_();
+          break;
+        }
+
+        if(isActive(current_handle_))
+        {
+          MRPLogging::basicWarn(node_logging_interface_,
+                                "Current goal was not completed successfully.");
+        }
+
+        if(isActive(pending_handle_))
+        {
+          MRPLogging::basicWarn(node_logging_interface_,
+                                "Executing a pending handle on the existing thread.");
+          this->acceptPendingGoal();
+        }
+        else
+        {
+          MRPLogging::basicDebug(node_logging_interface_,
+                                "Done processing available goals.");
+          break;
+        }
       }
+
+      MRPLogging::basicDebug(node_logging_interface_, "Action execution thread done.");
     }
 
     void activate()
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       server_active_ = true;
+      MRPLogging::basicInfo(node_logging_interface_,
+                            "Activating action server...");
       if (spin_thread_)
       {
-        std::async(std::launch::async, [this]()
-                   { callback_group_executor_->spin(); });
+        spin_future_ = std::async(std::launch::async, [this]()
+                                  { callback_group_executor_->spin(); });
       }
     }
 
     void deactivate()
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       server_active_ = false;
+      MRPLogging::basicInfo(node_logging_interface_,
+                            "Deactivating action server...");
     }
 
-    bool isRunning()
+    bool isRunning() const
     {
       return execution_future_.valid() &&
              (execution_future_.wait_for(std::chrono::milliseconds(0)) == std::future_status::timeout);
     }
 
-    bool isServerActive()
+    bool isServerActive() const
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       return server_active_;
     }
 
     bool isPreemptRequested() const
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       return preempt_requested_;
     }
 
     const std::shared_ptr<const typename ActionType::Goal> acceptPendingGoal()
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (!pending_handle_ || !pending_handle_->is_active())
       {
@@ -241,9 +280,19 @@ namespace mrp_common
       return current_handle_->get_goal();
     }
 
+    void terminateAll(
+        typename std::shared_ptr<typename ActionType::Result> result =
+            std::make_shared<typename ActionType::Result>())
+    {
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
+      terminate(current_handle_, result);
+      terminate(pending_handle_, result);
+      preempt_requested_ = false;
+    }
+
     void terminatePendingGoal()
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (!pending_handle_ || !pending_handle_->is_active())
       {
@@ -263,7 +312,7 @@ namespace mrp_common
 
     const std::shared_ptr<const typename ActionType::Goal> getCurrentGoal() const
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (!isActive(current_handle_))
       {
@@ -278,7 +327,7 @@ namespace mrp_common
 
     const rclcpp_action::GoalUUID getCurrentGoalID() const
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (!this->isActive(current_handle_))
       {
@@ -293,7 +342,7 @@ namespace mrp_common
 
     const std::shared_ptr<const typename ActionType::Goal> getPendingGoal() const
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (!pending_handle_ || !pending_handle_->is_active())
       {
@@ -308,7 +357,7 @@ namespace mrp_common
 
     bool isCancelRequested() const
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       // A cancel request is assumed if either handle is canceled by the client.
 
@@ -332,7 +381,7 @@ namespace mrp_common
         typename std::shared_ptr<typename ActionType::Result> result =
             std::make_shared<typename ActionType::Result>())
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       terminate(current_handle_, result);
     }
 
@@ -340,11 +389,11 @@ namespace mrp_common
         typename std::shared_ptr<typename ActionType::Result> result =
             std::make_shared<typename ActionType::Result>())
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (this->isActive(current_handle_))
       {
-        MRPLogging::basicError(
+        MRPLogging::basicInfo(
             node_logging_interface_,
             "Setting succeed on current goal.");
         current_handle_->succeed(result);
@@ -363,6 +412,8 @@ namespace mrp_common
         return;
       }
 
+      MRPLogging::basicInfo(node_logging_interface_,
+                            "Publishing feedback");
       current_handle_->publish_feedback(feedback);
     }
 
@@ -376,6 +427,7 @@ namespace mrp_common
     ExecuteCallback execute_callback_;
     CompletionCallback completion_callback_;
     std::future<void> execution_future_;
+    std::future<void> spin_future_;
 
     typename rclcpp_action::Server<ActionType>::SharedPtr action_server_;
     typename std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> current_handle_;
@@ -405,7 +457,7 @@ namespace mrp_common
         std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle,
         typename std::shared_ptr<typename ActionType::Result> result = std::make_shared<typename ActionType::Result>())
     {
-      std::lock_guard<std::recursive_mutex> lock(update_mutex_);
+      std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
       if (isActive(handle))
       {

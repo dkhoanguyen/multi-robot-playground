@@ -9,7 +9,7 @@ namespace mrp_component_testing
             std::bind(&MinimalActionServer::executionCallback, this),
             std::bind(&MinimalActionServer::completionCallback, this),
             std::chrono::milliseconds(500),
-            true,
+            true, // Spin executor
             rcl_action_server_get_default_options()),
         server_frequency_(1)
   {
@@ -29,18 +29,27 @@ namespace mrp_component_testing
     std::shared_ptr<turtlesim::action::RotateAbsolute::Feedback> feedback =
         std::make_shared<turtlesim::action::RotateAbsolute::Feedback>();
 
+    mrp_common::MRPLogging::basicInfo(
+        node_logging_interface_,
+        "MinimalActionServer");
+
     double counter = 0;
     double target = (double)current_goal->theta;
 
+    std::cout << "Target:" << target << std::endl;
+
     rclcpp::WallRate loop_rate(server_frequency_);
+
     while (rclcpp::ok())
     {
-      if(this->isCancelRequested())
+      // std::cout << rclcpp::ok() << std::endl;
+      std::cout << counter << std::endl;
+      if (this->isCancelRequested())
       {
-        terminateCurrent(result);
+        this->terminateCurrent(result);
         return;
       }
-      if(counter < target)
+      if (counter < target)
       {
         counter++;
         feedback->remaining = target - counter;
@@ -53,9 +62,7 @@ namespace mrp_component_testing
         return;
       }
 
-      if (!loop_rate.sleep())
-      {
-      }
+      loop_rate.sleep();
     }
   }
 

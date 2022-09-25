@@ -4,6 +4,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "multi_robot_playground_common/action_server.hpp"
+#include "multi_robot_playground_common/logging.hpp"
 
 #include "turtlesim/action/rotate_absolute.hpp"
 
