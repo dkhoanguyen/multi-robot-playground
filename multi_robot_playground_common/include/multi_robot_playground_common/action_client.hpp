@@ -10,13 +10,10 @@ namespace mrp_common
   class ActionClient
   {
   public:
-    explicit ActionClient(
-        rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
-        rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
-        rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface,
-        rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface,
-        const std::string &client_name,
-        const rcl_action_server_options_t &options)
+    template <typename NodeType>
+    ActionClient(NodeType node,
+                 const std::string &client_name,
+                 const rcl_service_options_t &options)
         : node_base_interface_(node_base_interface),
           node_clock_interface_(node_clock_interface),
           node_logging_interface_(node_logging_interface),
@@ -25,21 +22,23 @@ namespace mrp_common
     {
     }
 
-    template <typename NodeType>
-    ActionClient(NodeType node,
-                 const std::string &client_name,
-                 const rcl_service_options_t &options)
-        : ActionClient(
-              node->get_node_base_interface(),
-              node->get_node_clock_interface(),
-              node->get_node_logging_interface(),
-              node->get_node_waitables_interface(),
-              client_name, options)
+    virtual ~ActionClient()
     {
     }
 
-    virtual ~ActionClient()
+    void goalResponseCallback(
+        std::shared_future<rclcpp_action::ClientGoalHandle<typename ActionType>::SharedPtr> future)
     {
+    }
+
+    void feedbackCallback(rclcpp_action::ClientGoalHandle<typename ActionType>::SharedPtr,
+                          const std::shared_ptr<const ActionType::Feedback> feedback)
+    {
+    }
+
+    void resultCallback()
+    {
+      
     }
 
   protected:
@@ -47,8 +46,9 @@ namespace mrp_common
     rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
     rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
     rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface_;
-
     std::string client_name_;
+
+    typename rclcpp_action::Client<ActionType>::SharedPtr action_client_;
   };
 }
 
