@@ -22,7 +22,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(turtlesim REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(multi_robot_playground_common REQUIRED)
+find_package(mrp_common REQUIRED)
 
 # include_directories(
 #   include
@@ -38,7 +38,7 @@ set(dependencies
   rclcpp_action
   std_srvs
   turtlesim
-  multi_robot_playground_common
+  mrp_common
 )
 
 set(library_name multi_robot_component_testing)

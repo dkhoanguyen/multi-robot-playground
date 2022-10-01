@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(multi_robot_playground_common)
+project(mrp_common)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -19,6 +19,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(mrp_common_msgs REQUIRED)
 
 # include_directories(
 #   include
@@ -27,17 +28,18 @@ find_package(rclcpp_components REQUIRED)
 set(dependencies
   rclcpp
   rclcpp_components
+  mrp_common_msgs
 )
 
 set(HEADER_FILES 
-  include/multi_robot_playground_common/action_client.hpp
-  include/multi_robot_playground_common/action_server.hpp
-  include/multi_robot_playground_common/lifecycle_node.hpp
-  include/multi_robot_playground_common/service_client.hpp
-  include/multi_robot_playground_common/service_server.hpp
+  include/mrp_common/action_client.hpp
+  include/mrp_common/action_server.hpp
+  include/mrp_common/lifecycle_node.hpp
+  include/mrp_common/service_client.hpp
+  include/mrp_common/service_server.hpp
 )
 
-set(library_name multi_robot_playground_common)
+set(library_name mrp_common)
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
   ${HEADER_FILES}
@@ -66,7 +68,10 @@ install(
   DESTINATION include
 )
 
-
+# rosidl_generate_interfaces(${PROJECT_NAME}
+#   "msg/Heartbeat.msg"
+#   DEPENDENCIES std_msgs
+# )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

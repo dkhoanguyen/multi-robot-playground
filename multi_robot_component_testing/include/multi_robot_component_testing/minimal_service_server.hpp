@@ -5,7 +5,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/set_bool.hpp"
-#include "multi_robot_playground_common/service_server.hpp"
+#include "mrp_common/service_server.hpp"
 
 namespace mrp_component_testing
 {

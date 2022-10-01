@@ -5,7 +5,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "multi_robot_playground_common/lifecycle_node.hpp"
+#include "mrp_common/lifecycle_node.hpp"
 
 namespace mrp_motion_planner_server
 {
