@@ -398,11 +398,11 @@ namespace mrp_common
 
       if (this->isActive(current_handle_))
       {
+        current_handle_->succeed(result);
+        current_handle_.reset();
         Log::basicInfo(
             node_logging_interface_,
             "Setting succeed on current goal.");
-        current_handle_->succeed(result);
-        current_handle_.reset();
       }
     }
 

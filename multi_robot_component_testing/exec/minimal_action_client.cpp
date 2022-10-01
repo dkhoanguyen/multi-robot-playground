@@ -11,7 +11,7 @@ int main(int argc, char **argv)
       std::make_shared<mrp_component_testing::MinimalActionClient>(node, "test_action");
 
   auto goal_msg = turtlesim::action::RotateAbsolute::Goal();
-  goal_msg.theta = 10;
+  goal_msg.theta = 2;
 
   action_client->sendGoal(goal_msg);
   while(rclcpp::ok())
