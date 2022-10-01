@@ -5,7 +5,7 @@
 
 namespace mrp_common
 {
-  class MRPLogging
+  class Log
   {
   public:
     static void basicDebug(

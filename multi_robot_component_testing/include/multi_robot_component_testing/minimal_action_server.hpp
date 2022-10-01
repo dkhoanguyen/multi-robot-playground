@@ -13,9 +13,8 @@ namespace mrp_component_testing
   class MinimalActionServer : public mrp_common::ActionServer<turtlesim::action::RotateAbsolute>
   {
   public:
-    MinimalActionServer(
-        rclcpp::Node::SharedPtr &node,
-        std::string action_name);
+    MinimalActionServer(rclcpp::Node::SharedPtr &node,
+                        std::string action_name);
     ~MinimalActionServer();
 
     void executionCallback();

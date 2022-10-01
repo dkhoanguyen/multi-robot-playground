@@ -16,7 +16,7 @@ int main(int argc, char **argv)
   request->data = true;
   std_srvs::srv::SetBool::Response::SharedPtr response = std::make_shared<std_srvs::srv::SetBool::Response>();
   
-  service_client->request(request, response);
+  service_client->requestAndWaitForResponse(request, response);
   
   rclcpp::shutdown();
 }

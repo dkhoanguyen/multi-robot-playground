@@ -29,7 +29,7 @@ namespace mrp_component_testing
     std::shared_ptr<turtlesim::action::RotateAbsolute::Feedback> feedback =
         std::make_shared<turtlesim::action::RotateAbsolute::Feedback>();
 
-    mrp_common::MRPLogging::basicInfo(
+    mrp_common::Log::basicInfo(
         node_logging_interface_,
         "MinimalActionServer");
 

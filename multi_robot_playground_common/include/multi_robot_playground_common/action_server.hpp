@@ -83,13 +83,13 @@ namespace mrp_common
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       if (!server_active_)
       {
-        MRPLogging::basicWarn(
+        Log::basicWarn(
             node_logging_interface_,
             "Received goal but server is inactive, so reject this goal.");
         return rclcpp_action::GoalResponse::REJECT;
       }
 
-      MRPLogging::basicInfo(
+      Log::basicInfo(
           node_logging_interface_,
           "Received request for goal acceptance.");
       return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -100,13 +100,13 @@ namespace mrp_common
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       if (!handle->is_active())
       {
-        MRPLogging::basicWarn(
+        Log::basicWarn(
             node_logging_interface_,
             "Received request for goal cancellation,"
             "but the handle is inactive, so reject the request");
         return rclcpp_action::CancelResponse::REJECT;
       }
-      MRPLogging::basicInfo(
+      Log::basicInfo(
           node_logging_interface_,
           "Received request for goal cancellation");
       return rclcpp_action::CancelResponse::ACCEPT;
@@ -115,18 +115,18 @@ namespace mrp_common
     void handleAccepted(const std::shared_ptr<rclcpp_action::ServerGoalHandle<ActionType>> handle)
     {
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
-      MRPLogging::basicInfo(
+      Log::basicInfo(
           node_logging_interface_,
           "Receiving a new goal");
 
       if (isActive(current_handle_) || isRunning())
       {
-        MRPLogging::basicInfo(
+        Log::basicInfo(
             node_logging_interface_,
             "An older goal is active, moving the new goal to a pending slot.");
         if (isActive(pending_handle_))
         {
-          MRPLogging::basicInfo(
+          Log::basicInfo(
               node_logging_interface_,
               "The pending slot is occupied."
               " The previous pending goal will be terminated and replaced.");
@@ -140,7 +140,7 @@ namespace mrp_common
         if (isActive(pending_handle_))
         {
           // Shouldn't reach a state with a pending goal but no current one.
-          MRPLogging::basicError(
+          Log::basicError(
               node_logging_interface_,
               "Forgot to handle a preemption. Terminating the pending goal.");
           terminate(pending_handle_);
@@ -148,7 +148,7 @@ namespace mrp_common
         }
 
         current_handle_ = handle;
-        MRPLogging::basicInfo(
+        Log::basicInfo(
             node_logging_interface_,
             "Executing goal asynchronously.");
         execution_future_ = std::async(std::launch::async, [this]()
@@ -160,7 +160,7 @@ namespace mrp_common
     {
       while (rclcpp::ok() && !stop_execution_ && isActive(current_handle_))
       {
-        MRPLogging::basicInfo(
+        Log::basicInfo(
             node_logging_interface_,
             "Executing the goal...");
         try
@@ -169,52 +169,52 @@ namespace mrp_common
         }
         catch (const std::exception &ex)
         {
-          MRPLogging::basicError(
+          Log::basicError(
               node_logging_interface_,
               "Action server failed while executing action callback");
           completion_callback_();
           return;
         }
 
-        MRPLogging::basicDebug(node_logging_interface_,
+        Log::basicDebug(node_logging_interface_,
                                "Blocking process for new goal handle.");
-        if(stop_execution_)
+        if (stop_execution_)
         {
-          MRPLogging::basicWarn(node_logging_interface_,
+          Log::basicWarn(node_logging_interface_,
                                 "Stoping the thread as requested");
           this->terminateAll();
           completion_callback_();
           break;
         }
 
-        if(isActive(current_handle_))
+        if (isActive(current_handle_))
         {
-          MRPLogging::basicWarn(node_logging_interface_,
+          Log::basicWarn(node_logging_interface_,
                                 "Current goal was not completed successfully.");
         }
 
-        if(isActive(pending_handle_))
+        if (isActive(pending_handle_))
         {
-          MRPLogging::basicWarn(node_logging_interface_,
+          Log::basicWarn(node_logging_interface_,
                                 "Executing a pending handle on the existing thread.");
           this->acceptPendingGoal();
         }
         else
         {
-          MRPLogging::basicDebug(node_logging_interface_,
-                                "Done processing available goals.");
+          Log::basicDebug(node_logging_interface_,
+                                 "Done processing available goals.");
           break;
         }
       }
 
-      MRPLogging::basicDebug(node_logging_interface_, "Action execution thread done.");
+      Log::basicDebug(node_logging_interface_, "Action execution thread done.");
     }
 
     void activate()
     {
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       server_active_ = true;
-      MRPLogging::basicInfo(node_logging_interface_,
+      Log::basicInfo(node_logging_interface_,
                             "Activating action server...");
       if (spin_thread_)
       {
@@ -227,8 +227,13 @@ namespace mrp_common
     {
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       server_active_ = false;
-      MRPLogging::basicInfo(node_logging_interface_,
+      Log::basicInfo(node_logging_interface_,
                             "Deactivating action server...");
+      if(spin_thread_)
+      {
+        // Stop executor
+        callback_group_executor_->cancel();
+      }
     }
 
     bool isRunning() const
@@ -255,7 +260,7 @@ namespace mrp_common
 
       if (!pending_handle_ || !pending_handle_->is_active())
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "Attempting to get pending goal when not available");
         return std::shared_ptr<const typename ActionType::Goal>();
@@ -263,7 +268,7 @@ namespace mrp_common
 
       if (isActive(current_handle_) && current_handle_ != pending_handle_)
       {
-        MRPLogging::basicDebug(
+        Log::basicDebug(
             node_logging_interface_,
             "Cancelling the previous goal");
         current_handle_->abort(this->emptyResult());
@@ -273,7 +278,7 @@ namespace mrp_common
       pending_handle_.reset();
       preempt_requested_ = false;
 
-      MRPLogging::basicDebug(
+      Log::basicDebug(
           node_logging_interface_,
           "Preempted goal");
 
@@ -296,7 +301,7 @@ namespace mrp_common
 
       if (!pending_handle_ || !pending_handle_->is_active())
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "Attempting to terminate pending goal when not available");
         return;
@@ -305,7 +310,7 @@ namespace mrp_common
       this->terminate(pending_handle_);
       preempt_requested_ = false;
 
-      MRPLogging::basicDebug(
+      Log::basicDebug(
           node_logging_interface_,
           "Pending goal terminated");
     }
@@ -316,7 +321,7 @@ namespace mrp_common
 
       if (!isActive(current_handle_))
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "A goal is not available or has reached a final state");
         return std::shared_ptr<const typename ActionType::Goal>();
@@ -331,7 +336,7 @@ namespace mrp_common
 
       if (!this->isActive(current_handle_))
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "A goal is not available or has reached a final state");
         return rclcpp_action::GoalUUID();
@@ -346,7 +351,7 @@ namespace mrp_common
 
       if (!pending_handle_ || !pending_handle_->is_active())
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "Attempting to get pending goal when not available");
         return std::shared_ptr<const typename ActionType::Goal>();
@@ -363,7 +368,7 @@ namespace mrp_common
 
       if (current_handle_ == nullptr)
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "Checking for cancel but current goal is not available");
         return false;
@@ -393,7 +398,7 @@ namespace mrp_common
 
       if (this->isActive(current_handle_))
       {
-        MRPLogging::basicInfo(
+        Log::basicInfo(
             node_logging_interface_,
             "Setting succeed on current goal.");
         current_handle_->succeed(result);
@@ -406,13 +411,13 @@ namespace mrp_common
     {
       if (!this->isActive(current_handle_))
       {
-        MRPLogging::basicError(
+        Log::basicError(
             node_logging_interface_,
             "Trying to publish feedback when the current goal handle is not active");
         return;
       }
 
-      MRPLogging::basicInfo(node_logging_interface_,
+      Log::basicInfo(node_logging_interface_,
                             "Publishing feedback");
       current_handle_->publish_feedback(feedback);
     }
@@ -463,14 +468,14 @@ namespace mrp_common
       {
         if (handle->is_canceling())
         {
-          MRPLogging::basicWarn(
+          Log::basicWarn(
               node_logging_interface_,
               "Client requested to cancel the goal. Cancelling.");
           handle->canceled(result);
         }
         else
         {
-          MRPLogging::basicWarn(
+          Log::basicWarn(
               node_logging_interface_,
               "Aborting handle.");
           handle->abort(result);

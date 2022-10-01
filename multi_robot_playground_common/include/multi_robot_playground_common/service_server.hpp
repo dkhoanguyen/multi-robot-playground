@@ -21,11 +21,11 @@ namespace mrp_common
               node->get_node_logging_interface(),
               service_name, options)
     {
-      MRPLogging::basicInfo(node_logging_interface_, "Creating Callback Group");
+      Log::basicInfo(node_logging_interface_, "Creating Callback Group");
       callback_group_ = node->create_callback_group(
           rclcpp::CallbackGroupType::MutuallyExclusive);
       callback_group_executor_.add_node(node);
-      MRPLogging::basicInfo(node_logging_interface_, "Creating Service");
+      Log::basicInfo(node_logging_interface_, "Creating Service");
       using namespace std::placeholders;
       // Create service and resgister callback
       service_server_ = rclcpp::create_service<ServiceType>(

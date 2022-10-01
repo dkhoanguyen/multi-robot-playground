@@ -47,7 +47,7 @@ namespace mrp_common
 
     virtual ~ServiceClient() {}
 
-    bool request(typename ServiceType::Request::SharedPtr &request,
+    bool requestAndWaitForResponse(typename ServiceType::Request::SharedPtr &request,
                  typename ServiceType::Response::SharedPtr &response,
                  const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
     {

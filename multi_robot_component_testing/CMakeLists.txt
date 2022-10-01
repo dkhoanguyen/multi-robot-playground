@@ -46,6 +46,7 @@ add_library(${library_name} SHARED
   src/minimal_service_server.cpp
   src/minimal_service_client.cpp
   src/minimal_action_server.cpp
+  src/minimal_action_client.cpp
 )
 
 target_include_directories(${library_name} PUBLIC
@@ -130,6 +131,28 @@ $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(${minimal_action_server} ${dependencies})
 
 install(TARGETS ${minimal_action_server}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+##########################
+# MINIMAL ACTION CLIENT #
+##########################
+
+set(minimal_action_client minimal_action_client)
+add_executable(${minimal_action_client}
+  exec/minimal_action_client.cpp
+)
+
+target_link_libraries(${minimal_action_client} 
+  ${library_name}
+)
+
+target_include_directories(${minimal_action_client} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(${minimal_action_client} ${dependencies})
+
+install(TARGETS ${minimal_action_client}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ################
