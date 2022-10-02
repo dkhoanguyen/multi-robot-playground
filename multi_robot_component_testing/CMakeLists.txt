@@ -19,10 +19,12 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(turtlesim REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(mrp_common REQUIRED)
+find_package(mrp_common_msgs REQUIRED)
 
 # include_directories(
 #   include
@@ -35,10 +37,12 @@ find_package(mrp_common REQUIRED)
 set(dependencies
   rclcpp
   rclcpp_components
+  rclcpp_lifecycle
   rclcpp_action
   std_srvs
   turtlesim
   mrp_common
+  mrp_common_msgs
 )
 
 set(library_name multi_robot_component_testing)
@@ -47,6 +51,7 @@ add_library(${library_name} SHARED
   src/minimal_service_client.cpp
   src/minimal_action_server.cpp
   src/minimal_action_client.cpp
+  src/lifecycle_node.cpp
 )
 
 target_include_directories(${library_name} PUBLIC
@@ -153,6 +158,28 @@ $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(${minimal_action_client} ${dependencies})
 
 install(TARGETS ${minimal_action_client}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+###################
+# LIFE CYCLE NODE #
+###################
+
+set(lifecycle_node lifecycle_node)
+add_executable(${lifecycle_node}
+  exec/lifecycle_node.cpp
+)
+
+target_link_libraries(${lifecycle_node} 
+  ${library_name}
+)
+
+target_include_directories(${lifecycle_node} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(${lifecycle_node} ${dependencies})
+
+install(TARGETS ${lifecycle_node}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ################

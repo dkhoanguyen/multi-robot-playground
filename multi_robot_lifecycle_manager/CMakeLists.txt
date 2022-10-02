@@ -20,7 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-# find_package(bondcpp REQUIRED)
+find_package(mrp_common_msgs REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -28,7 +28,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 set(dependencies
   rclcpp
   rclcpp_lifecycle
-  # bondcpp
+  mrp_common_msgs
 )
 
 set(library_name multi_robot_lifecyle_manager)

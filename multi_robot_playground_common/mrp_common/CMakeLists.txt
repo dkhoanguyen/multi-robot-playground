@@ -18,9 +18,10 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
-
+find_package(lifecycle_msgs REQUIRED)
 # include_directories(
 #   include
 # )
@@ -29,6 +30,8 @@ set(dependencies
   rclcpp
   rclcpp_components
   mrp_common_msgs
+  rclcpp_lifecycle
+  lifecycle_msgs
 )
 
 set(HEADER_FILES 
