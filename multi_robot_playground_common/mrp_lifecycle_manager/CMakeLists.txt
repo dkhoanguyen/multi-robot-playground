@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(multi_robot_lifecycle_manager)
+project(mrp_lifecycle_manager)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -31,20 +31,20 @@ set(dependencies
   mrp_common_msgs
 )
 
-set(library_name multi_robot_lifecyle_manager)
+set(library_name mrp_lifecyle_manager)
 
 add_library(${library_name} SHARED src/lifecyle_manager.cpp)
 ament_target_dependencies(${library_name}
   ${dependencies}
 )
 
-target_include_directories(multi_robot_lifecyle_manager PUBLIC
+target_include_directories(mrp_lifecyle_manager PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(multi_robot_lifecyle_manager PRIVATE "MULTI_ROBOT_LIFECYCLE_MANAGER_BUILDING_LIBRARY")
+target_compile_definitions(mrp_lifecyle_manager PRIVATE "MULTI_ROBOT_LIFECYCLE_MANAGER_BUILDING_LIBRARY")
 
 install(
   DIRECTORY include/

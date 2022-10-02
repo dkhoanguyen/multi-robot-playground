@@ -37,7 +37,7 @@ namespace mrp_common
         callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
         callback_group_executor_->add_node(node_base_interface_);
       }
-      this->action_client_ = rclcpp_action::create_client<ActionType>(
+      action_client_ = rclcpp_action::create_client<ActionType>(
           node_base_interface_,
           node_graph_interface_,
           node_logging_interface_,
@@ -56,7 +56,7 @@ namespace mrp_common
 
     void sendGoal(const typename ActionType::Goal &goal)
     {
-      if (!this->action_client_->wait_for_action_server())
+      if (!action_client_->wait_for_action_server())
       {
         Log::basicError(node_logging_interface_, "Action server not available after waiting");
       }
@@ -70,7 +70,7 @@ namespace mrp_common
           std::bind(&ActionClient::feedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
       send_goal_options.result_callback =
           std::bind(&ActionClient::resultCallback, this, std::placeholders::_1);
-      this->action_client_->async_send_goal(goal, send_goal_options);
+      action_client_->async_send_goal(goal, send_goal_options);
 
       if (spin_thread_)
       {

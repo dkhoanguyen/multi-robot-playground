@@ -39,30 +39,30 @@ Turtlebot3Drive::Turtlebot3Drive()
   auto qos = rclcpp::QoS(rclcpp::KeepLast(10));
 
   // Initialise publishers
-  cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", qos);
+  cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", qos);
 
   // Initialise subscribers
-  scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+  scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
     "scan", \
     rclcpp::SensorDataQoS(), \
     std::bind(
       &Turtlebot3Drive::scan_callback, \
       this, \
       std::placeholders::_1));
-  odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
     "odom", qos, std::bind(&Turtlebot3Drive::odom_callback, this, std::placeholders::_1));
 
   /************************************************************
   ** Initialise ROS timers
   ************************************************************/
-  update_timer_ = this->create_wall_timer(10ms, std::bind(&Turtlebot3Drive::update_callback, this));
+  update_timer_ = create_wall_timer(10ms, std::bind(&Turtlebot3Drive::update_callback, this));
 
-  RCLCPP_INFO(this->get_logger(), "Turtlebot3 simulation node has been initialised");
+  RCLCPP_INFO(get_logger(), "Turtlebot3 simulation node has been initialised");
 }
 
 Turtlebot3Drive::~Turtlebot3Drive()
 {
-  RCLCPP_INFO(this->get_logger(), "Turtlebot3 simulation node has been terminated");
+  RCLCPP_INFO(get_logger(), "Turtlebot3 simulation node has been terminated");
 }
 
 /********************************************************************************

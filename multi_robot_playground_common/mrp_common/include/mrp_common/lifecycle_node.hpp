@@ -58,27 +58,6 @@ namespace mrp_common
 
     std::shared_ptr<Heartbeat> heartbeat_ptr_;
     std::chrono::milliseconds heartbeat_interval_;
-
-    /*
-     * @brief Lifecycle configure
-     */
-    CallbackReturn on_configure(const rclcpp_lifecycle::State &state) override;
-    /*
-     * @brief Lifecycle activate
-     */
-    CallbackReturn on_activate(const rclcpp_lifecycle::State &state) override;
-    /*
-     * @brief Lifecycle deactivate
-     */
-    CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state) override;
-    /*
-     * @brief Lifecycle cleanup
-     */
-    CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state) override;
-    /*
-     * @brief Lifecycle shutdown
-     */
-    CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state) override;
   };
 }
 

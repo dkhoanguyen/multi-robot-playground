@@ -182,7 +182,7 @@ namespace mrp_common
         {
           Log::basicWarn(node_logging_interface_,
                                 "Stoping the thread as requested");
-          this->terminateAll();
+          terminateAll();
           completion_callback_();
           break;
         }
@@ -197,7 +197,7 @@ namespace mrp_common
         {
           Log::basicWarn(node_logging_interface_,
                                 "Executing a pending handle on the existing thread.");
-          this->acceptPendingGoal();
+          acceptPendingGoal();
         }
         else
         {
@@ -271,7 +271,7 @@ namespace mrp_common
         Log::basicDebug(
             node_logging_interface_,
             "Cancelling the previous goal");
-        current_handle_->abort(this->emptyResult());
+        current_handle_->abort(emptyResult());
       }
 
       current_handle_ = pending_handle_;
@@ -307,7 +307,7 @@ namespace mrp_common
         return;
       }
 
-      this->terminate(pending_handle_);
+      terminate(pending_handle_);
       preempt_requested_ = false;
 
       Log::basicDebug(
@@ -334,7 +334,7 @@ namespace mrp_common
     {
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
-      if (!this->isActive(current_handle_))
+      if (!isActive(current_handle_))
       {
         Log::basicError(
             node_logging_interface_,
@@ -396,7 +396,7 @@ namespace mrp_common
     {
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
 
-      if (this->isActive(current_handle_))
+      if (isActive(current_handle_))
       {
         current_handle_->succeed(result);
         current_handle_.reset();
@@ -409,7 +409,7 @@ namespace mrp_common
     void publishFeedback(
         typename std::shared_ptr<typename ActionType::Feedback> feedback)
     {
-      if (!this->isActive(current_handle_))
+      if (!isActive(current_handle_))
       {
         Log::basicError(
             node_logging_interface_,

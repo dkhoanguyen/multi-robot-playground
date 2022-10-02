@@ -44,21 +44,21 @@ namespace mrp_component_testing
     {
       // std::cout << rclcpp::ok() << std::endl;
       std::cout << counter << std::endl;
-      if (this->isCancelRequested())
+      if (isCancelRequested())
       {
-        this->terminateCurrent(result);
+        terminateCurrent(result);
         return;
       }
       if (counter < target)
       {
         counter++;
         feedback->remaining = target - counter;
-        this->publishFeedback(feedback);
+        publishFeedback(feedback);
       }
       else
       {
         result->delta = target - counter;
-        this->succeededCurrent();
+        succeededCurrent();
         return;
       }
 

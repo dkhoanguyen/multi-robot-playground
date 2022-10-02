@@ -30,7 +30,7 @@ public:
   void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
   {
     // Store the pointer to the model
-    this->model = _parent;
+    model = _parent;
 
     // create the animation
     gazebo::common::PoseAnimationPtr anim(

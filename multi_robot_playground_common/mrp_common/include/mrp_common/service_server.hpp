@@ -59,7 +59,7 @@ namespace mrp_common
                        std::shared_ptr<typename ServiceType::Response> response)
     {
       std::cout << request->data << std::endl;
-      this->execute(request, response);
+      execute(request, response);
     }
 
     virtual void execute(std::shared_ptr<typename ServiceType::Request> &request,
