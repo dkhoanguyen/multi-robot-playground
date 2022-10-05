@@ -7,7 +7,13 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "mrp_common/lifecycle_node.hpp"
 #include "mrp_common_msgs/msg/heartbeat.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
+#include "lifecycle_msgs/msg/transition.hpp"
+
+#include "mrp_lifecycle_manager/lifecycle_manager_client.hpp"
+
 #include "mrp_lifecycle_manager/visibility_control.h"
 
 namespace mrp_lifecycle_manager
@@ -19,6 +25,10 @@ namespace mrp_lifecycle_manager
                     std::chrono::milliseconds heartbeat_timeout);
     virtual ~LifecyleManager();
 
+    void setMonitoredNodeList(std::vector<std::string> monitored_node_names);
+
+    bool changeNodeState(const std::string &node_name,
+                         mrp_common::LifecycleNode::Transition transition);
     bool registerLifecycleNode(const std::string &node_name,
                                const std::chrono::milliseconds &heartbeat_interval);
 
@@ -71,7 +81,8 @@ namespace mrp_lifecycle_manager
     };
     std::chrono::milliseconds heartbeat_timeout_;
     std::vector<std::string> monitored_node_names_;
-    std::map<std::string, std::shared_ptr<HealthMonitor>> monitor_map_;
+    std::map<std::string, std::shared_ptr<HealthMonitor>> monitored_map_;
+    std::map<std::string, std::shared_ptr<LifecycleManagerClient>> client_map_;
 
     rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
     rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;

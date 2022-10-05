@@ -14,6 +14,27 @@ namespace mrp_lifecycle_manager
   {
   }
 
+  void LifecyleManager::setMonitoredNodeList(std::vector<std::string> monitored_node_names)
+  {
+    monitored_node_names_ = monitored_node_names;
+    for (std::string &node_name : monitored_node_names_)
+    {
+      // Create a lifecyle_manager client
+      std::shared_ptr<mrp_lifecycle_manager::LifecycleManagerClient> client =
+          std::make_shared<mrp_lifecycle_manager::LifecycleManagerClient>(
+              this->shared_from_this(),
+              node_name);
+      client_map_[node_name] = client;
+
+
+    }
+  }
+
+  bool LifecyleManager::changeNodeState(const std::string &node_name,
+                                        mrp_common::LifecycleNode::Transition transition)
+  {
+  }
+
   bool LifecyleManager::registerLifecycleNode(const std::string &node_name,
                                               const std::chrono::milliseconds &heartbeat_interval)
   {
@@ -23,9 +44,9 @@ namespace mrp_lifecycle_manager
 
     // Create a health monitor instance to this node and record it if a similiar instance does
     // not exist in the map
-    if (monitor_map_.find(node_name) == monitor_map_.end() && heartbeat_timeout_.count() > 0.0)
+    if (monitored_map_.find(node_name) == monitored_map_.end() && heartbeat_timeout_.count() > 0.0)
     {
-      monitor_map_[node_name] =
+      monitored_map_[node_name] =
           std::make_shared<LifecyleManager::HealthMonitor>(
               node_name,
               heartbeat_timeout_,
@@ -35,7 +56,7 @@ namespace mrp_lifecycle_manager
               this->get_node_timers_interface(),
               this->get_node_clock_interface());
 
-      if (!monitor_map_[node_name]->initialiseHealthMonitor())
+      if (!monitored_map_[node_name]->initialiseHealthMonitor())
       {
         RCLCPP_ERROR(
             get_logger(),

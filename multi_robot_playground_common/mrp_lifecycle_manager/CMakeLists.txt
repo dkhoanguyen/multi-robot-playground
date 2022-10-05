@@ -20,7 +20,9 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(mrp_common REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -28,7 +30,9 @@ find_package(mrp_common_msgs REQUIRED)
 set(dependencies
   rclcpp
   rclcpp_lifecycle
+  mrp_common
   mrp_common_msgs
+  lifecycle_msgs
 )
 
 set(library_name mrp_lifecyle_manager)

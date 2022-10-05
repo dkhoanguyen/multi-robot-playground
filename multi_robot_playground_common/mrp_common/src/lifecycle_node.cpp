@@ -14,7 +14,6 @@ namespace mrp_common
         health_check_(health_check),
         heartbeat_interval_(heartbeat_interval)
   {
-    std::cout << health_check_ << std::endl;
   }
 
   LifecycleNode::~LifecycleNode()
@@ -23,10 +22,9 @@ namespace mrp_common
 
   void LifecycleNode::initialiseHeartbeat()
   {
-    std::cout << health_check_ << std::endl;
+    this->get_current_state();
     if (health_check_)
     {
-      std::cout << "Initializing health check" << std::endl;
       heartbeat_ptr_ = std::make_shared<Heartbeat>(
           heartbeat_interval_,
           get_node_topics_interface(),
@@ -38,7 +36,7 @@ namespace mrp_common
   }
 
   void LifecycleNode::startHeartbeat()
-  {
+  { 
     return heartbeat_ptr_->startBeating();
   }
 
