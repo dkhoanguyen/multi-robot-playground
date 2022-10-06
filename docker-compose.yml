@@ -1,0 +1,22 @@
+version: '3'
+services:
+  ros_dev:
+    image: ros2_humble_dev_env
+    privileged: true
+    environment:
+      - DISPLAY=novnc:0.0
+    networks:
+      - x11
+    command: tail -f /dev/null
+  
+  novnc:
+    image: theasp/novnc:latest
+    environment:
+      - DISPLAY_WIDTH=1600
+      - DISPLAY_HEIGHT=950
+    ports:
+      - "8080:8080"
+    networks:
+      - x11
+networks:
+  x11:
