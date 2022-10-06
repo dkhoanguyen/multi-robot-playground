@@ -18,24 +18,30 @@
 
 namespace mrp_lifecycle_manager
 {
-  class LifecyleManager : public rclcpp_lifecycle::LifecycleNode
+  class LifecycleManager : public rclcpp_lifecycle::LifecycleNode
   {
   public:
-    LifecyleManager(const rclcpp::NodeOptions &options,
+    LifecycleManager(const rclcpp::NodeOptions &options,
                     std::chrono::milliseconds heartbeat_timeout);
-    virtual ~LifecyleManager();
-
-    void setMonitoredNodeList(std::vector<std::string> monitored_node_names);
+    virtual ~LifecycleManager();
 
     bool changeNodeState(const std::string &node_name,
                          mrp_common::LifecycleNode::Transition transition);
+
     bool registerLifecycleNode(const std::string &node_name,
                                const std::chrono::milliseconds &heartbeat_interval);
+
+    bool registerLifecycleNodes(
+        const std::vector<std::string> &monitored_node_names,
+        const std::vector<std::chrono::milliseconds> &heartbeat_intervals);
+
+    bool startNodeHealthMonitor(const std::string &node_name);
+    bool startNodesHealthMonitor(const std::vector<std::string> &monitored_node_names);
 
   protected:
     class HealthMonitor
     {
-      enum class NodeStatus
+      enum class NodeHeartbeat
       {
         HEALTHY = 0,
         UNHEALTHY = 1,
@@ -53,7 +59,7 @@ namespace mrp_lifecycle_manager
           rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface);
       ~HealthMonitor();
 
-      NodeStatus getStatus();
+      NodeHeartbeat getStatus();
       bool initialiseHealthMonitor();
       void startMonitoring();
       void stopMonitoring();
@@ -69,7 +75,7 @@ namespace mrp_lifecycle_manager
       double last_monitored_time_;
       double heartbeat_interval_ms_;
       mutable std::recursive_mutex status_mutex_;
-      NodeStatus status_;
+      NodeHeartbeat status_;
 
       std::string node_name_;
       rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topic_interface_;
@@ -79,11 +85,15 @@ namespace mrp_lifecycle_manager
 
       void healthCallback(const typename mrp_common_msgs::msg::Heartbeat::SharedPtr msg);
     };
-    std::chrono::milliseconds heartbeat_timeout_;
-    std::vector<std::string> monitored_node_names_;
-    std::map<std::string, std::shared_ptr<HealthMonitor>> monitored_map_;
-    std::map<std::string, std::shared_ptr<LifecycleManagerClient>> client_map_;
 
+    struct MonitoredNode
+    {
+      std::shared_ptr<HealthMonitor> heartbeat_ptr_;
+      std::shared_ptr<LifecycleManagerClient> lifecyle_manager_client_;
+    };
+
+    std::chrono::milliseconds heartbeat_timeout_;
+    std::map<std::string, MonitoredNode> monitored_node_map_;
     rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
     rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   };
