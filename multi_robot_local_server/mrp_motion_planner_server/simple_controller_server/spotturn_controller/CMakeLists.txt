@@ -22,6 +22,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(mrp_local_server_core REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 include_directories(
   include
@@ -32,6 +33,7 @@ set(dependencies
   rclcpp_components
   mrp_local_server_core
   pluginlib
+  geometry_msgs
 )
 
 set(library_name spotturn_controller)

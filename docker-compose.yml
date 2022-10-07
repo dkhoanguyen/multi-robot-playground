@@ -1,22 +1,15 @@
 version: '3'
 services:
   ros_dev:
-    image: ros2_humble_dev_env
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile
     privileged: true
-    environment:
-      - DISPLAY=novnc:0.0
-    networks:
-      - x11
-    command: tail -f /dev/null
-  
-  novnc:
-    image: theasp/novnc:latest
-    environment:
-      - DISPLAY_WIDTH=1600
-      - DISPLAY_HEIGHT=950
+    volumes:
+      - ${PWD}:/root/multi_robot_playground2/src/multi-robot-playground
+    network_mode: host
     ports:
-      - "8080:8080"
-    networks:
-      - x11
-networks:
-  x11:
+      - 9090:9090
+      - 11345:11345
+    restart: always
+    command: bash -c 'source /opt/ros/humble/setup.bash && ros2 launch rosbridge_server rosbridge_websocket_launch.xml'
