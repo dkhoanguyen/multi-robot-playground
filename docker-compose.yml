@@ -13,12 +13,3 @@ services:
       - 11345:11345
     restart: always
     command: bash -c 'source /opt/ros/humble/setup.bash && ros2 launch rosbridge_server rosbridge_websocket_launch.xml'
-
-  glx-test:
-    image: ubuntu:16.04
-    environment: 
-      - DISPLAY
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - /home/ubuntu/.Xauthority:/root/.Xauthority:rw
-    network_mode: "host"

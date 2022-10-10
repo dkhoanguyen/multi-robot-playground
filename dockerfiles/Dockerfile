@@ -84,9 +84,24 @@ RUN cd /gazebo && \
     cmake .. &&\
     make install
 
+# Gzserver
 EXPOSE 11345
 
-# Source gazebo
-SHELL ["/bin/bash", "-c"] 
-RUN source /usr/local/share/gazebo-11/setup.bash && \
-    export export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
+#Gzweb
+EXPOSE 8080
+
+# Rosbridge
+EXPOSE 9090
+
+# Install gzweb
+RUN apt update && \
+    apt install -y nodejs
+
+SHELL ["/bin/bash", "-c"]
+RUN cd /gazebo && \
+    git clone https://github.com/osrf/gzweb && \
+    cd gzweb && \
+    git checkout gzweb_1.4.1 && \
+    source /usr/local/share/gazebo-11/setup.bash && \  
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/lib
+
