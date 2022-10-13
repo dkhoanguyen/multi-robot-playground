@@ -22,6 +22,13 @@ namespace mrp_lifecycle_manager
   class LifecycleManager : public rclcpp_lifecycle::LifecycleNode
   {
   public:
+    enum class TransitionRequestStatus
+    {
+      NO_ERROR = 0,
+      CANNOT_CHANGE_STATE = 1,
+      WRONG_END_STATE = 2
+    };
+
     LifecycleManager(const rclcpp::NodeOptions &options,
                      std::chrono::milliseconds heartbeat_timeout);
     virtual ~LifecycleManager();
@@ -36,9 +43,9 @@ namespace mrp_lifecycle_manager
     bool startNodeHealthMonitor(const std::string &node_name);
     bool startNodesHealthMonitor(const std::vector<std::string> &monitored_node_names);
 
-    bool transitionNode(const std::string &node_name,
-                        mrp_common::LifecycleNode::Transition transition,
-                        std::chrono::nanoseconds timeout);
+    TransitionRequestStatus transitionNode(const std::string &node_name,
+                                           mrp_common::LifecycleNode::Transition transition,
+                                           std::chrono::nanoseconds timeout);
     bool transitionNodes(const std::vector<std::string> &monitored_node_names,
                          mrp_common::LifecycleNode::Transition transition,
                          std::chrono::nanoseconds timeout);
@@ -46,20 +53,34 @@ namespace mrp_lifecycle_manager
     mrp_common::LifecycleNode::State getNodeState(const std::string &node_name,
                                                   std::chrono::nanoseconds timeout);
 
+    bool configureNodes(const std::vector<std::string> &monitored_node_names,
+                        std::chrono::nanoseconds timeout);
+    bool activateNodes(const std::vector<std::string> &monitored_node_names,
+                       std::chrono::nanoseconds timeout);
+    bool pauseNodes(const std::vector<std::string> &monitored_node_names,
+                    std::chrono::nanoseconds timeout);
+    bool resumeNodes(const std::vector<std::string> &monitored_node_names,
+                     std::chrono::nanoseconds timeout);
+    bool shutdownNodes(const std::vector<std::string> &monitored_node_names,
+                       std::chrono::nanoseconds timeout);
+
+    void monitorNodes();
+
+    // Heartbeat related functions
     bool createMonitorTimer();
     bool destroyMonitorTimer();
 
   protected:
     class HealthMonitor
     {
+    public:
       enum class NodeHeartbeat
       {
         HEALTHY = 0,
         UNHEALTHY = 1,
         UNKNOWN = 2
       };
-
-    public:
+      
       HealthMonitor(
           const std::string node_name,
           std::chrono::milliseconds heartbeat_timeout,

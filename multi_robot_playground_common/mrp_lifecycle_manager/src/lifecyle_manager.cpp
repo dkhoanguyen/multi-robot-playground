@@ -9,10 +9,11 @@ namespace mrp_lifecycle_manager
         heartbeat_timeout_(heartbeat_timeout)
   {
     // Main normal state
+    transition_state_map_[mrp_common::LifecycleNode::Transition::CREATE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_UNCONFIGURED;
     transition_state_map_[mrp_common::LifecycleNode::Transition::CONFIGURE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_INACTIVE;
     transition_state_map_[mrp_common::LifecycleNode::Transition::ACTIVATE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_ACTIVE;
     transition_state_map_[mrp_common::LifecycleNode::Transition::DEACTIVATE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_INACTIVE;
-    transition_state_map_[mrp_common::LifecycleNode::Transition::ACTIVE_SHUTDOWN] = mrp_common::LifecycleNode::State::TRANSITION_STATE_SHUTTINGDOWN; 
+    transition_state_map_[mrp_common::LifecycleNode::Transition::ACTIVE_SHUTDOWN] = mrp_common::LifecycleNode::State::PRIMARY_STATE_UNKNOWN;
   }
 
   LifecycleManager::~LifecycleManager()
@@ -82,17 +83,23 @@ namespace mrp_lifecycle_manager
     return all_node_healthy;
   }
 
-  bool LifecycleManager::transitionNode(const std::string &node_name,
-                                        mrp_common::LifecycleNode::Transition transition,
-                                        std::chrono::nanoseconds timeout)
+  LifecycleManager::TransitionRequestStatus LifecycleManager::transitionNode(const std::string &node_name,
+                                                                             mrp_common::LifecycleNode::Transition transition,
+                                                                             std::chrono::nanoseconds timeout)
   {
     if (!monitored_node_map_[node_name].lifecyle_manager_client_->requestTransition(transition, timeout))
     {
       // What should we do here when it fails to set state transition ?
-      mrp_common::Log::basicError(this->get_node_logging_interface(), "Unable to transition node");
-      return false;
+      return TransitionRequestStatus::CANNOT_CHANGE_STATE;
     }
-    return true;
+    // Compare with the desired target state
+    // Since the timeout has be incorporate in the service call, let's just check for the state at
+    // this point
+    if (getNodeState(node_name, timeout) != transition_state_map_[transition])
+    {
+      return TransitionRequestStatus::WRONG_END_STATE;
+    }
+    return TransitionRequestStatus::NO_ERROR;
   }
 
   bool LifecycleManager::transitionNodes(const std::vector<std::string> &monitored_node_names,
@@ -101,14 +108,61 @@ namespace mrp_lifecycle_manager
   {
     for (const std::string &node_name : monitored_node_names)
     {
-      transitionNode(node_name, transition, timeout);
+      if (transitionNode(node_name, transition, timeout) != TransitionRequestStatus::NO_ERROR)
+      {
+        return false;
+      }
     }
+
+    return true;
   }
 
   mrp_common::LifecycleNode::State LifecycleManager::getNodeState(const std::string &node_name,
                                                                   std::chrono::nanoseconds timeout)
   {
     return monitored_node_map_[node_name].lifecyle_manager_client_->getNodeState(timeout);
+  }
+
+  bool LifecycleManager::configureNodes(const std::vector<std::string> &monitored_node_names,
+                                        std::chrono::nanoseconds timeout)
+  {
+    return transitionNodes(monitored_node_names, mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+  }
+  bool LifecycleManager::activateNodes(const std::vector<std::string> &monitored_node_names,
+                                       std::chrono::nanoseconds timeout)
+  {
+    return transitionNodes(monitored_node_names, mrp_common::LifecycleNode::Transition::ACTIVATE, timeout);
+  }
+  bool LifecycleManager::pauseNodes(const std::vector<std::string> &monitored_node_names,
+                                    std::chrono::nanoseconds timeout)
+  {
+    return transitionNodes(monitored_node_names, mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+  }
+  bool LifecycleManager::resumeNodes(const std::vector<std::string> &monitored_node_names,
+                                     std::chrono::nanoseconds timeout)
+  {
+    return transitionNodes(monitored_node_names, mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+  }
+  bool LifecycleManager::shutdownNodes(const std::vector<std::string> &monitored_node_names,
+                                       std::chrono::nanoseconds timeout)
+  {
+    return transitionNodes(monitored_node_names, mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+  }
+
+  void LifecycleManager::monitorNodes()
+  {
+    for (auto const &monitored_node : monitored_node_map_)
+    {
+      if (!rclcpp::ok())
+      {
+        return;
+      }
+      // Check heartbeat if healthy or not
+      if (monitored_node.second.heartbeat_ptr_->getStatus() != HealthMonitor::NodeHeartbeat::HEALTHY)
+      {
+        // It is not healthy at all what should we do
+      }
+    }
   }
 
   //=================================================//
