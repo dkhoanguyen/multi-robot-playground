@@ -10,7 +10,6 @@
 namespace mrp_common
 {
   using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-
   class LifecycleNode : public rclcpp_lifecycle::LifecycleNode
   {
   public:

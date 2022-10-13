@@ -19,8 +19,10 @@
 
 namespace mrp_lifecycle_manager
 {
+  using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
   class LifecycleManager : public rclcpp_lifecycle::LifecycleNode
   {
+
   public:
     enum class TransitionRequestStatus
     {
@@ -29,8 +31,8 @@ namespace mrp_lifecycle_manager
       WRONG_END_STATE = 2
     };
 
-    LifecycleManager(const rclcpp::NodeOptions &options,
-                     std::chrono::milliseconds heartbeat_timeout);
+    explicit LifecycleManager(const rclcpp::NodeOptions &options,
+                              std::chrono::milliseconds heartbeat_timeout);
     virtual ~LifecycleManager();
 
     bool registerLifecycleNode(const std::string &node_name,
@@ -64,7 +66,16 @@ namespace mrp_lifecycle_manager
     bool shutdownNodes(const std::vector<std::string> &monitored_node_names,
                        std::chrono::nanoseconds timeout);
 
+    CallbackReturn on_configure(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_error(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_exit(const rclcpp_lifecycle::State &state);
+
     void monitorNodes();
+    void loadParameters();
 
     // Heartbeat related functions
     bool createMonitorTimer();
@@ -80,7 +91,7 @@ namespace mrp_lifecycle_manager
         UNHEALTHY = 1,
         UNKNOWN = 2
       };
-      
+
       HealthMonitor(
           const std::string node_name,
           std::chrono::milliseconds heartbeat_timeout,
