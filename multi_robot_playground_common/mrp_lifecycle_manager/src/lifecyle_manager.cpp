@@ -382,7 +382,7 @@ namespace mrp_lifecycle_manager
         qos_profile_,
         std::bind(&LifecycleManager::HealthMonitor::healthCallback, this, std::placeholders::_1),
         options);
-    last_monitored_time_ = node_clock_interface_->get_clock()->now().milliseconds();
+    last_monitored_time_ = node_clock_interface_->get_clock()->now().nanoseconds();
   }
 
   void LifecycleManager::HealthMonitor::startMonitoring()
