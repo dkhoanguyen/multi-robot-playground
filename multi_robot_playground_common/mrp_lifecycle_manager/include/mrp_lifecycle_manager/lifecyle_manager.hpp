@@ -96,6 +96,8 @@ namespace mrp_lifecycle_manager
           const std::string node_name,
           std::chrono::milliseconds heartbeat_timeout,
           std::chrono::milliseconds heartbeat_interval,
+          bool isolated_spin,
+          rclcpp::executors::SingleThreadedExecutor::SharedPtr executor,
           rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topic_interface,
           rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
           rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timer_interface,
@@ -119,6 +121,7 @@ namespace mrp_lifecycle_manager
       double heartbeat_interval_ms_;
       mutable std::recursive_mutex status_mutex_;
       NodeHeartbeat status_;
+      bool isolated_spin_;
 
       std::string node_name_;
       rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topic_interface_;
@@ -127,6 +130,8 @@ namespace mrp_lifecycle_manager
       rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface_;
 
       void healthCallback(const typename mrp_common_msgs::msg::Heartbeat::SharedPtr msg);
+
+      rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
     };
 
     struct MonitoredNode

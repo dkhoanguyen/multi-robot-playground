@@ -2,6 +2,11 @@
 
 namespace mrp_lifecycle_manager
 {
+  // Aliases for ease of use
+  using LifecycleTransition = mrp_common::LifecycleNode::Transition;
+  using LifecycleState = mrp_common::LifecycleNode::State;
+
+  using namespace std::chrono_literals;
 
   LifecycleManager::LifecycleManager(const rclcpp::NodeOptions &options,
                                      std::chrono::milliseconds heartbeat_timeout)
@@ -9,11 +14,15 @@ namespace mrp_lifecycle_manager
         heartbeat_timeout_(heartbeat_timeout)
   {
     // Main normal state
-    transition_state_map_[mrp_common::LifecycleNode::Transition::CREATE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_UNCONFIGURED;
-    transition_state_map_[mrp_common::LifecycleNode::Transition::CONFIGURE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_INACTIVE;
-    transition_state_map_[mrp_common::LifecycleNode::Transition::ACTIVATE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_ACTIVE;
-    transition_state_map_[mrp_common::LifecycleNode::Transition::DEACTIVATE] = mrp_common::LifecycleNode::State::PRIMARY_STATE_INACTIVE;
-    transition_state_map_[mrp_common::LifecycleNode::Transition::ACTIVE_SHUTDOWN] = mrp_common::LifecycleNode::State::PRIMARY_STATE_UNKNOWN;
+    transition_state_map_[LifecycleTransition::CREATE] = LifecycleState::PRIMARY_STATE_UNCONFIGURED;
+    transition_state_map_[LifecycleTransition::CONFIGURE] = LifecycleState::PRIMARY_STATE_INACTIVE;
+    transition_state_map_[LifecycleTransition::ACTIVATE] = LifecycleState::PRIMARY_STATE_ACTIVE;
+    transition_state_map_[LifecycleTransition::DEACTIVATE] = LifecycleState::PRIMARY_STATE_INACTIVE;
+    transition_state_map_[LifecycleTransition::ACTIVE_SHUTDOWN] = LifecycleState::PRIMARY_STATE_UNKNOWN;
+
+    callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_node(get_node_base_interface(), false);
   }
 
   LifecycleManager::~LifecycleManager()
@@ -31,14 +40,16 @@ namespace mrp_lifecycle_manager
           node_name,
           heartbeat_timeout_,
           heartbeat_interval,
-          this->get_node_topics_interface(),
-          this->get_node_base_interface(),
-          this->get_node_timers_interface(),
-          this->get_node_clock_interface());
+          false,
+          executor_,
+          get_node_topics_interface(),
+          get_node_base_interface(),
+          get_node_timers_interface(),
+          get_node_clock_interface());
 
       // Create lifecycle_manager_client for requesting state changes
       monitored_node.lifecyle_manager_client_ = std::make_shared<LifecycleManagerClient>(
-          this->shared_from_this(),
+          shared_from_this(),
           node_name);
 
       // Add to the monitored map
@@ -84,7 +95,7 @@ namespace mrp_lifecycle_manager
   }
 
   LifecycleManager::TransitionRequestStatus LifecycleManager::transitionNode(const std::string &node_name,
-                                                                             mrp_common::LifecycleNode::Transition transition,
+                                                                             LifecycleTransition transition,
                                                                              std::chrono::nanoseconds timeout)
   {
     if (!monitored_node_map_[node_name].lifecyle_manager_client_->requestTransition(transition, timeout))
@@ -103,7 +114,7 @@ namespace mrp_lifecycle_manager
   }
 
   bool LifecycleManager::transitionNodes(const std::vector<std::string> &monitored_node_names,
-                                         mrp_common::LifecycleNode::Transition transition,
+                                         LifecycleTransition transition,
                                          std::chrono::nanoseconds timeout)
   {
     for (const std::string &node_name : monitored_node_names)
@@ -127,31 +138,31 @@ namespace mrp_lifecycle_manager
                                         std::chrono::nanoseconds timeout)
   {
     return transitionNodes(monitored_node_names,
-                           mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+                           LifecycleTransition::CONFIGURE, timeout);
   }
   bool LifecycleManager::activateNodes(const std::vector<std::string> &monitored_node_names,
                                        std::chrono::nanoseconds timeout)
   {
     return transitionNodes(monitored_node_names,
-                           mrp_common::LifecycleNode::Transition::ACTIVATE, timeout);
+                           LifecycleTransition::ACTIVATE, timeout);
   }
   bool LifecycleManager::pauseNodes(const std::vector<std::string> &monitored_node_names,
                                     std::chrono::nanoseconds timeout)
   {
     return transitionNodes(monitored_node_names,
-                           mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+                           LifecycleTransition::CONFIGURE, timeout);
   }
   bool LifecycleManager::resumeNodes(const std::vector<std::string> &monitored_node_names,
                                      std::chrono::nanoseconds timeout)
   {
     return transitionNodes(monitored_node_names,
-                           mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+                           LifecycleTransition::CONFIGURE, timeout);
   }
   bool LifecycleManager::shutdownNodes(const std::vector<std::string> &monitored_node_names,
                                        std::chrono::nanoseconds timeout)
   {
     return transitionNodes(monitored_node_names,
-                           mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
+                           LifecycleTransition::CONFIGURE, timeout);
   }
 
   // LIFECYCLE NODE STATE TRANSITION CALLBACK
@@ -159,28 +170,28 @@ namespace mrp_lifecycle_manager
   LifecycleManager::on_configure(const rclcpp_lifecycle::State &state)
   {
     // Request params from local params server
-    mrp_common::Log::basicInfo(this->get_node_logging_interface(),
+    mrp_common::Log::basicInfo(get_node_logging_interface(),
                                "Configuring lifecycle manager");
 
-    // declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
-    // declare_parameter("autostart", rclcpp::ParameterValue(false));
-    // declare_parameter("heartbat_interval", 4.0);
-    // declare_parameter("bond_respawn_max_duration", 10.0);
-    // declare_parameter("attempt_respawn_reconnection", true);
+    // Get all parameters
+    loadParameters();
 
-    // std::vector<std::string> node_names = get_parameter("node_names").as_string_array();
-    // bool auto_start = false;
-    // get_parameter("autostart", auto_start);
-    // double heartbeat_interval;
-    // get_parameter("heartbat_interval", heartbeat_interval);
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   LifecycleManager::on_activate(const rclcpp_lifecycle::State &state)
   {
+    // Create wall timer for health monitoring
+    if (!createMonitorTimer())
+    {
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   LifecycleManager::on_deactivate(const rclcpp_lifecycle::State &state)
   {
+    
   }
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   LifecycleManager::on_cleanup(const rclcpp_lifecycle::State &state)
@@ -211,7 +222,7 @@ namespace mrp_lifecycle_manager
       if (monitored_node.second.heartbeat_ptr_->getStatus() != HealthMonitor::NodeHeartbeat::HEALTHY)
       {
         // It is not healthy at all what should we do
-        mrp_common::Log::basicError(this->get_node_logging_interface(),
+        mrp_common::Log::basicError(get_node_logging_interface(),
                                     std::string("Have not received a heartbeat from " + monitored_node.first + "."));
       }
     }
@@ -221,9 +232,70 @@ namespace mrp_lifecycle_manager
   {
     declare_parameter<std::vector<std::string>>("node_names", std::vector<std::string>());
     declare_parameter<bool>("autostart", false);
-    declare_parameter<double>("heartbat_interval", 4.0);
+    declare_parameter<std::vector<double>>("heartbat_interval", std::vector<double>());
     declare_parameter<double>("bond_respawn_max_duration", 10.0);
     declare_parameter<bool>("attempt_respawn_reconnection", true);
+  }
+
+  bool LifecycleManager::createMonitorTimer()
+  {
+    // Destroy the old timer
+    destroyMonitorTimer();
+    // Load parameters
+    loadParameters();
+    // Get necessary parameters
+    std::vector<std::string> node_names = get_parameter("node_names").as_string_array();
+    bool auto_start = false;
+    get_parameter("autostart", auto_start);
+    std::vector<double> heartbeat_interval;
+    get_parameter("heartbat_interval", heartbeat_interval);
+
+    // Convert raw duration in double to chrono duration
+    std::vector<std::chrono::milliseconds> converted_heartbeat;
+    for (const auto heartbeat : heartbeat_interval)
+    {
+      converted_heartbeat.push_back(std::chrono::duration<int64_t, std::milli>((int64_t)heartbeat));
+    }
+
+    if (converted_heartbeat.size() != node_names.size())
+    {
+      mrp_common::Log::basicError(get_node_logging_interface(),
+                                  "Unable to register monitor timer due to: \
+                                        Mismatch number of nodes and heartbeat values. \
+                                        Exitting...");
+      return false;
+    }
+    // Register lifecycle nodes
+    if (!registerLifecycleNodes(node_names, converted_heartbeat))
+    {
+      mrp_common::Log::basicError(get_node_logging_interface(),
+                                  "Unable to register monitor timer");
+      return false;
+    }
+
+    // Start executor beyond this point
+
+    // Let's monitor once every 1s
+    monitor_timer_ = create_wall_timer(
+        1s,
+        [this]() -> void
+        {
+          // Start monitoring
+          monitorNodes();
+        },
+        callback_group_);
+    return true;
+  }
+
+  bool LifecycleManager::destroyMonitorTimer()
+  {
+    if (monitor_timer_)
+    {
+      // mrp_common::Log::basicInfo("Terminating timer...");
+      monitor_timer_->cancel();
+      monitor_timer_.reset();
+    }
+    return true;
   }
 
   //=================================================//
@@ -234,6 +306,8 @@ namespace mrp_lifecycle_manager
       const std::string node_name,
       std::chrono::milliseconds heartbeat_timeout,
       std::chrono::milliseconds heartbeat_interval,
+      bool isolated_spin,
+      rclcpp::executors::SingleThreadedExecutor::SharedPtr executor,
       rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topic_interface,
       rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
       rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timer_interface,
@@ -241,6 +315,8 @@ namespace mrp_lifecycle_manager
       : node_name_(node_name),
         heartbeat_timeout_(heartbeat_timeout),
         heartbeat_interval_(heartbeat_interval),
+        isolated_spin_(isolated_spin),
+        executor_(executor),
         node_topic_interface_(node_topic_interface),
         node_base_interface_(node_base_interface),
         node_timer_interface_(node_timer_interface),
@@ -284,7 +360,12 @@ namespace mrp_lifecycle_manager
 
   void LifecycleManager::HealthMonitor::startMonitoring()
   {
-    // Spin executor
+    // Spin a default executor if isolate spin
+    if (isolated_spin_)
+    {
+      return;
+    }
+    // Attach
   }
 
   void LifecycleManager::HealthMonitor::healthCallback(const typename mrp_common_msgs::msg::Heartbeat::SharedPtr msg)
