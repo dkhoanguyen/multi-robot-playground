@@ -37,34 +37,26 @@ namespace mrp_lifecycle_manager
 
     bool registerLifecycleNode(const std::string &node_name,
                                const std::chrono::milliseconds &heartbeat_interval);
+    bool removeLifecycleNode(const std::string &node_name);
 
     bool registerLifecycleNodes(
         const std::vector<std::string> &monitored_node_names,
         const std::vector<std::chrono::milliseconds> &heartbeat_intervals);
+
+    bool removeLifecycleNodes(const std::vector<std::string> &monitored_node_names);
 
     bool startNodeHealthMonitor(const std::string &node_name);
     bool startNodesHealthMonitor(const std::vector<std::string> &monitored_node_names);
 
     TransitionRequestStatus transitionNode(const std::string &node_name,
                                            mrp_common::LifecycleNode::Transition transition,
-                                           std::chrono::nanoseconds timeout);
+                                           std::chrono::milliseconds timeout);
     bool transitionNodes(const std::vector<std::string> &monitored_node_names,
                          mrp_common::LifecycleNode::Transition transition,
-                         std::chrono::nanoseconds timeout);
+                         std::chrono::milliseconds timeout);
 
     mrp_common::LifecycleNode::State getNodeState(const std::string &node_name,
-                                                  std::chrono::nanoseconds timeout);
-
-    bool configureNodes(const std::vector<std::string> &monitored_node_names,
-                        std::chrono::nanoseconds timeout);
-    bool activateNodes(const std::vector<std::string> &monitored_node_names,
-                       std::chrono::nanoseconds timeout);
-    bool pauseNodes(const std::vector<std::string> &monitored_node_names,
-                    std::chrono::nanoseconds timeout);
-    bool resumeNodes(const std::vector<std::string> &monitored_node_names,
-                     std::chrono::nanoseconds timeout);
-    bool shutdownNodes(const std::vector<std::string> &monitored_node_names,
-                       std::chrono::nanoseconds timeout);
+                                                  std::chrono::milliseconds timeout);
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &state);
     CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
@@ -97,7 +89,7 @@ namespace mrp_lifecycle_manager
           std::chrono::milliseconds heartbeat_timeout,
           std::chrono::milliseconds heartbeat_interval,
           bool isolated_spin,
-          rclcpp::executors::SingleThreadedExecutor::SharedPtr executor,
+          rclcpp::CallbackGroup::SharedPtr callback_group,
           rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topic_interface,
           rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
           rclcpp::node_interfaces::NodeTimersInterface::SharedPtr node_timer_interface,
@@ -120,6 +112,7 @@ namespace mrp_lifecycle_manager
       double last_monitored_time_;
       double heartbeat_interval_ms_;
       mutable std::recursive_mutex status_mutex_;
+      std::future<void> execution_future_;
       NodeHeartbeat status_;
       bool isolated_spin_;
 
@@ -131,6 +124,7 @@ namespace mrp_lifecycle_manager
 
       void healthCallback(const typename mrp_common_msgs::msg::Heartbeat::SharedPtr msg);
 
+      rclcpp::CallbackGroup::SharedPtr callback_group_;
       rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
     };
 
@@ -140,12 +134,15 @@ namespace mrp_lifecycle_manager
       std::shared_ptr<LifecycleManagerClient> lifecyle_manager_client_;
     };
 
+    bool system_active_{false};
+
     std::chrono::milliseconds heartbeat_timeout_;
+    std::vector<std::string> monitored_node_names_;
     std::map<std::string, MonitoredNode> monitored_node_map_;
 
     rclcpp::TimerBase::SharedPtr monitor_timer_;
+    rclcpp::CallbackGroup::SharedPtr heartbeat_callback_group_{nullptr};
     rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
-    rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 
     std::map<mrp_common::LifecycleNode::Transition, mrp_common::LifecycleNode::State> transition_state_map_;
   };

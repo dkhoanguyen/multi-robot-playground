@@ -20,16 +20,16 @@ namespace mrp_lifecycle_manager
     ~LifecycleManagerClient();
 
     bool requestTransition(mrp_common::LifecycleNode::Transition transition,
-                           const std::chrono::nanoseconds timeout);
-    bool requestConfigure(const std::chrono::nanoseconds timeout);
-    bool requestCleanup(const std::chrono::nanoseconds timeout);
-    bool requestActivate(const std::chrono::nanoseconds timeout);
-    bool requestDeactivate(const std::chrono::nanoseconds timeout);
-    bool requestUnconfiguredShutdown(const std::chrono::nanoseconds timeout);
-    bool requestInactiveShutdown(const std::chrono::nanoseconds timeout);
-    bool requestActiveShutdown(const std::chrono::nanoseconds timeout);
+                           const std::chrono::milliseconds timeout);
+    bool requestConfigure(const std::chrono::milliseconds timeout);
+    bool requestCleanup(const std::chrono::milliseconds timeout);
+    bool requestActivate(const std::chrono::milliseconds timeout);
+    bool requestDeactivate(const std::chrono::milliseconds timeout);
+    bool requestUnconfiguredShutdown(const std::chrono::milliseconds timeout);
+    bool requestInactiveShutdown(const std::chrono::milliseconds timeout);
+    bool requestActiveShutdown(const std::chrono::milliseconds timeout);
 
-    mrp_common::LifecycleNode::State getNodeState(const std::chrono::nanoseconds timeout);
+    mrp_common::LifecycleNode::State getNodeState(const std::chrono::milliseconds timeout);
 
   protected:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node_;

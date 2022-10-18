@@ -20,7 +20,7 @@ namespace mrp_lifecycle_manager
   }
 
   bool LifecycleManagerClient::requestTransition(mrp_common::LifecycleNode::Transition transition,
-                                                 const std::chrono::nanoseconds timeout)
+                                                 const std::chrono::milliseconds timeout)
   {
     lifecycle_msgs::srv::ChangeState::Request::SharedPtr request =
         std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
@@ -32,38 +32,38 @@ namespace mrp_lifecycle_manager
     return change_state_client_->requestAndWaitForResponse(request, response, timeout);
   }
 
-  bool LifecycleManagerClient::requestConfigure(const std::chrono::nanoseconds timeout)
+  bool LifecycleManagerClient::requestConfigure(const std::chrono::milliseconds timeout)
   {
     return requestTransition(mrp_common::LifecycleNode::Transition::CONFIGURE, timeout);
   }
 
-  bool LifecycleManagerClient::requestActivate(const std::chrono::nanoseconds timeout)
+  bool LifecycleManagerClient::requestActivate(const std::chrono::milliseconds timeout)
   {
     return requestTransition(mrp_common::LifecycleNode::Transition::ACTIVATE, timeout);
   }
 
-  bool LifecycleManagerClient::requestDeactivate(const std::chrono::nanoseconds timeout)
+  bool LifecycleManagerClient::requestDeactivate(const std::chrono::milliseconds timeout)
   {
     return requestTransition(mrp_common::LifecycleNode::Transition::DEACTIVATE, timeout);
   }
 
-  bool LifecycleManagerClient::requestUnconfiguredShutdown(const std::chrono::nanoseconds timeout)
+  bool LifecycleManagerClient::requestUnconfiguredShutdown(const std::chrono::milliseconds timeout)
   {
     return requestTransition(mrp_common::LifecycleNode::Transition::UNCONFIGURED_SHUTDOWN, timeout);
   }
 
-  bool LifecycleManagerClient::requestInactiveShutdown(const std::chrono::nanoseconds timeout)
+  bool LifecycleManagerClient::requestInactiveShutdown(const std::chrono::milliseconds timeout)
   {
     return requestTransition(mrp_common::LifecycleNode::Transition::INACTIVE_SHUTDOWN, timeout);
   }
 
-  bool LifecycleManagerClient::requestActiveShutdown(const std::chrono::nanoseconds timeout)
+  bool LifecycleManagerClient::requestActiveShutdown(const std::chrono::milliseconds timeout)
   {
     return requestTransition(mrp_common::LifecycleNode::Transition::ACTIVE_SHUTDOWN, timeout);
   }
 
   mrp_common::LifecycleNode::State
-  LifecycleManagerClient::getNodeState(const std::chrono::nanoseconds timeout)
+  LifecycleManagerClient::getNodeState(const std::chrono::milliseconds timeout)
   {
     lifecycle_msgs::srv::GetState::Request::SharedPtr request =
         std::make_shared<lifecycle_msgs::srv::GetState::Request>();

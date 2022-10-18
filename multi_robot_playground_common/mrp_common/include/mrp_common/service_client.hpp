@@ -49,12 +49,10 @@ namespace mrp_common
 
     bool requestAndWaitForResponse(typename ServiceType::Request::SharedPtr &request,
                  typename ServiceType::Response::SharedPtr &response,
-                 const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
+                 const std::chrono::milliseconds timeout = std::chrono::milliseconds(-1))
     {
-      std::cout << "Requesting " << std::endl;
       // Wait for service server to response
       // Question: Should this function be a blocking function ?
-      
       while (!service_client_->wait_for_service(std::chrono::seconds(1)))
       {
         if (!rclcpp::ok())
