@@ -8,11 +8,11 @@ namespace mrp_lifecycle_manager
   {
     change_state_service_name_ = managed_node_name + "/change_state";
     change_state_client_ = std::make_shared<mrp_common::ServiceClient<lifecycle_msgs::srv::ChangeState>>(
-        node_, change_state_service_name_);
+        node_, change_state_service_name_, rcl_service_get_default_options());
 
     get_state_service_name_ = managed_node_name + "/get_state";
     get_state_client_ = std::make_shared<mrp_common::ServiceClient<lifecycle_msgs::srv::GetState>>(
-        node_, get_state_service_name_);
+        node_, get_state_service_name_, rcl_service_get_default_options());
   }
 
   LifecycleManagerClient::~LifecycleManagerClient()

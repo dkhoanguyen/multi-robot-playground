@@ -37,18 +37,18 @@ set(dependencies
 
 set(library_name mrp_lifecyle_manager)
 
-add_library(${library_name} SHARED src/lifecyle_manager.cpp)
-ament_target_dependencies(${library_name}
-  ${dependencies}
+add_library(${library_name} SHARED 
+  src/lifecycle_manager.cpp
+  src/lifecycle_manager_client.cpp
 )
 
 target_include_directories(mrp_lifecyle_manager PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-# Causes the visibility macros to use dllexport rather than dllimport,
-# which is appropriate when building the dll but not consuming it.
-target_compile_definitions(mrp_lifecyle_manager PRIVATE "MULTI_ROBOT_LIFECYCLE_MANAGER_BUILDING_LIBRARY")
+ament_target_dependencies(${library_name}
+  ${dependencies}
+)
 
 install(
   DIRECTORY include/
@@ -56,11 +56,34 @@ install(
 )
 install(
   TARGETS ${library_name}
-  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+##########################
+# LIFECYCLE MANAGER EXEC #
+##########################
+
+set(lifecycle_manager lifecycle_manager)
+add_executable(${lifecycle_manager}
+  src/main.cpp
+)
+
+target_link_libraries(${lifecycle_manager} 
+  ${library_name}
+)
+
+target_include_directories(${lifecycle_manager} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(${lifecycle_manager} ${dependencies})
+
+install(TARGETS ${lifecycle_manager}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -79,9 +102,6 @@ ament_export_include_directories(
 )
 ament_export_libraries(
   ${library_name}
-)
-ament_export_targets(
-  export_${PROJECT_NAME}
 )
 
 ament_package()

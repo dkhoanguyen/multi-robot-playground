@@ -16,15 +16,16 @@ namespace mrp_common
         NodeType &node,
         const std::string &service_name,
         const rcl_service_options_t &options)
-        : ServiceClient(
-              node->get_node_base_interface(),
-              node->get_node_graph_interface(),
-              node->get_node_services_interface(),
-              service_name, options)
+        : node_base_interface_(node->get_node_base_interface()),
+          node_graph_interface_(node->get_node_graph_interface()),
+          node_services_interface_(node->get_node_services_interface()),
+          node_logging_interface_(node->get_node_logging_interface()),
+          service_name_(service_name)
     {
       callback_group_ = node->create_callback_group(
           rclcpp::CallbackGroupType::MutuallyExclusive);
-      callback_group_executor_.add_node(node);
+      executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+      executor_->add_node(node_base_interface_);
       service_client_ = rclcpp::create_client<ServiceType>(
           node_base_interface_,
           node_graph_interface_,
@@ -33,17 +34,6 @@ namespace mrp_common
           rmw_qos_profile_default,
           callback_group_);
     }
-
-    explicit ServiceClient(
-        rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
-        rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph_interface,
-        rclcpp::node_interfaces::NodeServicesInterface::SharedPtr node_services_interface,
-        const std::string &service_name,
-        const rcl_service_options_t &options)
-        : node_base_interface_(node_base_interface),
-          node_graph_interface_(node_graph_interface),
-          node_services_interface_(node_services_interface),
-          service_name_(service_name) {}
 
     virtual ~ServiceClient() {}
 
@@ -65,7 +55,7 @@ namespace mrp_common
         std::cout << "waiting for service to appear..." << std::endl;
       }
       auto future_result = service_client_->async_send_request(request);
-      if (callback_group_executor_.spin_until_future_complete(future_result, timeout) !=
+      if (executor_->spin_until_future_complete(future_result, timeout) !=
           rclcpp::FutureReturnCode::SUCCESS)
       {
         throw std::runtime_error(service_name_ + " service client: async_send_request failed");
@@ -80,13 +70,14 @@ namespace mrp_common
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_;
     rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph_interface_;
     rclcpp::node_interfaces::NodeServicesInterface::SharedPtr node_services_interface_;
+    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
 
     std::string service_name_;
 
     typename rclcpp::Client<ServiceType>::SharedPtr service_client_;
 
     rclcpp::CallbackGroup::SharedPtr callback_group_;
-    rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+    rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   };
 }
 

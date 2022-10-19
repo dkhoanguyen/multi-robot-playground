@@ -251,24 +251,34 @@ namespace mrp_lifecycle_manager
   {
     declare_parameter<std::vector<std::string>>("node_names", std::vector<std::string>());
     declare_parameter<bool>("autostart", false);
-    declare_parameter<std::vector<double>>("heartbat_interval", std::vector<double>());
+    declare_parameter<std::vector<double>>("heartbeat_interval", std::vector<double>());
     declare_parameter<double>("bond_respawn_max_duration", 10.0);
     declare_parameter<bool>("attempt_respawn_reconnection", true);
 
     monitored_node_names_ = get_parameter("node_names").as_string_array();
+    std::cout << monitored_node_names_.size() << std::endl;
+    for (auto name : monitored_node_names_)
+    {
+      std::cout << name << std::endl;
+    }
+
+    std::vector<double> heartbeats = get_parameter("heartbeat_interval").as_double_array();
+    std::cout << heartbeats.size() << std::endl;
+    for (auto hb : heartbeats)
+    {
+      std::cout << hb << std::endl;
+    }
   }
 
   bool LifecycleManager::createMonitorTimer()
   {
     // Destroy the old timer
     destroyMonitorTimer();
-    // Load parameters
-    loadParameters();
     // Get necessary parameters
     bool auto_start = false;
     get_parameter("autostart", auto_start);
     std::vector<double> heartbeat_interval;
-    get_parameter("heartbat_interval", heartbeat_interval);
+    get_parameter("heartbeat_interval", heartbeat_interval);
 
     // Convert raw duration in double to chrono duration
     std::vector<std::chrono::milliseconds> converted_heartbeat;

@@ -12,13 +12,12 @@
 
 int main(int argc, char *argv[])
 {
-    rclcpp::init(argc, argv);
-    rclcpp::executors::SingleThreadedExecutor exe;
-    std::shared_ptr<mrp_lifecycle_manager::LifecycleManager> lc_node =
-        std::make_shared<mrp_lifecycle_manager::LifecycleManager>(rcl_node_get_default_options(),
-                                                                  std::chrono::milliseconds(2000));
-    exe.add_node(lc_node->get_node_base_interface());
-    exe.spin();
-    rclcpp::shutdown();
-    return 0;
+  rclcpp::init(argc, argv);
+  rclcpp::NodeOptions options;
+  std::shared_ptr<mrp_lifecycle_manager::LifecycleManager> lifecycle_manager =
+      std::make_shared<mrp_lifecycle_manager::LifecycleManager>(options,
+                                                                std::chrono::milliseconds(2000));
+  rclcpp::spin(lifecycle_manager->get_node_base_interface());
+  rclcpp::shutdown();
+  return 0;
 }
