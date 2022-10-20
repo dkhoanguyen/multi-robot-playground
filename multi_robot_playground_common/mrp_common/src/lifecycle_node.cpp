@@ -51,6 +51,42 @@ namespace mrp_common
         rclcpp_lifecycle::LifecycleNode::shared_from_this());
   }
 
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  LifecycleNode::on_configure(const rclcpp_lifecycle::State &)
+  {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  LifecycleNode::on_activate(const rclcpp_lifecycle::State &)
+  {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  LifecycleNode::on_deactivate(const rclcpp_lifecycle::State &)
+  {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  LifecycleNode::on_cleanup(const rclcpp_lifecycle::State &)
+  {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  LifecycleNode::on_shutdown(const rclcpp_lifecycle::State & state)
+  {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+    
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  LifecycleNode::on_error(const rclcpp_lifecycle::State &)
+  {
+    return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+  }
+
   LifecycleNode::Heartbeat::Heartbeat(
       std::chrono::milliseconds interval,
       rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr node_topic_interface,

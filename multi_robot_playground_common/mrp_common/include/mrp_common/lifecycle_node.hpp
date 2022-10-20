@@ -84,6 +84,14 @@ namespace mrp_common
 
     std::shared_ptr<mrp_common::LifecycleNode> shared_from_this();
 
+    // We need these here or else inheritance will not work properly
+    CallbackReturn on_configure(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_error(const rclcpp_lifecycle::State &state);
+    CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
+
   protected:
     class Heartbeat
     {
