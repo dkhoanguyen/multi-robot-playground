@@ -109,6 +109,8 @@ namespace mrp_common
       rclcpp::Publisher<mrp_common_msgs::msg::Heartbeat>::SharedPtr heartbeat_publisher_{nullptr};
       rclcpp::TimerBase::SharedPtr heartbeat_timer_{nullptr};
 
+      std::string node_name_;
+
       void heartbeatCallback();
     };
 

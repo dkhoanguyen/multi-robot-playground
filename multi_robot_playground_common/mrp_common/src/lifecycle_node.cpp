@@ -63,6 +63,7 @@ namespace mrp_common
         node_timer_interface_(node_timer_interface),
         node_clock_interface_(node_clock_interface)
   {
+  
   }
 
   LifecycleNode::Heartbeat::~Heartbeat()
@@ -71,19 +72,20 @@ namespace mrp_common
 
   void LifecycleNode::Heartbeat::createHeartbeat()
   {
+    node_name_ = node_base_interface_->get_fully_qualified_name();
     if (!heartbeat_publisher_)
     {
       // The granted lease is essentially infite here, i.e., only reader/watchdog will notify
       // violations. XXX causes segfault for cyclone dds, hence pass explicit lease life > heartbeat.
       rclcpp::QoS qos_profile(1);
-      qos_profile
-          .liveliness(RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_TOPIC) // The topic itself has to be HEALTHY
-          .liveliness_lease_duration(interval_)                  //
-          .deadline(interval_);                                  //
+      // qos_profile
+      //     .liveliness(RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_TOPIC) // The topic itself has to be HEALTHY
+      //     .liveliness_lease_duration(interval_)                  //
+      //     .deadline(interval_);                                  //
       // assert liveliness on the 'heartbeat' topic
       // Minimal publisher for publishing heartbeats
       heartbeat_publisher_ = rclcpp::create_publisher<mrp_common_msgs::msg::Heartbeat>(
-          node_topic_interface_, "heartbeat", qos_profile);
+          node_topic_interface_, node_name_ + "/heartbeat", qos_profile);
     }
     if (!heartbeat_timer_)
     {

@@ -45,18 +45,22 @@ namespace mrp_lifecycle_manager
     if (monitored_node_map_.find(node_name) == monitored_node_map_.end() &&
         heartbeat_timeout_.count() > 0.0)
     {
-      std::cout << "Registering node " << node_name << std::endl;
+      mrp_common::Log::basicInfo(get_node_logging_interface(),
+                                  "Registering " + node_name);
       MonitoredNode monitored_node;
       monitored_node.heartbeat_ptr_ = std::make_shared<LifecycleManager::HealthMonitor>(
           node_name,
           heartbeat_timeout_,
           heartbeat_interval,
           false,
-          heartbeat_callback_group_,
+          callback_group_,
           get_node_topics_interface(),
           get_node_base_interface(),
           get_node_timers_interface(),
           get_node_clock_interface());
+      
+      // Initialise heartbeat monitoring
+      monitored_node.heartbeat_ptr_->initialiseHealthMonitor();
 
       // Create lifecycle_manager_client for requesting state changes
       monitored_node.lifecyle_manager_client_ = std::make_shared<LifecycleManagerClient>(
@@ -133,10 +137,10 @@ namespace mrp_lifecycle_manager
     // Compare with the desired target state
     // Since the timeout has be incorporate in the service call, let's just check for the state at
     // this point
-    // if (getNodeState(node_name, timeout) != transition_state_map_[transition])
-    // {
-    //   return TransitionRequestStatus::WRONG_END_STATE;
-    // }
+    if (getNodeState(node_name, timeout) != transition_state_map_[transition])
+    {
+      return TransitionRequestStatus::WRONG_END_STATE;
+    }
     return TransitionRequestStatus::NO_ERROR;
   }
 
@@ -200,7 +204,6 @@ namespace mrp_lifecycle_manager
                                   "Unable to register monitor timer");
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
-
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -215,10 +218,10 @@ namespace mrp_lifecycle_manager
     }
 
     // Move all nodes to activation state
-    // if (!transitionNodes(monitored_node_names_, LifecycleTransition::ACTIVATE, timeout))
-    // {
-    //   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-    // }
+    if (!transitionNodes(monitored_node_names_, LifecycleTransition::ACTIVATE, timeout))
+    {
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
 
     // // Create wall timer for health monitoring
     // if (!createMonitorTimer())
@@ -301,18 +304,6 @@ namespace mrp_lifecycle_manager
     declare_parameter<bool>("attempt_respawn_reconnection", true);
 
     monitored_node_names_ = get_parameter("node_names").as_string_array();
-    std::cout << monitored_node_names_.size() << std::endl;
-    for (auto name : monitored_node_names_)
-    {
-      std::cout << name << std::endl;
-    }
-
-    std::vector<double> heartbeats = get_parameter("heartbeat_interval").as_double_array();
-    std::cout << heartbeats.size() << std::endl;
-    for (auto hb : heartbeats)
-    {
-      std::cout << hb << std::endl;
-    }
   }
 
   bool LifecycleManager::createMonitorTimer()
@@ -371,10 +362,11 @@ namespace mrp_lifecycle_manager
   {
     heartbeat_interval_ms_ =
         std::chrono::duration_cast<std::chrono::milliseconds>(heartbeat_interval_).count();
-    if (!isolated_spin_)
+    if (isolated_spin_)
     {
       callback_group_ = node_base_interface_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     }
+    status_ = NodeHeartbeat::UNHEALTHY;
   }
 
   LifecycleManager::HealthMonitor::~HealthMonitor()
@@ -399,13 +391,16 @@ namespace mrp_lifecycle_manager
         status_ = NodeHeartbeat::UNKNOWN;
       }
     };
+
+    rclcpp::QoS profile(1);
     std::string topic_name = node_name_ + "/heartbeat";
     rclcpp::SubscriptionOptions options;
     options.callback_group = callback_group_;
+
     heartbeat_sub_ = rclcpp::create_subscription<mrp_common_msgs::msg::Heartbeat>(
         node_topic_interface_,
         topic_name,
-        qos_profile_,
+        profile,
         std::bind(&LifecycleManager::HealthMonitor::healthCallback, this, std::placeholders::_1),
         options);
     last_monitored_time_ = node_clock_interface_->get_clock()->now().nanoseconds();
@@ -427,19 +422,20 @@ namespace mrp_lifecycle_manager
 
   void LifecycleManager::HealthMonitor::healthCallback(const typename mrp_common_msgs::msg::Heartbeat::SharedPtr msg)
   {
-    std::lock_guard<std::recursive_mutex> lck_guard(status_mutex_);
+    std::cout << "Heartbeat received" << std::endl;
     if ((last_monitored_time_ - msg->stamp.nanosec) / 1e6 < heartbeat_interval_ms_)
     {
       status_ = NodeHeartbeat::HEALTHY;
+      last_monitored_time_ = node_clock_interface_->get_clock()->now().nanoseconds();
       return;
     }
     status_ = NodeHeartbeat::UNHEALTHY;
+    last_monitored_time_ = node_clock_interface_->get_clock()->now().nanoseconds();
     return;
   }
 
   LifecycleManager::HealthMonitor::NodeHeartbeat LifecycleManager::HealthMonitor::getStatus()
   {
-    std::lock_guard<std::recursive_mutex> lck_guard(status_mutex_);
     return status_;
   }
 } // namespace mrp_lifecycle_manager

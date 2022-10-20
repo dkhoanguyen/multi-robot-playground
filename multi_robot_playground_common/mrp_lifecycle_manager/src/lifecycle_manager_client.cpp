@@ -31,14 +31,13 @@ namespace mrp_lifecycle_manager
     // This should block
     try
     {
-      std::cout << "Sending transition request" << std::endl;
-      change_state_client_->requestAndWaitForResponse(request, response);
+      return change_state_client_->requestAndWaitForResponse(request, response);
     }
     catch (std::exception &ex)
     {
       std::cout << ex.what() << std::endl;
     }
-    return true;
+    return false;
   }
 
   bool LifecycleManagerClient::requestConfigure(const std::chrono::milliseconds timeout)

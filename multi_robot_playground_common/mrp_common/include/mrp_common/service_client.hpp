@@ -80,12 +80,8 @@ namespace mrp_common
 
       Log::basicInfo(node_logging_interface_, "Waiting for response");
       while (result_future.wait_for(timeout) != std::future_status::ready);
-      // result_future.wait_for(timeout);
-      // Log::basicInfo(node_logging_interface_, "Request timeout...");
       Log::basicInfo(node_logging_interface_, "Response ready.");
       response = result_future.get();
-      std::cout << response.get() << std::endl;
-      // return response.get();
       return true;
     }
 
@@ -108,8 +104,7 @@ namespace mrp_common
 
     void responseCallback(typename rclcpp::Client<ServiceType>::SharedFuture shared_future)
     {
-      Log::basicInfo(node_logging_interface_, "Result");
-      std::cout << shared_future.get() << std::endl;
+      response_ = shared_future.get();
     }
   };
 }

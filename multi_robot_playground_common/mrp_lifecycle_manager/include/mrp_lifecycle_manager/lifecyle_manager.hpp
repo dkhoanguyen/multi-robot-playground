@@ -104,6 +104,8 @@ namespace mrp_lifecycle_manager
       void startMonitoring();
       void stopMonitoring();
 
+      int test = 0;
+
     protected:
       /// The lease duration granted to the remote (heartbeat) publisher
       std::chrono::milliseconds heartbeat_timeout_;

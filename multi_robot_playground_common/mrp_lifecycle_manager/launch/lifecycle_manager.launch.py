@@ -23,7 +23,9 @@ def generate_launch_description():
         actions=[
             Node(
                 package='multi_robot_component_testing',
-                executable='lifecycle_node'
+                executable='lifecycle_node',
+                output='screen',
+                arguments=['--ros-args']
             ),
             Node(
                 package='mrp_lifecycle_manager',
