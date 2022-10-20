@@ -14,10 +14,13 @@ int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
   rclcpp::NodeOptions options;
+  rclcpp::executors::MultiThreadedExecutor::SharedPtr executor1 =
+      std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
   std::shared_ptr<mrp_lifecycle_manager::LifecycleManager> lifecycle_manager =
-      std::make_shared<mrp_lifecycle_manager::LifecycleManager>(options,
+      std::make_shared<mrp_lifecycle_manager::LifecycleManager>(executor1,
+                                                                options,
                                                                 std::chrono::milliseconds(2000));
-  rclcpp::spin(lifecycle_manager->get_node_base_interface());
+  executor1->spin();
   rclcpp::shutdown();
   return 0;
 }

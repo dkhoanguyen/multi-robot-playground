@@ -8,9 +8,11 @@ namespace mrp_lifecycle_manager
 
   using namespace std::chrono_literals;
 
-  LifecycleManager::LifecycleManager(const rclcpp::NodeOptions &options,
+  LifecycleManager::LifecycleManager(rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_ptr,
+                                     const rclcpp::NodeOptions &options,
                                      std::chrono::milliseconds heartbeat_timeout)
       : rclcpp_lifecycle::LifecycleNode("lifecycle_manager", options),
+        executor_ptr_(executor_ptr),
         heartbeat_timeout_(heartbeat_timeout)
   {
     // Main normal state
@@ -22,10 +24,19 @@ namespace mrp_lifecycle_manager
 
     heartbeat_callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+    // executor_ptr_->add_node(get_node_base_interface());
+    executor_ptr_->add_node(get_node_base_interface());
   }
 
   LifecycleManager::~LifecycleManager()
   {
+  }
+
+  void LifecycleManager::spin()
+  {
+    execution_future_ = std::async(std::launch::async, [this]()
+                                   { executor_ptr_->spin(); });
   }
 
   bool LifecycleManager::registerLifecycleNode(const std::string &node_name,
@@ -34,6 +45,7 @@ namespace mrp_lifecycle_manager
     if (monitored_node_map_.find(node_name) == monitored_node_map_.end() &&
         heartbeat_timeout_.count() > 0.0)
     {
+      std::cout << "Registering node " << node_name << std::endl;
       MonitoredNode monitored_node;
       monitored_node.heartbeat_ptr_ = std::make_shared<LifecycleManager::HealthMonitor>(
           node_name,
@@ -71,8 +83,12 @@ namespace mrp_lifecycle_manager
     for (unsigned int idx = 0; idx < monitored_node_names.size(); idx++)
     {
       // Manually register each lifecycle node
-      registerLifecycleNode(monitored_node_names.at(idx), heartbeat_intervals.at(idx));
+      if (!registerLifecycleNode(monitored_node_names.at(idx), heartbeat_intervals.at(idx)))
+      {
+        return false;
+      }
     }
+    return true;
   }
 
   bool LifecycleManager::removeLifecycleNodes(const std::vector<std::string> &monitored_node_names)
@@ -112,16 +128,15 @@ namespace mrp_lifecycle_manager
   {
     if (!monitored_node_map_[node_name].lifecyle_manager_client_->requestTransition(transition, timeout))
     {
-      // What should we do here when it fails to set state transition ?
       return TransitionRequestStatus::CANNOT_CHANGE_STATE;
     }
     // Compare with the desired target state
     // Since the timeout has be incorporate in the service call, let's just check for the state at
     // this point
-    if (getNodeState(node_name, timeout) != transition_state_map_[transition])
-    {
-      return TransitionRequestStatus::WRONG_END_STATE;
-    }
+    // if (getNodeState(node_name, timeout) != transition_state_map_[transition])
+    // {
+    //   return TransitionRequestStatus::WRONG_END_STATE;
+    // }
     return TransitionRequestStatus::NO_ERROR;
   }
 
@@ -157,6 +172,35 @@ namespace mrp_lifecycle_manager
     // Get all parameters
     loadParameters();
 
+    // Get necessary parameters
+    bool auto_start = false;
+    get_parameter("autostart", auto_start);
+    std::vector<double> heartbeat_interval;
+    get_parameter("heartbeat_interval", heartbeat_interval);
+
+    // Convert raw duration in double to chrono duration
+    std::vector<std::chrono::milliseconds> converted_heartbeat;
+    for (const auto heartbeat : heartbeat_interval)
+    {
+      converted_heartbeat.push_back(std::chrono::duration<int64_t, std::milli>((int64_t)heartbeat));
+    }
+
+    if (converted_heartbeat.size() != monitored_node_names_.size())
+    {
+      mrp_common::Log::basicError(get_node_logging_interface(),
+                                  "Unable to register monitor timer due to: \
+                                  Mismatch number of nodes and heartbeat values. \
+                                  Exitting...");
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+    // Register lifecycle nodes
+    if (!registerLifecycleNodes(monitored_node_names_, converted_heartbeat))
+    {
+      mrp_common::Log::basicError(get_node_logging_interface(),
+                                  "Unable to register monitor timer");
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
+
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -169,19 +213,20 @@ namespace mrp_lifecycle_manager
     {
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
-    // Move all nodes to activation state
-    if (!transitionNodes(monitored_node_names_, LifecycleTransition::ACTIVATE, timeout))
-    {
-      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-    }
 
-    // Create wall timer for health monitoring
-    if (!createMonitorTimer())
-    {
-      // SHould log here
-      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
-    }
-    system_active_ = true;
+    // Move all nodes to activation state
+    // if (!transitionNodes(monitored_node_names_, LifecycleTransition::ACTIVATE, timeout))
+    // {
+    //   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    // }
+
+    // // Create wall timer for health monitoring
+    // if (!createMonitorTimer())
+    // {
+    //   // SHould log here
+    //   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    // }
+    // system_active_ = true;
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
@@ -274,35 +319,6 @@ namespace mrp_lifecycle_manager
   {
     // Destroy the old timer
     destroyMonitorTimer();
-    // Get necessary parameters
-    bool auto_start = false;
-    get_parameter("autostart", auto_start);
-    std::vector<double> heartbeat_interval;
-    get_parameter("heartbeat_interval", heartbeat_interval);
-
-    // Convert raw duration in double to chrono duration
-    std::vector<std::chrono::milliseconds> converted_heartbeat;
-    for (const auto heartbeat : heartbeat_interval)
-    {
-      converted_heartbeat.push_back(std::chrono::duration<int64_t, std::milli>((int64_t)heartbeat));
-    }
-
-    if (converted_heartbeat.size() != monitored_node_names_.size())
-    {
-      mrp_common::Log::basicError(get_node_logging_interface(),
-                                  "Unable to register monitor timer due to: \
-                                  Mismatch number of nodes and heartbeat values. \
-                                  Exitting...");
-      return false;
-    }
-    // Register lifecycle nodes
-    if (!registerLifecycleNodes(monitored_node_names_, converted_heartbeat))
-    {
-      mrp_common::Log::basicError(get_node_logging_interface(),
-                                  "Unable to register monitor timer");
-      return false;
-    }
-
     // Start executor beyond this point
 
     // Let's monitor once every 1s

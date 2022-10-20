@@ -31,9 +31,12 @@ namespace mrp_lifecycle_manager
       WRONG_END_STATE = 2
     };
 
-    explicit LifecycleManager(const rclcpp::NodeOptions &options,
+    explicit LifecycleManager(rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_ptr,
+                              const rclcpp::NodeOptions &options,
                               std::chrono::milliseconds heartbeat_timeout);
     virtual ~LifecycleManager();
+
+    void spin();
 
     bool registerLifecycleNode(const std::string &node_name,
                                const std::chrono::milliseconds &heartbeat_interval);
@@ -135,6 +138,7 @@ namespace mrp_lifecycle_manager
     };
 
     bool system_active_{false};
+    std::future<void> execution_future_;
 
     std::chrono::milliseconds heartbeat_timeout_;
     std::vector<std::string> monitored_node_names_;
@@ -143,6 +147,8 @@ namespace mrp_lifecycle_manager
     rclcpp::TimerBase::SharedPtr monitor_timer_;
     rclcpp::CallbackGroup::SharedPtr heartbeat_callback_group_{nullptr};
     rclcpp::CallbackGroup::SharedPtr callback_group_{nullptr};
+
+    rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_ptr_;
 
     std::map<mrp_common::LifecycleNode::Transition, mrp_common::LifecycleNode::State> transition_state_map_;
   };

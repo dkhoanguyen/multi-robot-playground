@@ -25,14 +25,14 @@ def generate_launch_description():
                 package='multi_robot_component_testing',
                 executable='lifecycle_node'
             ),
-            # Node(
-            #     package='mrp_lifecycle_manager',
-            #     executable='lifecycle_manager',
-            #     output='screen',
-            #     arguments=['--ros-args'],
-            #     parameters=[{'node_names': monitored_nodes},
-            #                 {'heartbeat_interval': heartbeat_interval}]
-            # )
+            Node(
+                package='mrp_lifecycle_manager',
+                executable='lifecycle_manager',
+                output='screen',
+                arguments=['--ros-args'],
+                parameters=[{'node_names': monitored_nodes},
+                            {'heartbeat_interval': heartbeat_interval}]
+            )
         ]
     )
     ld.add_action(load_nodes)

@@ -21,6 +21,7 @@ namespace mrp_lifecycle_manager
 
     bool requestTransition(mrp_common::LifecycleNode::Transition transition,
                            const std::chrono::milliseconds timeout);
+    
     bool requestConfigure(const std::chrono::milliseconds timeout);
     bool requestCleanup(const std::chrono::milliseconds timeout);
     bool requestActivate(const std::chrono::milliseconds timeout);
