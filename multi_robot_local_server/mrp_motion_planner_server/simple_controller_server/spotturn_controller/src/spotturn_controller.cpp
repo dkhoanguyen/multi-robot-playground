@@ -25,6 +25,25 @@ namespace spotturn_controller
   {
   }
 
+  double SpotturnController::euclideanDistance(const geometry_msgs::msg::PoseStamped &current_pose,
+                                               const geometry_msgs::msg::PoseStamped &target_pose)
+  {
+  }
+
+  double SpotturnController::angleToTarget(const geometry_msgs::msg::PoseStamped &current_pose,
+                                           const geometry_msgs::msg::PoseStamped &target_pose)
+  {
+  }
+
+  Eigen::MatrixXd SpotturnController::toLocalPose(const geometry_msgs::msg::PoseStamped &current_pose)
+  {
+    Eigen::MatrixXd current_pose_mtr(3,3);
+    current_pose_mtr << 1.0, 0.0, 0.0,
+                        0.0, 1.0, 0.0,
+                        0.0, 0.0, 1.0;
+    
+  }
+
 } // namespace spotturn_controller
 
 #include "pluginlib/class_list_macros.hpp"

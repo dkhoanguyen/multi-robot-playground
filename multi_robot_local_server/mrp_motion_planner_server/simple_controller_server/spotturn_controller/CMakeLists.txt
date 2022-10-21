@@ -23,6 +23,8 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(mrp_local_server_core REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3)
 
 include_directories(
   include
@@ -34,6 +36,7 @@ set(dependencies
   mrp_local_server_core
   pluginlib
   geometry_msgs
+  Eigen3
 )
 
 set(library_name spotturn_controller)

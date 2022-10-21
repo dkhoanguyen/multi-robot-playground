@@ -7,6 +7,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
+#include <Eigen/Dense>
+
 namespace spotturn_controller
 {
   class SpotturnController : public local_server_core::LocalController
@@ -19,6 +21,13 @@ namespace spotturn_controller
     void calculateVelocityCommand(
         geometry_msgs::msg::PoseStamped current_pose,
         geometry_msgs::msg::TwistStamped &vel_cmd);
+
+  protected:
+    double euclideanDistance(const geometry_msgs::msg::PoseStamped &current_pose,
+                             const geometry_msgs::msg::PoseStamped &target_pose);
+    double angleToTarget(const geometry_msgs::msg::PoseStamped &current_pose,
+                         const geometry_msgs::msg::PoseStamped &target_pose);
+    Eigen::MatrixXd toLocalPose(const geometry_msgs::msg::PoseStamped &current_pose);
   };
 } // namespace spotturn_controller
 
