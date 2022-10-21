@@ -17,6 +17,9 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Heartbeat.msg"
   "msg/Status.msg"
+  "msg/MonitoredNode.msg"
+  "srv/MonitoredNode.srv"
+  "srv/MonitoredNodeArray.srv"
   DEPENDENCIES std_msgs
   # LIBRARY_NAME ${PROJECT_NAME}
 )
