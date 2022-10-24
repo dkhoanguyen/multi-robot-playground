@@ -8,8 +8,14 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>mulri_robot_playground_common</depend>
+  <depend>mrp_common</depend>
+  <depend>mrp_local_server_core</depend>
   <depend>pluginlib</depend>
+  <depend>geometry_msgs</depend>
+  <depend>spotturn_controller</depend>
+  <depend>mrp_common_msgs</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rclcpp_lifecycle</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

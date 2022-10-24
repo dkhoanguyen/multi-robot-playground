@@ -11,9 +11,9 @@ namespace local_server_core
   public:
     virtual ~LocalController(){};
     virtual void initialise() = 0;
-    virtual void setWaypoints(const std::vector<geometry_msgs::msg::PoseStamped> waypoints) = 0;
+    virtual void setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints) = 0;
     virtual void calculateVelocityCommand(
-      geometry_msgs::msg::PoseStamped current_pose,
+      const geometry_msgs::msg::Pose &current_pose,
       geometry_msgs::msg::TwistStamped &vel_cmd) = 0;
   };
 } // namespace name

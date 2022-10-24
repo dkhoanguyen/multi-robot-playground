@@ -7,7 +7,8 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 
-#include <Eigen/Dense>
+#include "mrp_common/utils.hpp"
+#include <iostream>
 
 namespace spotturn_controller
 {
@@ -16,18 +17,34 @@ namespace spotturn_controller
   public:
     SpotturnController();
     virtual ~SpotturnController();
+
+    void setLinearMax(const double &linear_max);
+    void setAngularMax(const double &angular_max);
+    void setLinearError(const double &linear_err);
+    void setAngularError(const double &angular_err);
+
     void initialise();
-    void setWaypoints(const std::vector<geometry_msgs::msg::PoseStamped> waypoints);
+    void setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints);
     void calculateVelocityCommand(
-        geometry_msgs::msg::PoseStamped current_pose,
+        const geometry_msgs::msg::Pose &current_pose,
         geometry_msgs::msg::TwistStamped &vel_cmd);
 
   protected:
-    double euclideanDistance(const geometry_msgs::msg::PoseStamped &current_pose,
-                             const geometry_msgs::msg::PoseStamped &target_pose);
-    double angleToTarget(const geometry_msgs::msg::PoseStamped &current_pose,
-                         const geometry_msgs::msg::PoseStamped &target_pose);
-    Eigen::MatrixXd toLocalPose(const geometry_msgs::msg::PoseStamped &current_pose);
+    int current_waypoint_indx_;
+    std::vector<geometry_msgs::msg::Pose> waypoints_;
+
+    double max_linear_vel_;
+    double max_angular_vel_;
+
+    double linear_error_;
+    double angular_error_;
+
+    bool at_position_;
+
+    double calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
+                                   const geometry_msgs::msg::Pose &current_waypoint);
+    double calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
+                                    const geometry_msgs::msg::Pose &current_waypoint);
   };
 } // namespace spotturn_controller
 

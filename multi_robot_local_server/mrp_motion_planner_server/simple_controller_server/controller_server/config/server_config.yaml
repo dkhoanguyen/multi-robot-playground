@@ -1,0 +1,4 @@
+controller_name:
+  - 'spotturn_controller'
+controller_mapping:
+  - 'spotturn_controller::SpotturnController'

@@ -45,6 +45,7 @@ set(HEADER_FILES
 set(library_name mrp_common)
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
+  src/utils.cpp
   ${HEADER_FILES}
 )
 
