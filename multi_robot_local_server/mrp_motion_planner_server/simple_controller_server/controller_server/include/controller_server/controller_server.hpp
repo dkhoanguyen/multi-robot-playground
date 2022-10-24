@@ -50,6 +50,8 @@ namespace mrp_motion_planner_server
 
     protected:
       std::string robot_name_;
+
+      std::string cmd_vel_topic_;
       std::string controller_name_;
       std::string cmd_topic_vel_;
 
