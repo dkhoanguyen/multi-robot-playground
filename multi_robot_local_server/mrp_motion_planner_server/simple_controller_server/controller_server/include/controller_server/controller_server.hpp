@@ -2,19 +2,23 @@
 #define CONTROLLER_SERVER__CONTROLLER_SERVER_HPP_
 
 #include <chrono>
+#include <iostream>
 
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 #include "mrp_common/lifecycle_node.hpp"
+#include "mrp_common/service_server.hpp"
 
 #include <pluginlib/class_loader.hpp>
 #include "mrp_local_server_core/local_controller.hpp"
 #include "spotturn_controller/spotturn_controller.hpp"
-#include <iostream>
+
+#include "controller_server/srv/waypoints.hpp"
 
 namespace mrp_motion_planner_server
 {
@@ -58,10 +62,22 @@ namespace mrp_motion_planner_server
       std::shared_ptr<local_server_core::LocalController> controller_ptr_;
       std::map<std::string, std::string> controller_name_map_;
 
+      std::recursive_mutex odom_mtx_;
+      nav_msgs::msg::Odometry current_odom_;
+
       // Publisher for cmd_vel
       rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
       // Timer callback for velocity publisher
       rclcpp::TimerBase::SharedPtr cmd_vel_pub_timer_;
+
+      // Subscriber for getting current pose of the robot
+      rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+
+      // Services for waypoints and controller modifier
+      // std::shared_ptr<mrp_common::ServiceServer<>> ;
+
+      void followWaypoints(); 
+      void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
     };
   }
 }

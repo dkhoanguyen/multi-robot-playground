@@ -2,6 +2,7 @@
 
 namespace mrp_motion_planner_server
 {
+  using namespace std::chrono_literals;
   namespace controller_server
   {
     ControllerServer::ControllerServer()
@@ -23,6 +24,8 @@ namespace mrp_motion_planner_server
 
       std::vector<std::string> controller_names = get_parameter("controller_name").as_string_array();
       std::vector<std::string> controller_mapping = get_parameter("controller_mapping").as_string_array();
+      robot_name_ = get_parameter("robot_name").as_string();
+      cmd_topic_vel_ = robot_name_ + "/cmd_vel";
 
       for (unsigned int idx; idx < controller_names.size(); idx++)
       {
@@ -33,6 +36,25 @@ namespace mrp_motion_planner_server
     void ControllerServer::start()
     {
       // Initialise service for trajectory control
+      // Create publisher
+      cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>(cmd_topic_vel_,10);
+
+      // Create timer - 10Hz controller
+      cmd_vel_pub_timer_ = create_wall_timer(
+      100ms, std::bind(&ControllerServer::followWaypoints, this));
+    }
+
+    void ControllerServer::followWaypoints()
+    {
+      // std::vector<geometry_msgs::msg::Pose> pose_array;
+      // controller_ptr_->setWaypoints();
+      // controller_ptr_->calculateVelocityCommand();
+    }
+
+    void ControllerServer::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+    {
+      std::unique_lock<std::recursive_mutex> lck(odom_mtx_);
+      current_odom_ = *msg;
     }
 
     bool ControllerServer::loadController(const std::string &controller_name)

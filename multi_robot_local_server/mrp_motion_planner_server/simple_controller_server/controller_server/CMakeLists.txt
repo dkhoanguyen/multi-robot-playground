@@ -24,12 +24,19 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(mrp_local_server_core REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(mrp_common REQUIRED)
 find_package(spotturn_controller REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 include_directories(
   include
+)
+
+rosidl_generate_interfaces(${PROJECT_NAME}_msg
+  "srv/Waypoints.srv"
+  DEPENDENCIES geometry_msgs
 )
 
 set(dependencies
@@ -38,6 +45,7 @@ set(dependencies
   mrp_local_server_core
   pluginlib
   geometry_msgs
+  nav_msgs
   mrp_common
   mrp_common_msgs
   spotturn_controller
@@ -60,6 +68,18 @@ target_link_libraries(${executable_name}
   ${library_name}
 )
 
+rosidl_target_interfaces(
+  ${library_name} 
+  ${PROJECT_NAME}_msg
+  "rosidl_typesupport_cpp"
+)
+
+rosidl_target_interfaces(
+  ${executable_name} 
+  ${PROJECT_NAME}_msg
+  "rosidl_typesupport_cpp"
+)
+
 install(
   TARGETS ${library_name}
   ARCHIVE DESTINATION lib
@@ -76,12 +96,6 @@ install(
   DIRECTORY include/
   DESTINATION include
 )
-
-# find dependencies
-find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
