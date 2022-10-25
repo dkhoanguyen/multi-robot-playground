@@ -28,15 +28,11 @@ find_package(nav_msgs REQUIRED)
 find_package(mrp_common REQUIRED)
 find_package(spotturn_controller REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
+find_package(mrp_motion_planner_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 include_directories(
   include
-)
-
-rosidl_generate_interfaces(${PROJECT_NAME}_msg
-  "srv/Waypoints.srv"
-  DEPENDENCIES geometry_msgs
 )
 
 set(dependencies
@@ -49,6 +45,7 @@ set(dependencies
   mrp_common
   mrp_common_msgs
   spotturn_controller
+  mrp_motion_planner_msgs
 )
 
 set(library_name controller_server)
@@ -66,18 +63,6 @@ ament_target_dependencies(${library_name} ${dependencies})
 
 target_link_libraries(${executable_name} 
   ${library_name}
-)
-
-rosidl_target_interfaces(
-  ${library_name} 
-  ${PROJECT_NAME}_msg
-  "rosidl_typesupport_cpp"
-)
-
-rosidl_target_interfaces(
-  ${executable_name} 
-  ${PROJECT_NAME}_msg
-  "rosidl_typesupport_cpp"
 )
 
 install(

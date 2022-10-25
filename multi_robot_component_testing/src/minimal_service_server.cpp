@@ -3,7 +3,7 @@
 namespace mrp_component_testing
 {
   MinimalServiceServer::MinimalServiceServer(rclcpp::Node::SharedPtr node, std::string service_name)
-      : ServiceServer<std_srvs::srv::SetBool>(node, service_name, rcl_service_get_default_options())
+      : ServiceServer<std_srvs::srv::SetBool>(node, service_name, nullptr, false, rcl_service_get_default_options())
   {
   }
 

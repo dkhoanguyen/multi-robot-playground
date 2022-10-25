@@ -41,39 +41,11 @@ namespace spotturn_controller
 
   void SpotturnController::calculateVelocityCommand(
       const geometry_msgs::msg::Pose &current_pose,
-      geometry_msgs::msg::TwistStamped &vel_cmd)
+      geometry_msgs::msg::Twist &vel_cmd)
   {
     geometry_msgs::msg::Pose current_waypoint = waypoints_.at(current_waypoint_indx_);
-    double distance = mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
-
-    if (distance <= linear_error_)
-    {
-      distance = 0;
-    }
-    // Linear
-    if (distance <= max_linear_vel_)
-    {
-      vel_cmd.twist.linear.x = distance;
-    }
-
-    double x1 = current_pose.position.x;
-    double x2 = current_waypoint.position.x;
-    double current_yaw = mrp_common::GeometryUtils::yawFromPose(current_pose);
-
-    double y1 = current_pose.position.y;
-    double y2 = current_waypoint.position.y;
-    double target_yaw = mrp_common::GeometryUtils::yawFromPose(current_waypoint);
-
-    double theta = atan2((y2 - y1), (x2 - x1)) - current_yaw;
-    if (theta > M_1_PI)
-    {
-      theta = theta - 2 * M_1_PI;
-    }
-    else if (theta < -M_1_PI)
-    {
-      theta = theta + 2 * M_1_PI;
-    }
-    // Angular
+    vel_cmd.linear.x = calculateLinearVelocity(current_pose, current_waypoint);
+    vel_cmd.angular.z = calculateAngularVelocity(current_pose, current_waypoint);
   }
 
   double SpotturnController::calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,

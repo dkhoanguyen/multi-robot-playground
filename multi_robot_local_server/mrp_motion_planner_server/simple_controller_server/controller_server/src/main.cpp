@@ -9,5 +9,6 @@ int main(int argc, char **argv)
   // For the sake of Thursday demo
   controller_server.loadController("spotturn_controller");
   controller_server.start();
+  // rclcpp::spin(controller_server);
   return 0;
 }

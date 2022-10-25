@@ -14,7 +14,7 @@ namespace local_server_core
     virtual void setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints) = 0;
     virtual void calculateVelocityCommand(
       const geometry_msgs::msg::Pose &current_pose,
-      geometry_msgs::msg::TwistStamped &vel_cmd) = 0;
+      geometry_msgs::msg::Twist &vel_cmd) = 0;
   };
 } // namespace name
 

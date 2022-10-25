@@ -18,7 +18,7 @@
 #include "mrp_local_server_core/local_controller.hpp"
 #include "spotturn_controller/spotturn_controller.hpp"
 
-#include "controller_server/srv/waypoints.hpp"
+#include "mrp_motion_planner_msgs/srv/waypoints.hpp"
 
 namespace mrp_motion_planner_server
 {
@@ -57,13 +57,16 @@ namespace mrp_motion_planner_server
 
       std::string cmd_vel_topic_;
       std::string controller_name_;
-      std::string cmd_topic_vel_;
+      std::string odom_topic_;
 
       std::shared_ptr<local_server_core::LocalController> controller_ptr_;
       std::map<std::string, std::string> controller_name_map_;
 
       std::recursive_mutex odom_mtx_;
       nav_msgs::msg::Odometry current_odom_;
+
+      std::recursive_mutex waypoint_mtx_;
+      std::vector<geometry_msgs::msg::Pose> waypoints_;
 
       // Publisher for cmd_vel
       rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
@@ -74,10 +77,12 @@ namespace mrp_motion_planner_server
       rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
 
       // Services for waypoints and controller modifier
-      // std::shared_ptr<mrp_common::ServiceServer<>> ;
+      std::shared_ptr<mrp_common::ServiceServer<mrp_motion_planner_msgs::srv::Waypoints>> waypoints_server_;
 
-      void followWaypoints(); 
+      void followWaypoints();
       void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+      void waypointSrvCallback(std::shared_ptr<mrp_motion_planner_msgs::srv::Waypoints::Request> &request,
+                               std::shared_ptr<mrp_motion_planner_msgs::srv::Waypoints::Response> &response);
     };
   }
 }

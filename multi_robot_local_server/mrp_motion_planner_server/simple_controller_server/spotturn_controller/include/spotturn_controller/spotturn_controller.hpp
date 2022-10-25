@@ -27,7 +27,7 @@ namespace spotturn_controller
     void setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints);
     void calculateVelocityCommand(
         const geometry_msgs::msg::Pose &current_pose,
-        geometry_msgs::msg::TwistStamped &vel_cmd);
+        geometry_msgs::msg::Twist &vel_cmd);
 
   protected:
     int current_waypoint_indx_;
