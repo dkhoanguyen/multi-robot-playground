@@ -20,7 +20,7 @@ def generate_launch_description():
                 output='screen',
                 arguments=['--ros-args'],
                 parameters=[{'controller_name': ['spotturn_controller'],
-                             'controller_mapping': ['spotturn_controller::SpotturnController']
+                             'controller_mapping': ['spotturn_controller::SpotturnController'],
                              'robot_name': 'robot1'}]
             )
         ]

@@ -33,12 +33,15 @@ namespace mrp_motion_planner_server
         controller_name_map_[controller_names.at(idx)] = controller_mapping.at(idx);
       }
 
+      std::cout << "Creating service server" << std::endl;
+      // shared_from_this();
       waypoints_server_ = std::make_shared<mrp_common::ServiceServer<mrp_motion_planner_msgs::srv::Waypoints>>(
           shared_from_this(),
           "waypoints", 
           std::bind(&ControllerServer::waypointSrvCallback, this, std::placeholders::_1, std::placeholders::_2), 
           false, 
           rcl_service_get_default_options());
+      std::cout << "Server created" << std::endl;
     }
 
     void ControllerServer::start()

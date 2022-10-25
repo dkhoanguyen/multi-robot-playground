@@ -45,10 +45,9 @@ namespace mrp_common
     return heartbeat_ptr_->stopBeating();
   }
 
-  std::shared_ptr<mrp_common::LifecycleNode> LifecycleNode::shared_from_this()
+  rclcpp_lifecycle::LifecycleNode::SharedPtr LifecycleNode::shared_from_this()
   {
-    return std::static_pointer_cast<mrp_common::LifecycleNode>(
-        rclcpp_lifecycle::LifecycleNode::shared_from_this());
+    return  this->shared_from_this();
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
