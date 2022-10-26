@@ -8,9 +8,6 @@ int main(int argc, char **argv)
   controller_server->initialise();
   // For the sake of Thursday demo
   controller_server->loadController("spotturn_controller");
-  // controller_server->start();
-
-  // while(true);
   rclcpp::spin(controller_server->get_node_base_interface());
   return 0;
 }

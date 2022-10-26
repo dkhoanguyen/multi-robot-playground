@@ -52,6 +52,8 @@ namespace mrp_motion_planner_server
       bool setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints);
       bool getRobotCurrentPose(geometry_msgs::msg::Pose &pose) const;
 
+      bool atFinalTarget();
+
     protected:
       std::shared_ptr<pluginlib::ClassLoader<local_server_core::LocalController>> controller_loader_ptr_;
       std::string robot_name_;
@@ -70,6 +72,9 @@ namespace mrp_motion_planner_server
       std::atomic<bool> waypoint_received_{false};
       std::recursive_mutex waypoint_mtx_;
       std::vector<geometry_msgs::msg::Pose> waypoints_;
+
+      std::atomic<bool> at_final_target_{false};
+      std::atomic<bool> executing_waypoints_{false};
 
       // Publisher for cmd_vel
       rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;

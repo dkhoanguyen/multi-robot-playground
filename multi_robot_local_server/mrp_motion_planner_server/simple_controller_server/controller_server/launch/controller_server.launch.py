@@ -18,10 +18,10 @@ def generate_launch_description():
                 package='controller_server',
                 executable='controller_server_exec',
                 output='screen',
+                namespace='robot0',
                 arguments=['--ros-args'],
                 parameters=[{'controller_name': ['spotturn_controller'],
-                             'controller_mapping': ['spotturn_controller::SpotturnController'],
-                             'robot_name': 'robot1'}]
+                             'controller_mapping': ['spotturn_controller::SpotturnController']}]
             )
         ]
     )

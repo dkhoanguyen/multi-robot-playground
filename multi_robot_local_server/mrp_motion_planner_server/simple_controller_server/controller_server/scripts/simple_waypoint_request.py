@@ -52,7 +52,7 @@ def main(args=None):
     waypoint = {}
     waypoint['position'] = {
         'x' : 1.0,
-        'y' : 1.0,
+        'y' : 2.0,
         'z' : 0.0
     }
     waypoint['orientation'] = {
