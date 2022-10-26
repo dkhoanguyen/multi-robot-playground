@@ -82,7 +82,7 @@ namespace mrp_common
     void startHeartbeat();
     void stopHeartbeat();
 
-    rclcpp_lifecycle::LifecycleNode::SharedPtr shared_from_this();
+    rclcpp_lifecycle::LifecycleNode::SharedPtr sharedFromThis();
 
     // We need these here or else inheritance will not work properly
     CallbackReturn on_configure(const rclcpp_lifecycle::State &state);

@@ -24,7 +24,7 @@ namespace mrp_motion_planner_server
 {
   namespace controller_server
   {
-    class ControllerServer : mrp_common::LifecycleNode
+    class ControllerServer : public mrp_common::LifecycleNode
     {
     public:
       ControllerServer();
@@ -53,6 +53,7 @@ namespace mrp_motion_planner_server
       bool getRobotCurrentPose(geometry_msgs::msg::Pose &pose) const;
 
     protected:
+      std::shared_ptr<pluginlib::ClassLoader<local_server_core::LocalController>> controller_loader_ptr_;
       std::string robot_name_;
 
       std::string cmd_vel_topic_;
@@ -62,14 +63,16 @@ namespace mrp_motion_planner_server
       std::shared_ptr<local_server_core::LocalController> controller_ptr_;
       std::map<std::string, std::string> controller_name_map_;
 
+      std::atomic<bool> odom_ready_{false};
       std::recursive_mutex odom_mtx_;
       nav_msgs::msg::Odometry current_odom_;
 
+      std::atomic<bool> waypoint_received_{false};
       std::recursive_mutex waypoint_mtx_;
       std::vector<geometry_msgs::msg::Pose> waypoints_;
 
       // Publisher for cmd_vel
-      rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+      rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
       // Timer callback for velocity publisher
       rclcpp::TimerBase::SharedPtr cmd_vel_pub_timer_;
 

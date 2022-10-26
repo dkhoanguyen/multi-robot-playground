@@ -8,6 +8,7 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
   <depend>mrp_common</depend>
   <depend>mrp_local_server_core</depend>
   <depend>pluginlib</depend>
@@ -18,6 +19,8 @@
   <depend>rclcpp_components</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>mrp_motion_planner_msgs</depend>
+
+  <depend>rclpy</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

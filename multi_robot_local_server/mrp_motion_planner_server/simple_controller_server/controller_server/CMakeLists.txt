@@ -31,6 +31,9 @@ find_package(mrp_common_msgs REQUIRED)
 find_package(mrp_motion_planner_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+find_package(ament_cmake_python REQUIRED)
+find_package(rclpy REQUIRED)
+
 include_directories(
   include
 )
@@ -80,6 +83,12 @@ install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(
   DIRECTORY include/
   DESTINATION include
+)
+
+# Install Python executables
+install(PROGRAMS
+  scripts/simple_waypoint_request.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

@@ -6,6 +6,10 @@ namespace spotturn_controller
   SpotturnController::SpotturnController()
   {
     current_waypoint_indx_ = 0;
+    setLinearMax(0.22);
+    setAngularMax(2.5);
+    setLinearError(0.005);
+    setAngularError(0.009);
   }
 
   SpotturnController::~SpotturnController()
@@ -58,18 +62,27 @@ namespace spotturn_controller
     double x2 = current_waypoint.position.x;
     double current_yaw = mrp_common::GeometryUtils::yawFromPose(current_pose);
 
+    // std::cout << "Current yaw: " << current_yaw << std::endl;
+
     double y1 = current_pose.position.y;
     double y2 = current_waypoint.position.y;
     double target_yaw = mrp_common::GeometryUtils::yawFromPose(current_waypoint);
 
+    // std::cout << "x1: " << x1 << std::endl;
+    // std::cout << "y1: " << y1 << std::endl;
+    // std::cout << "x2: " << x2 << std::endl;
+    // std::cout << "y2: " << y2 << std::endl;
+
+    // std::cout << "Raw theta: " << atan2((y2 - y1), (x2 - x1)) << std::endl;
+
     double theta = atan2((y2 - y1), (x2 - x1)) - current_yaw;
-    if (theta > M_1_PI)
+    if (theta > M_PI)
     {
-      theta = theta - 2 * M_1_PI;
+      theta = theta - 2 * M_PI;
     }
-    else if (theta < -M_1_PI)
+    else if (theta < -M_PI)
     {
-      theta = theta + 2 * M_1_PI;
+      theta = theta + 2 * M_PI;
     }
 
     if (distance <= linear_error_)
@@ -78,10 +91,13 @@ namespace spotturn_controller
       at_position_ = true;
     }
     // Linear
-    if (distance <= max_linear_vel_)
+    linear_vel = distance;
+    if (distance > max_linear_vel_)
     {
-      linear_vel = distance;
+      linear_vel = max_linear_vel_;
     }
+    // std::cout << "Linear: " << linear_vel << std::endl;
+    // std::cout << "Theta: " << abs(theta) << std::endl;
 
     if (abs(theta) < angular_error_)
     {
@@ -110,13 +126,13 @@ namespace spotturn_controller
     double target_yaw = mrp_common::GeometryUtils::yawFromPose(current_waypoint);
 
     double theta = atan2((y2 - y1), (x2 - x1)) - current_yaw;
-    if (theta > M_1_PI)
+    if (theta > M_PI)
     {
-      theta = theta - 2 * M_1_PI;
+      theta = theta - 2 * M_PI;
     }
-    else if (theta < -M_1_PI)
+    else if (theta < -M_PI)
     {
-      theta = theta + 2 * M_1_PI;
+      theta = theta + 2 * M_PI;
     }
 
     if (abs(theta) <= angular_error_)
