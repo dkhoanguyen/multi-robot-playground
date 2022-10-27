@@ -12,7 +12,7 @@ from tf_transformations import quaternion_from_euler
 
 class MinimalClientAsync(Node):
 
-    def __init__(self, robot_name='robot1'):
+    def __init__(self, robot_name='robot0'):
         super().__init__('minimal_client_async')
         self.cli = self.create_client(Waypoints, f'/{robot_name}/waypoints')
         while not self.cli.wait_for_service(timeout_sec=1.0):
@@ -49,18 +49,32 @@ class MinimalClientAsync(Node):
 def main(args=None):
     rclpy.init(args=args)
     
-    waypoint = {}
-    waypoint['position'] = {
+    waypoint1 = {}
+    waypoint1['position'] = {
         'x' : 1.0,
-        'y' : 2.0,
+        'y' : 1.0,
         'z' : 0.0
     }
-    waypoint['orientation'] = {
+    waypoint1['orientation'] = {
         'r' : 0.0,
         'p' : 0.0,
         'y' : 0.0
     }
-    waypoints = [waypoint]
+    waypoints = [waypoint1]
+    
+    waypoint2 = {}
+    waypoint2['position'] = {
+        'x' : 0.0,
+        'y' : 0.0,
+        'z' : 0.0
+    }
+    waypoint2['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : 0.0
+    }
+    waypoints.append(waypoint2)
+    print(waypoints)
     minimal_client = MinimalClientAsync()
     response = minimal_client.send_request(waypoints)
     print(response)

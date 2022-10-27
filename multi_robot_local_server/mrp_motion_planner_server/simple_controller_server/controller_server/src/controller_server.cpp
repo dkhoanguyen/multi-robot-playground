@@ -89,8 +89,6 @@ namespace mrp_motion_planner_server
       }
       geometry_msgs::msg::Twist control_velocity;
       controller_ptr_->calculateVelocityCommand(current_odom.pose.pose, control_velocity);
-      std::cout << "Linear: " << control_velocity.linear.x << std::endl;
-      std::cout << "Angular: " << control_velocity.angular.z << std::endl;
       cmd_vel_pub_->publish(control_velocity);
     }
 
