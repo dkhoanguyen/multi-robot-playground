@@ -7,6 +7,9 @@
   <maintainer email="khoanguyendacdang2198@gmail.com">khoa</maintainer>
   <license>TODO: License declaration</license>
 
+  <depend>controller_server</depend>
+  <depend>mrp_lifecycle_manager</depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

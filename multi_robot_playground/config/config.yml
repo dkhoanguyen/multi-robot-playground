@@ -36,15 +36,26 @@ robots:
       urdf_package: turtlebot3_description
       urdf_path: urdf/turtlebot3_burger.urdf
 
-    # - name: robot2
-    #   namespace: robot2
-    #   radius: 0.2
-    #   x: 0
-    #   y: -1
-    #   yaw: 0
-    #   model_package: modified_turtlebot3_gazebo
-    #   path_to_model: models/turtlebot3_waffle/model.sdf
-    #   urdf_package: turtlebot3_description
-    #   urdf_path: urdf/turtlebot3_waffle.urdf
+    - name: robot2
+      namespace: robot2
+      radius: 0.2
+      x: 1
+      y: 1
+      yaw: 0
+      model_package: modified_turtlebot3_gazebo
+      path_to_model: models/turtlebot3_burger/model.sdf
+      urdf_package: turtlebot3_description
+      urdf_path: urdf/turtlebot3_burger.urdf
+    
+    - name: robot3
+      namespace: robot3
+      radius: 0.2
+      x: 1
+      y: 0
+      yaw: 0
+      model_package: modified_turtlebot3_gazebo
+      path_to_model: models/turtlebot3_burger/model.sdf
+      urdf_package: turtlebot3_description
+      urdf_path: urdf/turtlebot3_burger.urdf
 
       
