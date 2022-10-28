@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from math import atan2
+import time
 import sys
 import rclpy
 from rclpy.node import Node
@@ -10,7 +12,7 @@ from geometry_msgs.msg import Pose, PoseArray
 from tf_transformations import quaternion_from_euler
 
 
-class MinimalClientAsync(Node):
+class WaypointRequestClient(Node):
 
     def __init__(self, robot_name='robot0'):
         super().__init__('minimal_client_async')
@@ -49,38 +51,139 @@ class MinimalClientAsync(Node):
 def main(args=None):
     rclpy.init(args=args)
     
-    waypoint1 = {}
-    waypoint1['position'] = {
+    # Robot 0
+    robot0_waypoints = []
+    robot0_waypoint1 = {}
+    robot0_waypoint1['position'] = {
+        'x' : 0.25,
+        'y' : 0.75,
+        'z' : 0.0
+    }
+    robot0_waypoint1['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : atan2(0.75 - 0, 0.25 - 0)
+    }
+    robot0_waypoints.append(robot0_waypoint1)
+
+    robot0_waypoint2 = {}
+    robot0_waypoint2['position'] = {
         'x' : 1.0,
         'y' : 1.0,
         'z' : 0.0
     }
-    waypoint1['orientation'] = {
+    robot0_waypoint2['orientation'] = {
         'r' : 0.0,
         'p' : 0.0,
         'y' : 0.0
     }
-    waypoints = [waypoint1]
-    
-    waypoint2 = {}
-    waypoint2['position'] = {
+    robot0_waypoints.append(robot0_waypoint2)
+
+    # Robot 1
+    robot1_waypoints = []
+    robot1_waypoint1 = {}
+    robot1_waypoint1['position'] = {
+        'x' : 0.6,
+        'y' : 0.6,
+        'z' : 0.0
+    }
+    robot1_waypoint1['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : atan2(0.6 - 0, 0.6 - 1)
+    }
+    robot1_waypoints.append(robot1_waypoint1)
+
+    robot1_waypoint2 = {}
+    robot1_waypoint2['position'] = {
+        'x' : 1.0,
+        'y' : 0.0,
+        'z' : 0.0
+    }
+    robot1_waypoint2['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : 0.0
+    }
+    robot1_waypoints.append(robot1_waypoint2)
+
+    # Robot 2
+    robot2_waypoints = []
+    robot2_waypoint1 = {}
+    robot2_waypoint1['position'] = {
+        'x' : 0.75,
+        'y' : 0.25,
+        'z' : 0.0
+    }
+    robot2_waypoint1['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : atan2(0.25 - 1, 0.75 - 1)
+    }
+    robot2_waypoints.append(robot2_waypoint1)
+
+    robot2_waypoint2 = {}
+    robot2_waypoint2['position'] = {
         'x' : 0.0,
         'y' : 0.0,
         'z' : 0.0
     }
-    waypoint2['orientation'] = {
+    robot2_waypoint2['orientation'] = {
         'r' : 0.0,
         'p' : 0.0,
         'y' : 0.0
     }
-    waypoints.append(waypoint2)
-    print(waypoints)
-    minimal_client = MinimalClientAsync()
-    response = minimal_client.send_request(waypoints)
-    print(response)
-    # minimal_client.get_logger().info(response.success)
+    robot2_waypoints.append(robot2_waypoint2)
 
-    minimal_client.destroy_node()
+    # Robot 3
+    robot3_waypoints = []
+    robot3_waypoint1 = {}
+    robot3_waypoint1['position'] = {
+        'x' : 0.4,
+        'y' : 0.4,
+        'z' : 0.0
+    }
+    robot3_waypoint1['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : atan2(0.4 - 1, 0.4 - 0)
+    }
+    robot3_waypoints.append(robot3_waypoint1)
+
+    robot3_waypoint2 = {}
+    robot3_waypoint2['position'] = {
+        'x' : 0.0,
+        'y' : 1.0,
+        'z' : 0.0
+    }
+    robot3_waypoint2['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : 0.0
+    }
+    robot3_waypoints.append(robot3_waypoint2)
+
+    # Robot 1
+    minimal_client1 = WaypointRequestClient(robot_name="robot1")
+    response = minimal_client1.send_request(robot1_waypoints)
+    minimal_client1.destroy_node()
+
+     # Robot 3
+    minimal_client3 = WaypointRequestClient(robot_name="robot3")
+    response = minimal_client3.send_request(robot3_waypoints)
+    minimal_client3.destroy_node()
+    
+    time.sleep(4)
+    # Robot 0
+    minimal_client0 = WaypointRequestClient(robot_name="robot0")
+    response = minimal_client0.send_request(robot0_waypoints)
+    minimal_client0.destroy_node()
+
+    # Robot 0
+    minimal_client2 = WaypointRequestClient(robot_name="robot2")
+    response = minimal_client2.send_request(robot2_waypoints)
+    minimal_client2.destroy_node()
+
     rclpy.shutdown()
 
 if __name__ == '__main__':
