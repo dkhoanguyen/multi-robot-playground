@@ -30,6 +30,7 @@ find_package(spotturn_controller REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(mrp_motion_planner_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 find_package(ament_cmake_python REQUIRED)
 find_package(rclpy REQUIRED)

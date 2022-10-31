@@ -13,21 +13,27 @@
 
 #include "mrp_common/lifecycle_node.hpp"
 #include "mrp_common/service_server.hpp"
+#include "mrp_common/action_server.hpp"
 
 #include <pluginlib/class_loader.hpp>
 #include "mrp_local_server_core/local_motion_planner.hpp"
 
 #include "mrp_motion_planner_msgs/srv/waypoints.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "nav2_msgs/action/follow_path.hpp"
+
+#include "mrp_common/logging.hpp"
 
 namespace mrp_motion_planner
 {
   class MotionPlannerServer : public mrp_common::LifecycleNode
   {
   public:
-    MotionPlannerServer();
+    MotionPlannerServer(const std::string &default_planner_name);
     virtual ~MotionPlannerServer();
 
     void initialise();
+    void start();
     bool loadPlanner(const std::string &planner_name);
 
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -53,11 +59,27 @@ namespace mrp_motion_planner
   protected:
     std::shared_ptr<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>> loader_ptr_;
 
-    std::string robot_names_;
-    // std::vector<nav_msgs::msg::Odometry>
+    
+    // Robot related
+    std::string robot_name_;
+    std::string planner_name_;
+    std::map<std::string, std::string> planner_name_map_;
+
+    // Publisher for cmd_vel
+    std::string robot_cmd_vel_topic_name_;
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr robot_cmd_vel_pub_;
+    // Subscriber for getting current pose of the robot
+    std::string robot_odom_topic_name_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_odom_sub_;
+    std::shared_ptr<mrp_common::ActionServer<nav2_msgs::action::FollowPath>> follow_path_action_server_;
+
+    // Other robots related
+    std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> other_robots_odom_sub_;
 
     void resgisterRobotOdomSub(const std::string &robot_name);
     void registerRobotsOdomSubs(const std::vector<std::string> &robot_names);
+
+    void followPath();
   };
 }
 

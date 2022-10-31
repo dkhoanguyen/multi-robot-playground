@@ -13,7 +13,7 @@
   <depend>mrp_local_server_core</depend>
   <depend>pluginlib</depend>
   <depend>geometry_msgs</depend>
-  <depend>nav_mags</depend>
+  <depend>nav_msgs</depend>
   <depend>spotturn_controller</depend>
   <depend>mrp_common_msgs</depend>
   <depend>rclcpp_components</depend>
