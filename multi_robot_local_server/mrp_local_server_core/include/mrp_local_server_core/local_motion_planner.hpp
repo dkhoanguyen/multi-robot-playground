@@ -28,6 +28,9 @@ namespace mrp_local_server_core
 
     // Consider what the robot sees (laser scan)
     virtual void setLaserScan(const sensor_msgs::msg::LaserScan &scan) = 0;
+
+    // For feedback
+    virtual double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose) = 0;
   };
 };
 

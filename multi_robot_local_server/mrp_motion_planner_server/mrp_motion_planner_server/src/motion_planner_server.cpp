@@ -75,9 +75,9 @@ namespace mrp_motion_planner
       follow_path_action_server_ = std::make_shared<mrp_common::ActionServer<nav2_msgs::action::FollowPath>>(
           shared_from_this(),
           "follow_path",
-          std::bind(&MotionPlannerServer::followPath,this),
-          nullptr,
-          std::chrono::milliseconds(1000),
+          std::bind(&MotionPlannerServer::followPath, this),
+          std::bind(&MotionPlannerServer::reachEndOfPath, this),
+          std::chrono::milliseconds(100), // Execution frequency
           false,
           rcl_action_server_get_default_options());
       mrp_common::Log::basicInfo(
@@ -200,6 +200,7 @@ namespace mrp_motion_planner
 
   void MotionPlannerServer::followPath()
   {
+    // Follow path should be a blocking function until we finish the path
     // Can't start until we have odom data of ourselves
     if (!robot_odom_->ready)
     {
@@ -219,31 +220,45 @@ namespace mrp_motion_planner
       all_members_odom_ready_ = true;
     }
 
-    std::shared_ptr<const nav2_msgs::action::FollowPath::Goal> current_goal =
-        follow_path_action_server_->getCurrentGoal();
-    std::vector<geometry_msgs::msg::PoseStamped> path = current_goal->path.poses;
-
-    // Get current odom
-    nav_msgs::msg::Odometry robot_current_odom;
+    while (rclcpp::ok())
     {
-      std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
-      robot_current_odom = robot_odom_->current_odom;
-    }
-    // Get all odom from other members
-    std::vector<nav_msgs::msg::Odometry> member_odom;
-    for(const std::string &robot_name : member_robots_names_)
-    {
-      std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
-      member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
-    }
-    planner_ptr_->setMembersOdom(member_odom);
+      std::shared_ptr<const nav2_msgs::action::FollowPath::Goal> current_goal =
+          follow_path_action_server_->getCurrentGoal();
+      std::shared_ptr<nav2_msgs::action::FollowPath::Feedback> feedback =
+          std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+      std::vector<geometry_msgs::msg::PoseStamped> path = current_goal->path.poses;
 
-    // Calculate velocity command to move through path from the current position
-    geometry_msgs::msg::Twist control_velocity;
-    planner_ptr_->calculateVelocityCommand(robot_current_odom.pose.pose,control_velocity);
+      // Get current odom
+      nav_msgs::msg::Odometry robot_current_odom;
+      {
+        std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
+        robot_current_odom = robot_odom_->current_odom;
+      }
+      // Get all odom from other members
+      std::vector<nav_msgs::msg::Odometry> member_odom;
+      for (const std::string &robot_name : member_robots_names_)
+      {
+        std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
+        member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
+      }
+      planner_ptr_->setMembersOdom(member_odom);
 
-    // Publish control command
-    robot_cmd_vel_pub_->publish(control_velocity);
+      // Calculate velocity command to move through path from the current position
+      geometry_msgs::msg::Twist control_velocity;
+      planner_ptr_->calculateVelocityCommand(robot_current_odom.pose.pose, control_velocity);
+      feedback->distance_to_goal = planner_ptr_->getDistanceToGoal(robot_current_odom.pose.pose);
+      feedback->speed = control_velocity.linear.x;
+
+      // Publish control command
+      robot_cmd_vel_pub_->publish(control_velocity);
+
+      // Publish feedback
+      follow_path_action_server_->publishFeedback(feedback);
+    }
+  }
+
+  void MotionPlannerServer::reachEndOfPath()
+  {
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn

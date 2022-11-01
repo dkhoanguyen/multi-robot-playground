@@ -30,6 +30,8 @@ namespace mrp_motion_planner
 
     // Consider what the robot sees (laser scan)
     void setLaserScan(const sensor_msgs::msg::LaserScan &scan);
+
+    double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose);
   };
 }
 

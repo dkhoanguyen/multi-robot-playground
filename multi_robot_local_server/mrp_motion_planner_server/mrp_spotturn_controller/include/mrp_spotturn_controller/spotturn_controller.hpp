@@ -40,6 +40,9 @@ namespace mrp_motion_planner
     // Consider what the robot sees (laser scan)
     void setLaserScan(const sensor_msgs::msg::LaserScan &scan);
 
+    // For feedback 
+    double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose);
+
   protected:
     int current_waypoint_indx_;
     std::vector<geometry_msgs::msg::PoseStamped> path_;

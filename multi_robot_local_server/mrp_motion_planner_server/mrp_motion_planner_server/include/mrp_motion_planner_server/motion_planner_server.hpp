@@ -103,6 +103,7 @@ namespace mrp_motion_planner
     void getAllMembersInTeam(const int &team_id, std::vector<std::string> &member_names);
     
     void followPath();
+    void reachEndOfPath();
   };
 }
 

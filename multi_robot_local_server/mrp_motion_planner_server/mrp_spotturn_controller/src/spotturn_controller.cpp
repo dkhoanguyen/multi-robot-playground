@@ -68,6 +68,20 @@ namespace mrp_motion_planner
     }
   }
 
+  double SpotTurn::getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose)
+  {
+    geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
+    return mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
+  }
+
+  void SpotTurn::setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &others_odom)
+  {
+  }
+
+  void SpotTurn::setLaserScan(const sensor_msgs::msg::LaserScan &scan)
+  {
+  }
+
   double SpotTurn::calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
                                                      const geometry_msgs::msg::Pose &current_waypoint)
   {

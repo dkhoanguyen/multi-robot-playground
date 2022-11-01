@@ -38,6 +38,12 @@ namespace mrp_motion_planner
   void RVO::setLaserScan(const sensor_msgs::msg::LaserScan &scan)
   {
   }
+
+  double RVO::getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose)
+  {
+    
+  }
+
 }
 
 #include "pluginlib/class_list_macros.hpp"
