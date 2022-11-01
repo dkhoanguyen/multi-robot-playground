@@ -39,3 +39,6 @@ namespace mrp_motion_planner
   {
   }
 }
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(mrp_motion_planner::RVO, mrp_local_server_core::MotionPlannerInterface)

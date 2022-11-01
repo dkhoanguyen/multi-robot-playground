@@ -18,15 +18,16 @@ endif()
 # find dependencies
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_ros REQUIRED)
 find_package(mrp_local_server_core REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(mrp_common REQUIRED)
-find_package(spotturn_controller REQUIRED)
+find_package(mrp_rvo REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(mrp_motion_planner_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
@@ -42,23 +43,48 @@ include_directories(
 set(dependencies
   rclcpp
   rclcpp_components
+  rclcpp_action
   mrp_local_server_core
   pluginlib
   geometry_msgs
   nav_msgs
+  nav2_msgs
   mrp_common
   mrp_common_msgs
-  spotturn_controller
+  mrp_rvo
   mrp_motion_planner_msgs
 )
 
-# add_executable(motion_planner_server src/motion_planner_server.cpp)
-# target_include_directories(motion_planner_server PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
+set(library_name motion_planner_server)
+add_library(${library_name} SHARED
+  src/motion_planner_server.cpp
+)
 
-# install(TARGETS motion_planner_server
-#   DESTINATION lib/${PROJECT_NAME})
+set(executable_name motion_planner_server_exec)
+add_executable(${executable_name}
+  src/main.cpp
+)
+
+ament_target_dependencies(${library_name} ${dependencies})
+
+target_link_libraries(${executable_name} 
+  ${library_name}
+)
+
+install(
+  TARGETS ${library_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS ${executable_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -71,4 +97,9 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_include_directories(include)
+ament_export_libraries(
+  ${library_name})
+ament_export_dependencies(${dependencies})
 ament_package()
+

@@ -11,7 +11,7 @@ namespace mrp_local_server_core
   class MotionPlannerInterface
   {
   public:
-    virtual ~MotionPlannerInterface();
+    virtual ~MotionPlannerInterface(){};
     virtual void initialise() = 0;
     virtual void start() = 0;
     virtual void stop() = 0;

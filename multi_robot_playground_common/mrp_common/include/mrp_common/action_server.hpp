@@ -33,7 +33,7 @@ namespace mrp_common
 
     template <typename NodeSharedPtrType>
     explicit ActionServer(
-        NodeSharedPtrType &node,
+        NodeSharedPtrType node,
         const std::string &action_name,
         ExecuteCallback execute_callback,
         CompletionCallback completion_callback,
