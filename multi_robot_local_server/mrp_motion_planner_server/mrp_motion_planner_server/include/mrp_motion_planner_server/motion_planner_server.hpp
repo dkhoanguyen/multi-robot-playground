@@ -97,6 +97,7 @@ namespace mrp_motion_planner
 
     void getAllTeams(std::vector<int> &team_id_list);
     void getAllMembersInTeam(const int &team_id, std::vector<std::string> &member_names);
+    
     void followPath();
   };
 }
