@@ -30,6 +30,7 @@ find_package(mrp_common REQUIRED)
 find_package(mrp_rvo REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(mrp_motion_planner_msgs REQUIRED)
+find_package(mrp_comms_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
 
@@ -53,6 +54,7 @@ set(dependencies
   mrp_common_msgs
   mrp_rvo
   mrp_motion_planner_msgs
+  mrp_comms_msgs
 )
 
 set(library_name motion_planner_server)

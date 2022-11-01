@@ -18,13 +18,14 @@
 #include "nav2_msgs/action/follow_path.hpp"
 
 #include "mrp_common/lifecycle_node.hpp"
-#include "mrp_common/service_server.hpp"
+#include "mrp_common/service_client.hpp"
 #include "mrp_common/action_server.hpp"
 #include "mrp_common/logging.hpp"
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
 
-#include "mrp_motion_planner_msgs/srv/waypoints.hpp"
+#include "mrp_comms_msgs/srv/get_all_teams.hpp"
+#include "mrp_comms_msgs/srv/get_members_in_team.hpp"
 
 namespace mrp_motion_planner
 {
@@ -56,15 +57,14 @@ namespace mrp_motion_planner
     bool setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints);
     bool getRobotCurrentPose(geometry_msgs::msg::Pose &pose) const;
 
-    void setOtherRobots(const std::string &robot_names);
+    void setOtherRobotNames(const std::vector<std::string> &robot_names);
 
   protected:
     struct RobotOdom
     {
-      RobotOdom() : ready(false) {};
       nav_msgs::msg::Odometry current_odom;
       std::recursive_mutex mtx;
-      std::atomic<bool> ready;
+      std::atomic<bool> ready{false};
     };
 
     std::shared_ptr<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>> loader_ptr_;
@@ -75,9 +75,7 @@ namespace mrp_motion_planner
     std::map<std::string, std::string> planner_name_map_;
 
     // Robot Odom
-    std::atomic<bool> robot_odom_ready_{false};
-    std::recursive_mutex robot_odom_mtx_;
-    nav_msgs::msg::Odometry robot_current_odom_;
+    std::shared_ptr<RobotOdom> robot_odom_;
 
     // Publisher for cmd_vel
     std::string robot_cmd_vel_topic_name_;
@@ -85,16 +83,20 @@ namespace mrp_motion_planner
     // Subscriber for getting current pose of the robot
     std::string robot_odom_topic_name_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_odom_sub_;
+    // Action server for path execution
     std::shared_ptr<mrp_common::ActionServer<nav2_msgs::action::FollowPath>> follow_path_action_server_;
 
     // Other robots related
-    std::vector<std::string> other_robots_names_;
-    std::map<std::string, rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> other_robots_odom_sub_map_;
-    std::map<std::string, std::shared_ptr<RobotOdom>> other_robots_odom_data_map_;
+    std::vector<std::string> member_robots_names_;
+    std::map<std::string, rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> member_robots_odom_sub_map_;
+    std::map<std::string, std::shared_ptr<RobotOdom>> member_robots_odom_data_map_;
 
-    void resgisterRobotOdomSub(const std::string &robot_name);
-    void registerRobotsOdomSubs(const std::vector<std::string> &robot_names);
+    // Service client to ask for team configuration
+    std::shared_ptr<mrp_common::ServiceClient<mrp_comms_msgs::srv::GetAllTeams>> get_team_client_;
+    std::shared_ptr<mrp_common::ServiceClient<mrp_comms_msgs::srv::GetMembersInTeam>> get_all_robots_in_team_client_;
 
+    void getAllTeams(std::vector<int> &team_id_list);
+    void getAllMembersInTeam(const int &team_id, std::vector<std::string> &member_names);
     void followPath();
   };
 }

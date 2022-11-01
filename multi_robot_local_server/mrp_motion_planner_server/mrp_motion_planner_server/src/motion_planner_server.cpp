@@ -22,11 +22,11 @@ namespace mrp_motion_planner
         get_node_logging_interface(),
         "Extracting parameters from parameter server");
 
-    declare_parameter<std::vector<std::string>>("planner_name", std::vector<std::string>());
-    declare_parameter<std::vector<std::string>>("planner_mapping", std::vector<std::string>());
+    declare_parameter<std::vector<std::string>>("planner_name_list", std::vector<std::string>());
+    declare_parameter<std::vector<std::string>>("planner_name_obj_mapping", std::vector<std::string>());
 
-    std::vector<std::string> planner_names = get_parameter("planner_name").as_string_array();
-    std::vector<std::string> planner_mapping = get_parameter("planner_mapping").as_string_array();
+    std::vector<std::string> planner_names = get_parameter("planner_name_list").as_string_array();
+    std::vector<std::string> planner_mapping = get_parameter("planner_name_obj_mapping").as_string_array();
     robot_name_ = get_namespace();
     robot_cmd_vel_topic_name_ = robot_name_ + "/cmd_vel";
     robot_odom_topic_name_ = robot_name_ + "/odom";
@@ -41,6 +41,32 @@ namespace mrp_motion_planner
       }
     }
 
+    // Create cmd_vel subscriber
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Registering publisher for topic " + robot_cmd_vel_topic_name_);
+    robot_cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>(robot_cmd_vel_topic_name_, 10);
+
+    // Create get_all_teams service client
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Creating service client for getting all available teams");
+    try
+    {
+      get_team_client_ = std::make_shared<mrp_common::ServiceClient<mrp_comms_msgs::srv::GetAllTeams>>(
+          shared_from_this(),
+          false, // Do not spin as an isolated thread
+          robot_name_ + "get_all_teams",
+          rcl_service_get_default_options());
+    }
+    catch (const std::exception &e)
+    {
+      mrp_common::Log::basicError(
+          get_node_logging_interface(),
+          "Unable to create get team service client for " + robot_name_ + " due to err " + std::string(e.what()));
+    }
+
+    // Create follow_path action server
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Creating motion planner action server for " + robot_name_);
@@ -62,13 +88,8 @@ namespace mrp_motion_planner
     {
       mrp_common::Log::basicError(
           get_node_logging_interface(),
-          "Unable to create motion planner action server for " + robot_name_);
+          "Unable to create motion planner action server for " + robot_name_ + " due to err " + std::string(e.what()));
     }
-
-    mrp_common::Log::basicInfo(
-        get_node_logging_interface(),
-        "Registering publisher for topic " + robot_cmd_vel_topic_name_);
-    robot_cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>(robot_cmd_vel_topic_name_, 10);
   }
 
   void MotionPlannerServer::start()
@@ -81,37 +102,83 @@ namespace mrp_motion_planner
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Subscribing to robot odom for this robot");
-    std::string local_string = robot_odom_topic_name_;
     robot_odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
         robot_odom_topic_name_, 10,
-        [this, local_string](const nav_msgs::msg::Odometry::SharedPtr msg)
+        [this](const nav_msgs::msg::Odometry::SharedPtr msg)
         {
-          std::unique_lock<std::recursive_mutex> lck(robot_odom_mtx_);
-          std::cout << "Message coming from " + robot_odom_topic_name_ << std::endl;
-          robot_current_odom_ = *msg;
-          robot_odom_ready_ = true;
+          std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
+          robot_odom_->current_odom = *msg;
+          robot_odom_->ready = true;
         });
 
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Subscribing to odom of other robots beside this one");
 
-    for (const std::string robot_name : other_robots_names_)
+    for (const std::string robot_name : member_robots_names_)
     {
-      other_robots_odom_data_map_[robot_name] = std::make_shared<RobotOdom>();
-      other_robots_odom_sub_map_[robot_name] = create_subscription<nav_msgs::msg::Odometry>(
+      member_robots_odom_data_map_[robot_name] = std::make_shared<RobotOdom>();
+      member_robots_odom_sub_map_[robot_name] = create_subscription<nav_msgs::msg::Odometry>(
           robot_name + "/odom", 10,
-          [this, robot_name](const nav_msgs::msg::Odometry::SharedPtr msg) {
-            std::unique_lock<std::recursive_mutex> lck(other_robots_odom_data_map_[robot_name]->mtx);
-            other_robots_odom_data_map_[robot_name]->current_odom = *msg;
-            other_robots_odom_data_map_[robot_name]->ready = true;
+          [this, robot_name](const nav_msgs::msg::Odometry::SharedPtr msg)
+          {
+            std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
+            member_robots_odom_data_map_[robot_name]->current_odom = *msg;
+            member_robots_odom_data_map_[robot_name]->ready = true;
           });
+    }
+  }
+
+  void MotionPlannerServer::setOtherRobotNames(const std::vector<std::string> &robot_names)
+  {
+    member_robots_names_ = robot_names;
+  }
+
+  void MotionPlannerServer::getAllTeams(std::vector<int> &team_id_list)
+  {
+    mrp_comms_msgs::srv::GetAllTeams::Request::SharedPtr request =
+        std::make_shared<mrp_comms_msgs::srv::GetAllTeams::Request>();
+    mrp_comms_msgs::srv::GetAllTeams::Response::SharedPtr response =
+        std::make_shared<mrp_comms_msgs::srv::GetAllTeams::Response>();
+
+    // This should block
+    try
+    {
+      get_team_client_->requestAndWaitForResponse(request, response);
+      team_id_list = std::vector<int>(response->id_list.begin(), response->id_list.end());
+    }
+    catch (std::exception &e)
+    {
+      mrp_common::Log::basicFatal(
+          get_node_logging_interface(),
+          "Unable to request list of teams due to error " + std::string(e.what()));
+    }
+  }
+
+  void MotionPlannerServer::getAllMembersInTeam(const int &team_id, std::vector<std::string> &member_names)
+  {
+    mrp_comms_msgs::srv::GetMembersInTeam::Request::SharedPtr request =
+        std::make_shared<mrp_comms_msgs::srv::GetMembersInTeam::Request>();
+    mrp_comms_msgs::srv::GetMembersInTeam::Response::SharedPtr response =
+        std::make_shared<mrp_comms_msgs::srv::GetMembersInTeam::Response>();
+    request->team_id = team_id;
+
+    try
+    {
+      get_all_robots_in_team_client_->requestAndWaitForResponse(request, response);
+      member_names = response->member_name_list;
+    }
+    catch (const std::exception &e)
+    {
+      mrp_common::Log::basicFatal(
+          get_node_logging_interface(),
+          "Unable to request list of member in team " + std::to_string(team_id) + " due to error " + std::string(e.what()));
     }
   }
 
   void MotionPlannerServer::followPath()
   {
-    if (!robot_odom_ready_)
+    if (!robot_odom_->ready)
     {
       return;
     }

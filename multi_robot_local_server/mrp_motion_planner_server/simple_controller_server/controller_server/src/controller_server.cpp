@@ -20,7 +20,6 @@ namespace mrp_motion_planner_server
 
     bool ControllerServer::atFinalTarget()
     {
-      
     }
 
     void ControllerServer::initialise()
@@ -62,9 +61,16 @@ namespace mrp_motion_planner_server
 
       // Create odom subscriber
       std::cout << odom_topic_ << std::endl;
+      std::string local_string = odom_topic_;
       odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
           odom_topic_, 10,
-          std::bind(&ControllerServer::odomCallback, this, std::placeholders::_1));
+          [this, local_string](const nav_msgs::msg::Odometry::SharedPtr msg)
+          {
+            std::cout << "Message coming from " + local_string << std::endl;
+            std::unique_lock<std::recursive_mutex> lck(odom_mtx_);
+            current_odom_ = *msg;
+            odom_ready_ = true;
+          });
 
       // Create timer - 10Hz controller
       cmd_vel_pub_timer_ = create_wall_timer(
