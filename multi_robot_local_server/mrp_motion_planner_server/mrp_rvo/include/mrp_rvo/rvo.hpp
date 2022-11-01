@@ -2,6 +2,11 @@
 #define MRP_RVO__RVO_HPP_
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+
+#include "nav_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 namespace mrp_motion_planner
 {
@@ -15,13 +20,13 @@ namespace mrp_motion_planner
     void start();
     void stop();
 
-    void setWaypoints(const std::vector<geometry_msgs::msg::Pose> &waypoints);
+    void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path);
     void calculateVelocityCommand(
         const geometry_msgs::msg::Pose &current_pose,
         geometry_msgs::msg::Twist &vel_cmd);
 
     // Consider the intension of other robots
-    void setOthersOdom(const std::vector<nav_msgs::msg::Odometry> &others_odom);
+    void setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &members_odom);
 
     // Consider what the robot sees (laser scan)
     void setLaserScan(const sensor_msgs::msg::LaserScan &scan);

@@ -1,9 +1,9 @@
-#include "mrp_spotturn_controller/spotturn_controller.hpp"
+#include "spotturn_controller/spotturn_controller.hpp"
 
-namespace mrp_motion_planner
+namespace spotturn_controller
 {
 
-  SpotTurn::SpotTurn()
+  SpotturnController::SpotturnController()
   {
     current_waypoint_indx_ = 0;
     setLinearMax(0.22);
@@ -13,54 +13,54 @@ namespace mrp_motion_planner
     at_position_ = false;
   }
 
-  SpotTurn::~SpotTurn()
+  SpotturnController::~SpotturnController()
   {
   }
 
-  void SpotTurn::setLinearMax(const double &linear_max)
+  void SpotturnController::setLinearMax(const double &linear_max)
   {
     max_linear_vel_ = linear_max;
   }
-  void SpotTurn::setAngularMax(const double &angular_max)
+  void SpotturnController::setAngularMax(const double &angular_max)
   {
     max_angular_vel_ = angular_max;
   }
-  void SpotTurn::setLinearError(const double &linear_err)
+  void SpotturnController::setLinearError(const double &linear_err)
   {
     linear_error_ = linear_err;
   }
-  void SpotTurn::setAngularError(const double &angular_err)
+  void SpotturnController::setAngularError(const double &angular_err)
   {
     angular_error_ = angular_err;
   }
 
-  void SpotTurn::initialise()
+  void SpotturnController::initialise()
   {
     std::cout << "Initialising spotturn controller" << std::endl;
   }
 
-  void SpotTurn::setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path)
+  void SpotturnController::setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints)
   {
-    path_ = path;
+    waypoints_ = waypoints;
     current_waypoint_indx_ = 0;
     at_position_ = false;
   }
 
-  void SpotTurn::calculateVelocityCommand(
+  void SpotturnController::calculateVelocityCommand(
       const geometry_msgs::msg::Pose &current_pose,
       geometry_msgs::msg::Twist &vel_cmd)
   {
-    if(current_waypoint_indx_ == path_.size())
+    if(current_waypoint_indx_ == waypoints_.size())
     {
       return;
     }
-    geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
+    geometry_msgs::msg::Pose current_waypoint = waypoints_.at(current_waypoint_indx_);
     vel_cmd.angular.z = calculateAngularVelocity(current_pose, current_waypoint);
     vel_cmd.linear.x = calculateLinearVelocity(current_pose, current_waypoint);
 
     if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
     {
-      if (current_waypoint_indx_ < path_.size())
+      if (current_waypoint_indx_ < waypoints_.size())
       {
         current_waypoint_indx_++;
       }
@@ -68,7 +68,7 @@ namespace mrp_motion_planner
     }
   }
 
-  double SpotTurn::calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
+  double SpotturnController::calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
                                                      const geometry_msgs::msg::Pose &current_waypoint)
   {
     double distance = mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
@@ -119,7 +119,7 @@ namespace mrp_motion_planner
     }
     return linear_vel;
   }
-  double SpotTurn::calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
+  double SpotturnController::calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
                                                       const geometry_msgs::msg::Pose &current_waypoint)
   {
     double x1 = current_pose.position.x;
@@ -166,4 +166,4 @@ namespace mrp_motion_planner
 } // namespace spotturn_controller
 
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(mrp_motion_planner::SpotTurn, mrp_local_server_core::MotionPlannerInterface)
+PLUGINLIB_EXPORT_CLASS(spotturn_controller::SpotturnController, local_server_core::LocalController)

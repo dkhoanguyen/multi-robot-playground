@@ -1,24 +1,21 @@
 #ifndef SPOTTURN_CONTROLLER__SPOTTURN_CONTROLLER_HPP_
 #define SPOTTURN_CONTROLLER__SPOTTURN_CONTROLLER_HPP_
 
-#include "mrp_local_server_core/local_motion_planner.hpp"
+#include "mrp_local_server_core/local_controller.hpp"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/twist.hpp"
-
-#include "nav_msgs/msg/odometry.hpp"
-#include "sensor_msgs/msg/laser_scan.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 #include "mrp_common/utils.hpp"
 #include <iostream>
 
-namespace mrp_motion_planner
+namespace spotturn_controller
 {
-  class SpotTurn : public mrp_local_server_core::MotionPlannerInterface
+  class SpotturnController : public local_server_core::LocalController
   {
   public:
-    SpotTurn();
-    virtual ~SpotTurn();
+    SpotturnController();
+    virtual ~SpotturnController();
 
     void setLinearMax(const double &linear_max);
     void setAngularMax(const double &angular_max);
@@ -26,23 +23,14 @@ namespace mrp_motion_planner
     void setAngularError(const double &angular_err);
 
     void initialise();
-    void start();
-    void stop();
-    void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path);
-
+    void setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints);
     void calculateVelocityCommand(
         const geometry_msgs::msg::Pose &current_pose,
         geometry_msgs::msg::Twist &vel_cmd);
 
-    // Consider the state of other robots
-    void setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &members_odom);
-
-    // Consider what the robot sees (laser scan)
-    void setLaserScan(const sensor_msgs::msg::LaserScan &scan);
-
   protected:
     int current_waypoint_indx_;
-    std::vector<geometry_msgs::msg::PoseStamped> path_;
+    std::vector<geometry_msgs::msg::Pose> waypoints_;
 
     double max_linear_vel_;
     double max_angular_vel_;

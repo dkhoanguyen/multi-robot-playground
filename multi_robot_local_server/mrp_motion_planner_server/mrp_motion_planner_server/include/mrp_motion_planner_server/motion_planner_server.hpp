@@ -37,6 +37,7 @@ namespace mrp_motion_planner
 
     void initialise();
     void start();
+    void stop();
     bool loadPlanner(const std::string &planner_name);
 
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -57,7 +58,7 @@ namespace mrp_motion_planner
     bool setWaypoints(const std::vector<geometry_msgs::msg::Pose> waypoints);
     bool getRobotCurrentPose(geometry_msgs::msg::Pose &pose) const;
 
-    void setOtherRobotNames(const std::vector<std::string> &robot_names);
+    void setMemberRobotNames(const std::vector<std::string> &robot_names);
 
   protected:
     struct RobotOdom
@@ -67,7 +68,9 @@ namespace mrp_motion_planner
       std::atomic<bool> ready{false};
     };
 
+    // Motion planner
     std::shared_ptr<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>> loader_ptr_;
+    std::shared_ptr<mrp_local_server_core::MotionPlannerInterface> planner_ptr_;
 
     // Robot related
     std::string robot_name_;
@@ -90,6 +93,7 @@ namespace mrp_motion_planner
     std::vector<std::string> member_robots_names_;
     std::map<std::string, rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> member_robots_odom_sub_map_;
     std::map<std::string, std::shared_ptr<RobotOdom>> member_robots_odom_data_map_;
+    std::atomic<bool> all_members_odom_ready_{false};
 
     // Service client to ask for team configuration
     std::shared_ptr<mrp_common::ServiceClient<mrp_comms_msgs::srv::GetAllTeams>> get_team_client_;

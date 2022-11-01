@@ -46,16 +46,16 @@ add_library(${library_name} SHARED
   src/spotturn_controller.cpp
 )
 
-set(executable_name spotturn_controller_node)
-add_executable(${executable_name}
-  src/main.cpp
-)
+# set(executable_name spotturn_controller_node)
+# add_executable(${executable_name}
+#   src/main.cpp
+# )
 
 ament_target_dependencies(${library_name} ${dependencies})
 
-target_link_libraries(${executable_name} 
-  ${library_name}
-)
+# target_link_libraries(${executable_name} 
+#   ${library_name}
+# )
 
 install(
   TARGETS ${library_name}
@@ -68,8 +68,8 @@ install(FILES plugins.xml
   DESTINATION share
 )
 
-install(TARGETS ${executable_name}
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+# install(TARGETS ${executable_name}
+#   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(
   DIRECTORY include/

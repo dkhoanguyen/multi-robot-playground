@@ -22,7 +22,7 @@ namespace mrp_motion_planner
   {
   }
 
-  void RVO::setWaypoints(const std::vector<geometry_msgs::msg::Pose> &waypoints)
+  void RVO::setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path)
   {
   }
   void RVO::calculateVelocityCommand(
@@ -31,7 +31,7 @@ namespace mrp_motion_planner
   {
   }
 
-  void RVO::setOthersOdom(const std::vector<nav_msgs::msg::Odometry> &others_odom)
+  void RVO::setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &others_odom)
   {
   }
 

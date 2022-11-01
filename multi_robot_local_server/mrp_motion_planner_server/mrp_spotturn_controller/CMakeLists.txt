@@ -41,6 +41,30 @@ set(dependencies
   mrp_common
 )
 
+set(library_name spotturn)
+add_library(${library_name} SHARED
+  src/spotturn_controller.cpp
+)
+
+ament_target_dependencies(${library_name} ${dependencies})
+
+install(
+  TARGETS ${library_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(FILES plugins.xml
+  DESTINATION share
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

@@ -75,7 +75,7 @@ namespace mrp_motion_planner
       follow_path_action_server_ = std::make_shared<mrp_common::ActionServer<nav2_msgs::action::FollowPath>>(
           shared_from_this(),
           "follow_path",
-          nullptr,
+          std::bind(&MotionPlannerServer::followPath,this),
           nullptr,
           std::chrono::milliseconds(1000),
           false,
@@ -111,6 +111,13 @@ namespace mrp_motion_planner
           robot_odom_->ready = true;
         });
 
+    // Request list of all member robots in the current team
+    int team_id = 0; // This should later be requested
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Requesting list of robot member in team " + std::to_string(team_id));
+    getAllMembersInTeam(team_id, member_robots_names_);
+
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Subscribing to odom of other robots beside this one");
@@ -129,7 +136,22 @@ namespace mrp_motion_planner
     }
   }
 
-  void MotionPlannerServer::setOtherRobotNames(const std::vector<std::string> &robot_names)
+  bool MotionPlannerServer::loadPlanner(const std::string &planner_name)
+  {
+    planner_name_ = planner_name;
+    try
+    {
+      planner_ptr_ = loader_ptr_->createSharedInstance(planner_name_map_[planner_name_]);
+      planner_ptr_->initialise();
+    }
+    catch (pluginlib::PluginlibException &ex)
+    {
+      return false;
+    }
+    return true;
+  }
+
+  void MotionPlannerServer::setMemberRobotNames(const std::vector<std::string> &robot_names)
   {
     member_robots_names_ = robot_names;
   }
@@ -178,14 +200,50 @@ namespace mrp_motion_planner
 
   void MotionPlannerServer::followPath()
   {
+    // Can't start until we have odom data of ourselves
     if (!robot_odom_->ready)
     {
       return;
     }
 
+    // We can't start until we receive all odom data from other team members
+    if (!all_members_odom_ready_)
+    {
+      for (const std::string &robot_name : member_robots_names_)
+      {
+        if (!member_robots_odom_data_map_[robot_name]->ready)
+        {
+          return;
+        }
+      }
+      all_members_odom_ready_ = true;
+    }
+
     std::shared_ptr<const nav2_msgs::action::FollowPath::Goal> current_goal =
         follow_path_action_server_->getCurrentGoal();
     std::vector<geometry_msgs::msg::PoseStamped> path = current_goal->path.poses;
+
+    // Get current odom
+    nav_msgs::msg::Odometry robot_current_odom;
+    {
+      std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
+      robot_current_odom = robot_odom_->current_odom;
+    }
+    // Get all odom from other members
+    std::vector<nav_msgs::msg::Odometry> member_odom;
+    for(const std::string &robot_name : member_robots_names_)
+    {
+      std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
+      member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
+    }
+    planner_ptr_->setMembersOdom(member_odom);
+
+    // Calculate velocity command to move through path from the current position
+    geometry_msgs::msg::Twist control_velocity;
+    planner_ptr_->calculateVelocityCommand(robot_current_odom.pose.pose,control_velocity);
+
+    // Publish control command
+    robot_cmd_vel_pub_->publish(control_velocity);
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
