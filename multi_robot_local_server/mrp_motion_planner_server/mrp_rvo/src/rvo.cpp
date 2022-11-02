@@ -44,6 +44,10 @@ namespace mrp_motion_planner
     
   }
 
+  bool RVO::reachGoal()
+  {
+    
+  }
 }
 
 #include "pluginlib/class_list_macros.hpp"

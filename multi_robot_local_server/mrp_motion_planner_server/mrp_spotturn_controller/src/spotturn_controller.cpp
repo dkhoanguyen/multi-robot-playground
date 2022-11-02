@@ -11,6 +11,7 @@ namespace mrp_motion_planner
     setLinearError(0.01);
     setAngularError(0.01);
     at_position_ = false;
+    reach_goal_ = false;
   }
 
   SpotTurn::~SpotTurn()
@@ -44,6 +45,7 @@ namespace mrp_motion_planner
     path_ = path;
     current_waypoint_indx_ = 0;
     at_position_ = false;
+    reach_goal_ = false;
   }
 
   void SpotTurn::calculateVelocityCommand(
@@ -64,6 +66,10 @@ namespace mrp_motion_planner
       {
         current_waypoint_indx_++;
       }
+      else
+      {
+        reach_goal_ = true;
+      }
       at_position_ = false;
     }
   }
@@ -72,6 +78,11 @@ namespace mrp_motion_planner
   {
     geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
     return mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
+  }
+
+  bool SpotTurn::reachGoal()
+  {
+    return reach_goal_;
   }
 
   void SpotTurn::setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &others_odom)

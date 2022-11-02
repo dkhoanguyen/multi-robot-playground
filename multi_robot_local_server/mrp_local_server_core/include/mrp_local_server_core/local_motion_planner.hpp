@@ -31,6 +31,9 @@ namespace mrp_local_server_core
 
     // For feedback
     virtual double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose) = 0;
+
+    // For accessing
+    virtual bool reachGoal() = 0;
   };
 };
 

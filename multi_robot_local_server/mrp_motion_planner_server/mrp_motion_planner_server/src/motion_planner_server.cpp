@@ -2,6 +2,7 @@
 
 namespace mrp_motion_planner
 {
+  const std::string MotionPlannerServer::DEFAULT_PLANNER = "rvo";
   MotionPlannerServer::MotionPlannerServer(const std::string &default_planner_name)
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
@@ -220,45 +221,124 @@ namespace mrp_motion_planner
       all_members_odom_ready_ = true;
     }
 
-    while (rclcpp::ok())
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Begin computing control command");
+    try
     {
-      std::shared_ptr<const nav2_msgs::action::FollowPath::Goal> current_goal =
-          follow_path_action_server_->getCurrentGoal();
-      std::shared_ptr<nav2_msgs::action::FollowPath::Feedback> feedback =
-          std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
-      std::vector<geometry_msgs::msg::PoseStamped> path = current_goal->path.poses;
-
-      // Get current odom
-      nav_msgs::msg::Odometry robot_current_odom;
+      // Load planner first
+      if (!loadPlanner(planner_name_))
       {
-        std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
-        robot_current_odom = robot_odom_->current_odom;
+        mrp_common::Log::basicError(
+            get_node_logging_interface(),
+            "Unable to load planner " + planner_name_ +
+                ". Fall back to defaul planner " + MotionPlannerServer::DEFAULT_PLANNER);
+        loadPlanner(MotionPlannerServer::DEFAULT_PLANNER);
       }
-      // Get all odom from other members
-      std::vector<nav_msgs::msg::Odometry> member_odom;
-      for (const std::string &robot_name : member_robots_names_)
+
+      // Set path
+      planner_ptr_->setPath(follow_path_action_server_->getCurrentGoal()->path.poses);
+
+      rclcpp::WallRate loop_rate(std::chrono::milliseconds(100));
+      while (rclcpp::ok())
       {
-        std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
-        member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
+        // If action server is inactive -> terminate
+        if (follow_path_action_server_ == nullptr || !follow_path_action_server_->isServerActive())
+        {
+          mrp_common::Log::basicError(
+              get_node_logging_interface(),
+              "Follow path action server is inactive. Stopping now");
+          publishZeroVelocity();
+          return;
+        }
+
+        // If cancel request is received
+        if (follow_path_action_server_->isCancelRequested())
+        {
+          mrp_common::Log::basicInfo(
+              get_node_logging_interface(),
+              "Goal was canceled. Stopping now");
+          follow_path_action_server_->terminateAll();
+          publishZeroVelocity();
+          return;
+        }
+
+        // Check to see if there is any new path request coming
+
+        //=== Start computing and publishing control command ===//
+        computeAndPublishVelocity();
+
+        if (reachEndOfPath())
+        {
+          mrp_common::Log::basicInfo(
+              get_node_logging_interface(),
+              "Reach goal");
+          publishZeroVelocity();
+          break;
+        }
+
+        if (!loop_rate.sleep())
+        {
+          mrp_common::Log::basicWarn(
+              get_node_logging_interface(),
+              "Motion planner exceeded the specified rate");
+        }
       }
-      planner_ptr_->setMembersOdom(member_odom);
-
-      // Calculate velocity command to move through path from the current position
-      geometry_msgs::msg::Twist control_velocity;
-      planner_ptr_->calculateVelocityCommand(robot_current_odom.pose.pose, control_velocity);
-      feedback->distance_to_goal = planner_ptr_->getDistanceToGoal(robot_current_odom.pose.pose);
-      feedback->speed = control_velocity.linear.x;
-
-      // Publish control command
-      robot_cmd_vel_pub_->publish(control_velocity);
-
-      // Publish feedback
-      follow_path_action_server_->publishFeedback(feedback);
     }
+    catch (const std::exception &e)
+    {
+      std::cerr << e.what() << '\n';
+    }
+
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Controller succeeded. Sending back result");
+
+    follow_path_action_server_->succeededCurrent();
   }
 
-  void MotionPlannerServer::reachEndOfPath()
+  void MotionPlannerServer::updatePath()
   {
+    
+  }
+
+  void MotionPlannerServer::computeAndPublishVelocity()
+  {
+    nav_msgs::msg::Odometry robot_current_odom;
+    {
+      std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
+      robot_current_odom = robot_odom_->current_odom;
+    }
+    // Get all odom from other members
+    std::vector<nav_msgs::msg::Odometry> member_odom;
+    for (const std::string &robot_name : member_robots_names_)
+    {
+      std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
+      member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
+    }
+
+    // Calculate velocity command to move through path from the current position
+    planner_ptr_->setMembersOdom(member_odom);
+
+    geometry_msgs::msg::Twist control_velocity;
+    planner_ptr_->calculateVelocityCommand(robot_current_odom.pose.pose, control_velocity);
+
+    // Create feedback
+    std::shared_ptr<nav2_msgs::action::FollowPath::Feedback> feedback =
+        std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+    feedback->distance_to_goal = planner_ptr_->getDistanceToGoal(robot_current_odom.pose.pose);
+    feedback->speed = std::hypot(control_velocity.linear.x, control_velocity.linear.y);
+
+    // Publish control command
+    robot_cmd_vel_pub_->publish(control_velocity);
+
+    // Publish feedback
+    follow_path_action_server_->publishFeedback(feedback);
+  }
+
+  bool MotionPlannerServer::reachEndOfPath()
+  {
+    return planner_ptr_->reachGoal();
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
@@ -272,5 +352,28 @@ namespace mrp_motion_planner
   {
     start();
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  }
+
+  void MotionPlannerServer::publishVelocity(const geometry_msgs::msg::Twist &control_velocity)
+  {
+    auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>(control_velocity);
+    if (robot_cmd_vel_pub_ != nullptr && robot_cmd_vel_pub_->is_activated() &&
+        robot_cmd_vel_pub_->get_subscription_count() > 0)
+    {
+      robot_cmd_vel_pub_->publish(std::move(cmd_vel));
+    }
+  }
+
+  void MotionPlannerServer::publishZeroVelocity()
+  {
+    geometry_msgs::msg::Twist control_velocity;
+    control_velocity.linear.x = 0;
+    control_velocity.linear.y = 0;
+    control_velocity.linear.z = 0;
+
+    control_velocity.angular.x = 0;
+    control_velocity.angular.y = 0;
+    control_velocity.angular.z = 0;
+    robot_cmd_vel_pub_->publish(control_velocity);
   }
 }

@@ -61,6 +61,7 @@ namespace mrp_motion_planner
     void setMemberRobotNames(const std::vector<std::string> &robot_names);
 
   protected:
+    static const std::string DEFAULT_PLANNER;
     struct RobotOdom
     {
       nav_msgs::msg::Odometry current_odom;
@@ -101,9 +102,16 @@ namespace mrp_motion_planner
 
     void getAllTeams(std::vector<int> &team_id_list);
     void getAllMembersInTeam(const int &team_id, std::vector<std::string> &member_names);
-    
+
     void followPath();
-    void reachEndOfPath();
+    
+    void updatePath();
+    void computeAndPublishVelocity();
+    bool reachEndOfPath();
+
+    // Other utils functions
+    void publishVelocity(const geometry_msgs::msg::Twist &control_velocity);
+    void publishZeroVelocity();
   };
 }
 

@@ -43,6 +43,8 @@ namespace mrp_motion_planner
     // For feedback 
     double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose);
 
+    bool reachGoal();
+
   protected:
     int current_waypoint_indx_;
     std::vector<geometry_msgs::msg::PoseStamped> path_;
@@ -54,6 +56,7 @@ namespace mrp_motion_planner
     double angular_error_;
 
     bool at_position_;
+    bool reach_goal_;
 
     double calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
                                    const geometry_msgs::msg::Pose &current_waypoint);

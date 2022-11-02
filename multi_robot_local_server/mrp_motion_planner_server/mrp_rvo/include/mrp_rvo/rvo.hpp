@@ -32,6 +32,8 @@ namespace mrp_motion_planner
     void setLaserScan(const sensor_msgs::msg::LaserScan &scan);
 
     double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose);
+
+    bool reachGoal();
   };
 }
 
