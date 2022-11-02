@@ -28,6 +28,8 @@ namespace mrp_motion_planner
     void initialise();
     void start();
     void stop();
+    void resume();
+    void pause();
     void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path);
 
     void calculateVelocityCommand(
