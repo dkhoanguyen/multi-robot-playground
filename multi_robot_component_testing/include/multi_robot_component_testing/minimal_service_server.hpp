@@ -7,17 +7,19 @@
 #include "std_srvs/srv/set_bool.hpp"
 #include "mrp_common/service_server.hpp"
 
+#include "mrp_comms_msgs/srv/get_members_in_team.hpp"
+
 namespace mrp_component_testing
 {
-  class MinimalServiceServer : public mrp_common::ServiceServer<std_srvs::srv::SetBool>
+  class MinimalServiceServer : public mrp_common::ServiceServer<mrp_comms_msgs::srv::GetMembersInTeam>
   {
   public:
     MinimalServiceServer(rclcpp::Node::SharedPtr node,
-                         std::string service_name = "minimal_service");
+                         std::string service_name = "/robot0/get_members_from_team");
     ~MinimalServiceServer();
 
-    void execute(std::shared_ptr<std_srvs::srv::SetBool::Request> &request,
-                 std::shared_ptr<std_srvs::srv::SetBool::Response> &response);
+    void execute(std::shared_ptr<mrp_comms_msgs::srv::GetMembersInTeam::Request> &request,
+                 std::shared_ptr<mrp_comms_msgs::srv::GetMembersInTeam::Response> &response);
   };
 }
 

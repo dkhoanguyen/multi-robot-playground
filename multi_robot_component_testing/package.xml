@@ -16,6 +16,7 @@
 
   <depend>mrp_common</depend>
   <depend>mrp_common_msgs</depend>
+  <depend>mrp_comms_msgs</depend>
   <depend>rclcpp_components</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>turtlesim</depend>

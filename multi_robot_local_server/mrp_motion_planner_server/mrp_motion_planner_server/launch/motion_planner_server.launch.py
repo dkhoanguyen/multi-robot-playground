@@ -12,6 +12,13 @@ def prepare_launch(context):
     load_nodes = GroupAction(
         actions=[
             Node(
+                package='multi_robot_component_testing',
+                executable='minimal_service_server',
+                output='screen',
+                namespace=robot_name.perform(context),
+                arguments=['--ros-args']
+            ),
+            Node(
                 package='mrp_motion_planner_server',
                 executable='motion_planner_server_exec',
                 output='screen',

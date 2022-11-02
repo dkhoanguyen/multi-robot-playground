@@ -397,7 +397,7 @@ namespace mrp_motion_planner
       get_team_client_ = std::make_shared<mrp_common::ServiceClient<mrp_comms_msgs::srv::GetAllTeams>>(
           shared_from_this(),
           false, // Do not spin as an isolated thread
-          robot_name_ + "get_all_teams",
+          robot_name_ + "/get_all_teams",
           rcl_service_get_default_options());
     }
     catch (const std::exception &e)
@@ -418,7 +418,7 @@ namespace mrp_motion_planner
       get_all_robots_in_team_client_ = std::make_shared<mrp_common::ServiceClient<mrp_comms_msgs::srv::GetMembersInTeam>>(
           shared_from_this(),
           false, // Do not spin as an isolated thread
-          robot_name_ + "get_all_members_in_team",
+          robot_name_ + "/get_members_from_team",
           rcl_service_get_default_options());
     }
     catch (const std::exception &e)

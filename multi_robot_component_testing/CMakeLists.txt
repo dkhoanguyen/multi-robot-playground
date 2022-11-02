@@ -25,6 +25,7 @@ find_package(turtlesim REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(mrp_common REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
+find_package(mrp_comms_msgs REQUIRED)
 
 # include_directories(
 #   include
@@ -43,6 +44,7 @@ set(dependencies
   turtlesim
   mrp_common
   mrp_common_msgs
+  mrp_comms_msgs
 )
 
 set(library_name multi_robot_component_testing)
@@ -98,23 +100,23 @@ install(TARGETS ${minimal_service_server}
 # MINIMAL SERVICE CLIENT #
 ##########################
 
-# set(minimal_service_client minimal_service_client)
-# add_executable(${minimal_service_client}
-#   exec/minimal_service_client.cpp
-# )
+set(minimal_service_client minimal_service_client)
+add_executable(${minimal_service_client}
+  exec/minimal_service_client.cpp
+)
 
-# target_link_libraries(${minimal_service_client} 
-#   ${library_name}
-# )
+target_link_libraries(${minimal_service_client} 
+  ${library_name}
+)
 
-# target_include_directories(${minimal_service_client} PUBLIC
-# $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-# $<INSTALL_INTERFACE:include>)
+target_include_directories(${minimal_service_client} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
 
-# ament_target_dependencies(${minimal_service_client} ${dependencies})
+ament_target_dependencies(${minimal_service_client} ${dependencies})
 
-# install(TARGETS ${minimal_service_client}
-#   RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(TARGETS ${minimal_service_client}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ##########################
 # MINIMAL ACTION SERVER #

@@ -6,10 +6,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "mrp_common/service_client.hpp"
+#include "mrp_comms_msgs/srv/get_members_in_team.hpp"
 
 namespace mrp_component_testing
 {
-  class MinimalServiceClient : public mrp_common::ServiceClient<std_srvs::srv::SetBool>
+  class MinimalServiceClient : public mrp_common::ServiceClient<mrp_comms_msgs::srv::GetMembersInTeam>
   {
   public:
     MinimalServiceClient(rclcpp::Node::SharedPtr node,
