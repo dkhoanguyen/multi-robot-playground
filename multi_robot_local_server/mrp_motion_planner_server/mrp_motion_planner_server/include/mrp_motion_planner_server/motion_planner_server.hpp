@@ -35,11 +35,9 @@ namespace mrp_motion_planner
     MotionPlannerServer(const std::string &planner_name);
     virtual ~MotionPlannerServer();
 
-    void initialise();
-    void start();
-    void stop();
-    void resume();
-    void pause();
+    bool initialise();
+    bool start();
+    bool stop();
 
     bool loadPlanner(const std::string &planner_name);
 
@@ -125,7 +123,6 @@ namespace mrp_motion_planner
     // Other utils functions
     void publishVelocity(const geometry_msgs::msg::Twist &control_velocity);
     void publishZeroVelocity();
-
   };
 }
 

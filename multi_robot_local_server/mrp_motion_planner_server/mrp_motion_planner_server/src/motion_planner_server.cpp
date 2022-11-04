@@ -29,7 +29,7 @@ namespace mrp_motion_planner
   //                                              //
   // ============================================ //
   // === INIT === //
-  void MotionPlannerServer::initialise()
+  bool MotionPlannerServer::initialise()
   {
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
@@ -38,7 +38,7 @@ namespace mrp_motion_planner
     std::vector<std::string> planner_names = get_parameter("planner_name_list").as_string_array();
     std::vector<std::string> planner_mapping = get_parameter("planner_name_plugin_mapping").as_string_array();
     planner_rate_ = std::chrono::milliseconds((int)get_parameter("planner_rate").as_double());
-    
+
     robot_name_ = get_namespace();
     robot_cmd_vel_topic_name_ = robot_name_ + "/cmd_vel";
     robot_odom_topic_name_ = robot_name_ + "/odom";
@@ -64,10 +64,15 @@ namespace mrp_motion_planner
 
     // Create follow_path action server
     createFollowPathActionServer();
+
+    // Initialise heartbeat
+    initialiseHeartbeat();
+
+    return true;
   }
 
   // === START === //
-  void MotionPlannerServer::start()
+  bool MotionPlannerServer::start()
   {
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
@@ -78,21 +83,23 @@ namespace mrp_motion_planner
 
     // Request list of all member robots in the current team
     registerMemberRobots();
+
+    // Start beating
+    startHeartbeat();
+
+    return true;
   }
 
   // === STOP === //
-  void MotionPlannerServer::stop()
+  bool MotionPlannerServer::stop()
   {
-  }
+    follow_path_action_server_->deactivate();
+    publishZeroVelocity();
+    robot_cmd_vel_pub_->on_deactivate();
 
-  // === RESUME === //
-  void MotionPlannerServer::resume()
-  {
-  }
-
-  // === PAUSE === //
-  void MotionPlannerServer::pause()
-  {
+    // Stop heartbeat
+    stopHeartbeat();
+    return true;
   }
 
   // ============================================ //
@@ -105,32 +112,77 @@ namespace mrp_motion_planner
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Initialising motion planner server");
-    initialise();
+    if (!initialise())
+    {
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   MotionPlannerServer::on_activate(const rclcpp_lifecycle::State &state)
   {
-    start();
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Activating motion planner server");
+    if (!start())
+    {
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   MotionPlannerServer::on_deactivate(const rclcpp_lifecycle::State &state)
   {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Deactivating motion planner server");
+    if (!stop())
+    {
+      return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
+    }
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   MotionPlannerServer::on_cleanup(const rclcpp_lifecycle::State &state)
   {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Cleaning up motion planner server");
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
   MotionPlannerServer::on_shutdown(const rclcpp_lifecycle::State &state)
   {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Shutting down motion planner server");
+
+    // Clean up all pointers
+    loader_ptr_.reset();
+    planner_ptr_.reset();
+    robot_odom_.reset();
+    robot_cmd_vel_pub_.reset();
+    robot_odom_sub_.reset();
+
+    for (auto element : member_robots_odom_sub_map_)
+    {
+      element.second.reset();
+    }
+    for (auto element : member_robots_odom_data_map_)
+    {
+      element.second.reset();
+    }
+
+    // Clean up all services and actions
+    get_team_client_.reset();
+    get_all_robots_in_team_client_.reset();
+    follow_path_action_server_.reset();
+
+    heartbeat_ptr_.reset();
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
@@ -202,26 +254,6 @@ namespace mrp_motion_planner
 
   void MotionPlannerServer::followPath()
   {
-    // Follow path should be a blocking function until we finish the path
-    // Can't start until we have odom data of ourselves
-    if (!robot_odom_->ready)
-    {
-      return;
-    }
-
-    // We can't start until we receive all odom data from other team members
-    if (!all_members_odom_ready_)
-    {
-      for (const std::string &robot_name : member_robots_names_)
-      {
-        if (!member_robots_odom_data_map_[robot_name]->ready)
-        {
-          return;
-        }
-      }
-      all_members_odom_ready_ = true;
-    }
-
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Begin computing control command");
@@ -243,6 +275,26 @@ namespace mrp_motion_planner
       rclcpp::WallRate loop_rate(planner_rate_);
       while (rclcpp::ok())
       {
+        // Follow path should be a blocking function until we finish the path
+        // Can't start until we have odom data of ourselves
+        if (!robot_odom_->ready)
+        {
+          return;
+        }
+
+        // We can't start until we receive all odom data from other team members
+        if (!all_members_odom_ready_)
+        {
+          for (const std::string &robot_name : member_robots_names_)
+          {
+            if (!member_robots_odom_data_map_[robot_name]->ready)
+            {
+              return;
+            }
+          }
+          all_members_odom_ready_ = true;
+        }
+
         // If action server is inactive -> terminate
         if (follow_path_action_server_ == nullptr || !follow_path_action_server_->isServerActive())
         {
