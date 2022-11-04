@@ -20,7 +20,7 @@ def generate_launch_description():
     lifecycle_manager_pkg = get_package_share_directory(
         'mrp_lifecycle_manager')
 
-    for i in range(0, 1):
+    for i in range(0, 4):
         ld.add_action(IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(motion_planner_server_pkg, 'launch',

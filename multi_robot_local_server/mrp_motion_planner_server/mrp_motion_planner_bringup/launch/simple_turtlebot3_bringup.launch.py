@@ -39,7 +39,7 @@ def generate_launch_description():
                          'lifecycle_manager.launch.py')
         ),
         launch_arguments=[
-            ('robot_name', '')
+            ('robot_name', f'robot{i}')
         ]
     )
 

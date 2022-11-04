@@ -29,7 +29,7 @@ namespace mrp_lifecycle_manager
     executor_ptr_->add_node(get_node_base_interface());
 
     declare_parameter<std::vector<std::string>>("node_names", std::vector<std::string>());
-    declare_parameter<int>("monitor_rate", 1000); 
+    declare_parameter<int>("monitor_rate", 1000);
     declare_parameter<bool>("autostart", false);
     declare_parameter<std::vector<double>>("heartbeat_interval", std::vector<double>());
     declare_parameter<double>("bond_respawn_max_duration", 10.0);
@@ -215,9 +215,9 @@ namespace mrp_lifecycle_manager
     // Create monitored_node_array service for changing states of monitored node dynamically
     change_nodes_state_server_ = std::make_shared<mrp_common::ServiceServer<mrp_common_msgs::srv::MonitoredNodeArray>>(
         shared_from_this(),
-        "/change_monitored_nodes_state",
-        nullptr,
-        true, rcl_service_get_default_options());
+        std::string(get_name()) + "/change_monitored_nodes_state",
+        std::bind(&LifecycleManager::changeNodesStateCallback, this, std::placeholders::_1, std::placeholders::_2),
+        false, rcl_service_get_default_options());
 
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
@@ -244,7 +244,7 @@ namespace mrp_lifecycle_manager
     //   // SHould log here
     //   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     // }
-    // system_active_ = true;
+    system_active_ = true;
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 
@@ -347,6 +347,15 @@ namespace mrp_lifecycle_manager
   void LifecycleManager::changeNodesStateCallback(std::shared_ptr<mrp_common_msgs::srv::MonitoredNodeArray::Request> &request,
                                                   std::shared_ptr<mrp_common_msgs::srv::MonitoredNodeArray::Response> &response)
   {
+    if (!system_active_)
+    {
+      mrp_common::Log::basicError(
+        get_node_logging_interface(),
+        "Lifecycle Manager is inactive. Rejecting this request.");
+        response->success = false;
+        return;
+    }
+
     bool success = true;
     for (auto node : request->nodes)
     {
@@ -396,7 +405,7 @@ namespace mrp_lifecycle_manager
 
   //=================================================//
   //                                                 //
-  // ================================================//
+  //=================================================//
 
   LifecycleManager::HealthMonitor::HealthMonitor(
       const std::string node_name,

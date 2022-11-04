@@ -23,6 +23,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'activate_motion_planners = mrp_local_bringup.activate_motion_planners:main'
         ],
     },
 )
