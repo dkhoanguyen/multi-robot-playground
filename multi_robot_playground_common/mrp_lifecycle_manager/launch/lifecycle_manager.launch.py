@@ -1,25 +1,24 @@
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, GroupAction, OpaqueFunction,
-                            IncludeLaunchDescription, SetEnvironmentVariable)
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.actions import (DeclareLaunchArgument, GroupAction, OpaqueFunction)
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.actions import PushRosNamespace
+
 
 def prepare_launch(context):
     robot_name_arg = DeclareLaunchArgument(
         'robot_name', default_value='')
     robot_name = LaunchConfiguration('robot_name')
 
-    monitored_nodes = [
-        "/robot0/motion_planner_server",
-    ]
-    heartbeat_interval = [
-        float(1000)
-    ]
+    monitored_nodes_arg = DeclareLaunchArgument(
+        'monitored_nodes', default_value="['']")
+    monitored_nodes = LaunchConfiguration('monitored_nodes')
+
+    heartbeat_interval_arg = DeclareLaunchArgument(
+        'heartbeat_interval', default_value=[])
+
+    heartbeat_interval = LaunchConfiguration('heartbeat_interval')
 
     load_nodes = GroupAction(
         actions=[
@@ -29,16 +28,19 @@ def prepare_launch(context):
                 output='screen',
                 namespace=robot_name.perform(context),
                 arguments=['--ros-args'],
-                parameters=[{'node_names': monitored_nodes},
-                            {'heartbeat_interval': heartbeat_interval}]
+                parameters=[{'node_names': monitored_nodes.perform(context)},
+                            {'heartbeat_interval': heartbeat_interval.perform(context)}]
             )
         ]
     )
 
     return [
         robot_name_arg,
+        monitored_nodes_arg,
+        heartbeat_interval_arg,
         load_nodes
     ]
+
 
 def generate_launch_description():
     return LaunchDescription([

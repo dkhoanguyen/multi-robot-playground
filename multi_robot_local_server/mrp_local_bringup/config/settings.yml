@@ -1,0 +1,11 @@
+servers:
+  # station-robot_comms:
+  #   heartbeat: 1000
+  # inter-robot_comms:
+  #   heartbeat: 1000
+  # task_planner:
+  #   heartbeat: 1000
+  # task_execution:
+  #   heartbeat: 1000
+  motion_planner:
+    heartbeat: 1000.0

@@ -52,7 +52,7 @@ add_library(${library_name} SHARED
   src/minimal_service_server.cpp
   # src/minimal_service_client.cpp
   src/minimal_action_server.cpp
-  src/minimal_action_client.cpp
+  # src/minimal_action_client.cpp
   src/lifecycle_node.cpp
 )
 
@@ -100,23 +100,23 @@ install(TARGETS ${minimal_service_server}
 # MINIMAL SERVICE CLIENT #
 ##########################
 
-set(minimal_service_client minimal_service_client)
-add_executable(${minimal_service_client}
-  exec/minimal_service_client.cpp
-)
+# set(minimal_service_client minimal_service_client)
+# add_executable(${minimal_service_client}
+#   exec/minimal_service_client.cpp
+# )
 
-target_link_libraries(${minimal_service_client} 
-  ${library_name}
-)
+# target_link_libraries(${minimal_service_client} 
+#   ${library_name}
+# )
 
-target_include_directories(${minimal_service_client} PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-$<INSTALL_INTERFACE:include>)
+# target_include_directories(${minimal_service_client} PUBLIC
+# $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+# $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(${minimal_service_client} ${dependencies})
+# ament_target_dependencies(${minimal_service_client} ${dependencies})
 
-install(TARGETS ${minimal_service_client}
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+# install(TARGETS ${minimal_service_client}
+#   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ##########################
 # MINIMAL ACTION SERVER #
@@ -144,23 +144,23 @@ install(TARGETS ${minimal_action_server}
 # MINIMAL ACTION CLIENT #
 ##########################
 
-set(minimal_action_client minimal_action_client)
-add_executable(${minimal_action_client}
-  exec/minimal_action_client.cpp
-)
+# set(minimal_action_client minimal_action_client)
+# add_executable(${minimal_action_client}
+#   exec/minimal_action_client.cpp
+# )
 
-target_link_libraries(${minimal_action_client} 
-  ${library_name}
-)
+# target_link_libraries(${minimal_action_client} 
+#   ${library_name}
+# )
 
-target_include_directories(${minimal_action_client} PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-$<INSTALL_INTERFACE:include>)
+# target_include_directories(${minimal_action_client} PUBLIC
+# $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+# $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(${minimal_action_client} ${dependencies})
+# ament_target_dependencies(${minimal_action_client} ${dependencies})
 
-install(TARGETS ${minimal_action_client}
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+# install(TARGETS ${minimal_action_client}
+#   RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 ###################
 # LIFE CYCLE NODE #

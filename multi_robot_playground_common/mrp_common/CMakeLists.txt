@@ -22,6 +22,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 # include_directories(
 #   include
 # )
@@ -32,6 +33,7 @@ set(dependencies
   mrp_common_msgs
   rclcpp_lifecycle
   lifecycle_msgs
+  geometry_msgs
 )
 
 set(HEADER_FILES 
