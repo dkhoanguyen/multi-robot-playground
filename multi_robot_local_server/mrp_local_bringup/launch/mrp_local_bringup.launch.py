@@ -24,13 +24,18 @@ def generate_launch_description():
     container_name = LaunchConfiguration('container_name')
     log_level = LaunchConfiguration('log_level')
 
-    # This should be environment variable
     declare_robot_name_arg = DeclareLaunchArgument(
-        "robot_name", default_value=TextSubstitution(text="robot"))
+        "robot_name", default_value='robot')
     declare_use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
+    declare_auto_start_arg = DeclareLaunchArgument(
+        'autostart',
+        default_value='false')
+    declare_container_name_arg  = DeclareLaunchArgument(
+        'container_name',
+        default_value='servers_container')
     declare_log_level_arg = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
@@ -62,7 +67,7 @@ def generate_launch_description():
     with open(os.path.join(motion_planner_server_pkg, settings_path), 'r') as config_stream:
         motion_planner_settings = yaml.safe_load(config_stream)
         heartbeat_list.append(
-            motion_planner_settings['generals']['health']['heartbeat'])
+            motion_planner_settings['general']['health']['heartbeat'])
 
     node_actions.append(
         Node(
@@ -79,6 +84,9 @@ def generate_launch_description():
     # Preparing monitored node lists for manager
     lifecycle_manager_pkg = get_package_share_directory(
         'mrp_lifecycle_manager')
+    # Load settings
+    with open(os.path.join(lifecycle_manager_pkg, settings_path), 'r') as config_stream:
+        lifecycle_manager_settings = yaml.safe_load(config_stream)
 
     node_actions.append(
         Node(
@@ -87,14 +95,16 @@ def generate_launch_description():
             output='screen',
             namespace=robot_name,
             arguments=['--ros-args'],
-            parameters=[{'node_names': monitored_nodes.perform(context)},
-                        {'heartbeat_interval': heartbeat_interval.perform(context)}]
-        ))
+            parameters=[{'node_names': components_list},
+                        {'heartbeat_interval': heartbeat_list},
+                        lifecycle_manager_settings]))
 
     load_nodes = GroupAction(node_actions)
 
     ld.add_action(declare_robot_name_arg)
     ld.add_action(declare_use_sim_time_arg)
+    ld.add_action(declare_auto_start_arg)
+    ld.add_action(declare_container_name_arg)
     ld.add_action(declare_log_level_arg)
 
     ld.add_action(load_nodes)
