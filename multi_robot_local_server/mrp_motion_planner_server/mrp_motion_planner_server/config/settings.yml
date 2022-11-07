@@ -1,0 +1,12 @@
+general:
+  health:
+    heartbeat: 1000.0
+
+planners:
+  default_planner: spotturn
+  planner_name_list:
+    - spotturn
+    - rvo
+  planner_name_plugin_mapping:
+    - mrp_motion_planner::SpotturnController
+    - mrp_motion_planner::RVO

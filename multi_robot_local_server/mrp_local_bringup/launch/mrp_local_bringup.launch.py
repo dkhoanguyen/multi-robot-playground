@@ -1,4 +1,5 @@
 import os
+from platform import node
 import yaml
 
 from ament_index_python.packages import get_package_share_directory
@@ -9,19 +10,32 @@ from launch.actions import (DeclareLaunchArgument, GroupAction,
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import TextSubstitution, LaunchConfiguration
-from launch_ros.actions import Node
-from launch_ros.actions import PushRosNamespace
+from launch_ros.actions import SetParameter, Node
 
 
 def generate_launch_description():
     ld = LaunchDescription()
 
-    # This should be environment variable
-    robot_name_arg = DeclareLaunchArgument(
-        "robot_name", default_value=TextSubstitution(text="robot")
-    )
-    ld.add_action(robot_name_arg)
+    # Declare launch configurations
+    robot_name = LaunchConfiguration('robot_name')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    auto_start = LaunchConfiguration('autostart')
+    use_composition = LaunchConfiguration('use_composition')
+    container_name = LaunchConfiguration('container_name')
+    log_level = LaunchConfiguration('log_level')
 
+    # This should be environment variable
+    declare_robot_name_arg = DeclareLaunchArgument(
+        "robot_name", default_value=TextSubstitution(text="robot"))
+    declare_use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation (Gazebo) clock if true')
+    declare_log_level_arg = DeclareLaunchArgument(
+        'log_level', default_value='info',
+        description='log level')
+
+    #
     local_bringup_pkg = get_package_share_directory(
         'mrp_local_bringup')
 
@@ -29,41 +43,59 @@ def generate_launch_description():
     with open(os.path.join(local_bringup_pkg, settings_path), 'r') as config_stream:
         settings = yaml.safe_load(config_stream)
 
-    server_names = []
-    heartbeats = []
-    # Load all servers
-    for server_name, server_config in settings['servers'].items():
-        server_pkg = get_package_share_directory(
-            f'mrp_{server_name}_server')
+    # This is for lifecycle manager
+    components_list = [
+        'motion_planner'
+    ]
+    heartbeat_list = []
 
-        # Load servers accordingly
-        ld.add_action(IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(server_pkg, 'launch',
-                             f'{server_name}_server.launch.py')
-            ),
-            launch_arguments=[
-                ('robot_name', LaunchConfiguration('robot_name'))
-            ]
-        ))
-        
-        # Preparations for lifecycle_manager
-        server_names.append(server_name)
-        heartbeats.append(server_config['heartbeat'])
+    # Preparing to load node
+    node_actions = [
+        SetParameter("use_sim_time", use_sim_time),
+    ]
 
+    # Load components
+    # Motion planner
+    motion_planner_server_pkg = get_package_share_directory(
+        'mrp_motion_planner_server')
+    # Load parameters
+    with open(os.path.join(motion_planner_server_pkg, settings_path), 'r') as config_stream:
+        motion_planner_settings = yaml.safe_load(config_stream)
+        heartbeat_list.append(
+            motion_planner_settings['generals']['health']['heartbeat'])
+
+    node_actions.append(
+        Node(
+            package='mrp_motion_planner_server',
+            executable='motion_planner_server_exec',
+            output='screen',
+            namespace=robot_name,
+            arguments=['--ros-args', '--log-level', log_level],
+            parameters=[motion_planner_settings]
+        )
+    )
+
+    # Finally lifecycle manager
+    # Preparing monitored node lists for manager
     lifecycle_manager_pkg = get_package_share_directory(
         'mrp_lifecycle_manager')
-    # lifecycle manager
-    ld.add_action(IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(lifecycle_manager_pkg, 'launch',
-                         'lifecycle_manager.launch.py')
-        ),
-        launch_arguments=[
-            ('robot_name', LaunchConfiguration('robot_name')),
-            ('monitored_nodes', server_names),
-            ('heartbeat_interval', str(heartbeats))
-        ]
-    ))
 
+    node_actions.append(
+        Node(
+            package='mrp_lifecycle_manager',
+            executable='lifecycle_manager',
+            output='screen',
+            namespace=robot_name,
+            arguments=['--ros-args'],
+            parameters=[{'node_names': monitored_nodes.perform(context)},
+                        {'heartbeat_interval': heartbeat_interval.perform(context)}]
+        ))
+
+    load_nodes = GroupAction(node_actions)
+
+    ld.add_action(declare_robot_name_arg)
+    ld.add_action(declare_use_sim_time_arg)
+    ld.add_action(declare_log_level_arg)
+
+    ld.add_action(load_nodes)
     return ld
