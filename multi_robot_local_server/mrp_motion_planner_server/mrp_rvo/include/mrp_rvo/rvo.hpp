@@ -23,13 +23,9 @@ namespace mrp_motion_planner
     void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path);
     void calculateVelocityCommand(
         const geometry_msgs::msg::Pose &current_pose,
+        const std::vector<nav_msgs::msg::Odometry> &members_odom,
+        sensor_msgs::msg::LaserScan &scan,
         geometry_msgs::msg::Twist &vel_cmd);
-
-    // Consider the intension of other robots
-    void setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &members_odom);
-
-    // Consider what the robot sees (laser scan)
-    void setLaserScan(const sensor_msgs::msg::LaserScan &scan);
 
     double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose);
 

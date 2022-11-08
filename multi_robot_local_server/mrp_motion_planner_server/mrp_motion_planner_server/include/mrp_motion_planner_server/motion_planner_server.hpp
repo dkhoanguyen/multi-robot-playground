@@ -17,6 +17,8 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_msgs/action/follow_path.hpp"
 
+#include "sensor_msgs/msg/laser_scan.hpp"
+
 #include "mrp_common/lifecycle_node.hpp"
 #include "mrp_common/service_client.hpp"
 #include "mrp_common/action_server.hpp"
@@ -70,6 +72,13 @@ namespace mrp_motion_planner
       std::atomic<bool> ready{false};
     };
 
+    struct RobotLaserScan
+    {
+      sensor_msgs::msg::LaserScan current_scan;
+      std::recursive_mutex mtx;
+      std::atomic<bool> ready{false};
+    };
+
     // Motion planner
     std::shared_ptr<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>> loader_ptr_;
     std::shared_ptr<mrp_local_server_core::MotionPlannerInterface> planner_ptr_;
@@ -83,6 +92,9 @@ namespace mrp_motion_planner
     // Robot Odom
     std::shared_ptr<RobotOdom> robot_odom_;
 
+    // Laser scan
+    std::shared_ptr<RobotLaserScan> robot_scan_;
+    
     // Publisher for cmd_vel
     std::string robot_cmd_vel_topic_name_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr robot_cmd_vel_pub_;
@@ -92,6 +104,11 @@ namespace mrp_motion_planner
     std::string robot_odom_topic_name_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_odom_sub_;
     void createOdomSubscriber();
+
+    // Subscriber for getting laser scan of the robot
+    std::string robot_scan_topic_name_;
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr robot_scan_sub_;
+    void createLaserScanSubscriber();
 
     // Action server for path execution
     std::shared_ptr<mrp_common::ActionServer<nav2_msgs::action::FollowPath>> follow_path_action_server_;

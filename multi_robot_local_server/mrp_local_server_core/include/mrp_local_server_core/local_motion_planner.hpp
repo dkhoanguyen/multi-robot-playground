@@ -18,16 +18,13 @@ namespace mrp_local_server_core
     virtual void stop() = 0;
 
     // Target
+    // We should change laser scan to cost map in the future
     virtual void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path) = 0;
     virtual void calculateVelocityCommand(
         const geometry_msgs::msg::Pose &current_pose,
+        const std::vector<nav_msgs::msg::Odometry> &members_odom,
+        sensor_msgs::msg::LaserScan &scan,
         geometry_msgs::msg::Twist &vel_cmd) = 0;
-
-    // Consider the intension of other robots
-    virtual void setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &members_odom) = 0;
-
-    // Consider what the robot sees (laser scan)
-    virtual void setLaserScan(const sensor_msgs::msg::LaserScan &scan) = 0;
 
     // For feedback
     virtual double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose) = 0;

@@ -5,11 +5,8 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, GroupAction,
-                            IncludeLaunchDescription, SetEnvironmentVariable)
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import TextSubstitution, LaunchConfiguration
+from launch.actions import (DeclareLaunchArgument, GroupAction)
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import SetParameter, Node
 
 
@@ -50,6 +47,9 @@ def generate_launch_description():
 
     # This is for lifecycle manager
     components_list = [
+        # 'robot_comms',
+        # 'task_planner',
+        # 'task_execution',
         'motion_planner'
     ]
     heartbeat_list = []
@@ -94,10 +94,10 @@ def generate_launch_description():
             executable='lifecycle_manager',
             output='screen',
             namespace=robot_name,
-            arguments=['--ros-args'],
+            arguments=['--ros-args', '--log-level', log_level],
             parameters=[{'node_names': components_list},
                         {'heartbeat_interval': heartbeat_list},
-                        lifecycle_manager_settings]))
+                        lifecycle_manager_settings['general']]))
 
     load_nodes = GroupAction(node_actions)
 

@@ -50,9 +50,11 @@ namespace mrp_motion_planner
 
   void SpotTurn::calculateVelocityCommand(
       const geometry_msgs::msg::Pose &current_pose,
+      const std::vector<nav_msgs::msg::Odometry> &members_odom,
+      sensor_msgs::msg::LaserScan &scan,
       geometry_msgs::msg::Twist &vel_cmd)
   {
-    if(current_waypoint_indx_ == path_.size())
+    if (current_waypoint_indx_ == path_.size())
     {
       return;
     }
@@ -85,16 +87,8 @@ namespace mrp_motion_planner
     return reach_goal_;
   }
 
-  void SpotTurn::setMembersOdom(const std::vector<nav_msgs::msg::Odometry> &others_odom)
-  {
-  }
-
-  void SpotTurn::setLaserScan(const sensor_msgs::msg::LaserScan &scan)
-  {
-  }
-
   double SpotTurn::calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                                     const geometry_msgs::msg::Pose &current_waypoint)
+                                           const geometry_msgs::msg::Pose &current_waypoint)
   {
     double distance = mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
 
@@ -145,7 +139,7 @@ namespace mrp_motion_planner
     return linear_vel;
   }
   double SpotTurn::calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                                      const geometry_msgs::msg::Pose &current_waypoint)
+                                            const geometry_msgs::msg::Pose &current_waypoint)
   {
     double x1 = current_pose.position.x;
     double x2 = current_waypoint.position.x;

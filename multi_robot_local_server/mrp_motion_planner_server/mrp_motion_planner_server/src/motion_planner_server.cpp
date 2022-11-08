@@ -369,11 +369,19 @@ namespace mrp_motion_planner
       member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
     }
 
-    // Calculate velocity command to move through path from the current position
-    planner_ptr_->setMembersOdom(member_odom);
+    // Get current scan
+    sensor_msgs::msg::LaserScan current_scan;
+    {
+      std::unique_lock<std::recursive_mutex> lck(robot_scan_->mtx);
+      current_scan = robot_scan_->current_scan;
+    }
 
     geometry_msgs::msg::Twist control_velocity;
-    planner_ptr_->calculateVelocityCommand(robot_current_odom.pose.pose, control_velocity);
+    planner_ptr_->calculateVelocityCommand(
+        robot_current_odom.pose.pose,
+        member_odom,
+        current_scan,
+        control_velocity);
 
     // Create feedback
     std::shared_ptr<nav2_msgs::action::FollowPath::Feedback> feedback =
@@ -436,6 +444,21 @@ namespace mrp_motion_planner
           std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
           robot_odom_->current_odom = *msg;
           robot_odom_->ready = true;
+        });
+  }
+
+  void MotionPlannerServer::createLaserScanSubscriber()
+  {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Subscribing to laser scan for this robot");
+    robot_scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
+        robot_scan_topic_name_, 10,
+        [this](const sensor_msgs::msg::LaserScan::SharedPtr msg)
+        {
+          std::unique_lock<std::recursive_mutex> lck(robot_scan_->mtx);
+          robot_scan_->current_scan = *msg;
+          robot_scan_->ready = true;
         });
   }
 
