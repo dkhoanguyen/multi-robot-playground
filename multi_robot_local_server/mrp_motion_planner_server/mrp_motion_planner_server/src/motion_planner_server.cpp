@@ -84,6 +84,9 @@ namespace mrp_motion_planner
     // Request list of all member robots in the current team
     registerMemberRobots();
 
+    // Activating follow_path action server
+    follow_path_action_server_->activate();
+
     // Start beating
     startHeartbeat();
 

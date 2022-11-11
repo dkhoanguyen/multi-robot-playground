@@ -7,39 +7,41 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from nav2_msgs.action import FollowPath
 from nav_msgs.msg import Path
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 
 from tf_transformations import quaternion_from_euler
 
 class PathRequestClient(Node):
     def __init__(self, robot_name='robot'):
-        super.__init__('PathRequestClient')
+        super().__init__('PathRequestClient')
         self._action_client = ActionClient(
-            self, FollowPath, f'/{robot_name}/motion_planner/follow_path')
+            self, FollowPath, f'/{robot_name}/follow_path')
 
     def send_goal(self, raw_path):
         goal_msg = FollowPath.Goal()
         path = Path()
 
         for waypoint in raw_path:
-            pose = Pose()
-            pose.position.x = waypoint['position']['x']
-            pose.position.y = waypoint['position']['y']
-            pose.position.z = waypoint['position']['z']
+            pose = PoseStamped()
+            pose.pose.position.x = waypoint['position']['x']
+            pose.pose.position.y = waypoint['position']['y']
+            pose.pose.position.z = waypoint['position']['z']
 
             r = waypoint['orientation']['r']
             p = waypoint['orientation']['p']
             y = waypoint['orientation']['y']
 
             quat = quaternion_from_euler(r, p, y)
-            pose.orientation.x = quat[0]
-            pose.orientation.y = quat[1]
-            pose.orientation.z = quat[2]
-            pose.orientation.w = quat[3]
+            pose.pose.orientation.x = quat[0]
+            pose.pose.orientation.y = quat[1]
+            pose.pose.orientation.z = quat[2]
+            pose.pose.orientation.w = quat[3]
             path.poses.append(pose)
 
         goal_msg.path = path
+        print("waiting for server")
         self._action_client.wait_for_server(1)
+        print("Action server is ready")
 
         self._send_goal_future = self._action_client.send_goal_async(
             goal_msg, feedback_callback=self.feedback_callback)
@@ -99,8 +101,9 @@ def main(args=None):
     
 
     action_client = PathRequestClient()
-    action_client.send_goal()
+    action_client.send_goal(robot0_waypoints)
 
+    print("Done sending goal")
     rclpy.spin(action_client)
 
 

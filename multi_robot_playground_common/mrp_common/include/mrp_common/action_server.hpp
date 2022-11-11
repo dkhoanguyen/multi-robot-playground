@@ -81,6 +81,7 @@ namespace mrp_common
     rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID &uuid,
                                            std::shared_ptr<const typename ActionType::Goal> goal)
     {
+      std::cout << "Heyyyadsaudy" << std::endl;
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       if (!server_active_)
       {

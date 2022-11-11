@@ -30,7 +30,7 @@ def generate_launch_description():
     declare_auto_start_arg = DeclareLaunchArgument(
         'autostart',
         default_value='false')
-    declare_container_name_arg  = DeclareLaunchArgument(
+    declare_container_name_arg = DeclareLaunchArgument(
         'container_name',
         default_value='servers_container')
     declare_log_level_arg = DeclareLaunchArgument(
@@ -47,10 +47,10 @@ def generate_launch_description():
 
     # This is for lifecycle manager
     components_list = [
-        # 'robot_comms',
-        # 'task_planner',
-        # 'task_execution',
-        'motion_planner'
+        # 'robot_comms_server',
+        # 'task_planner_server',
+        # 'task_execution_server',
+        'motion_planner_server'
     ]
     heartbeat_list = []
 
@@ -98,6 +98,15 @@ def generate_launch_description():
             parameters=[{'node_names': components_list},
                         {'heartbeat_interval': heartbeat_list},
                         lifecycle_manager_settings['general']]))
+
+    node_actions.append(
+        Node(
+            package='multi_robot_component_testing',
+            executable='minimal_service_server',
+            output='screen',
+            namespace=robot_name,
+            arguments=['--ros-args']
+        ))
 
     load_nodes = GroupAction(node_actions)
 

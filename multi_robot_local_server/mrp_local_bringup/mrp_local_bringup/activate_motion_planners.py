@@ -7,7 +7,7 @@ from mrp_common_msgs.srv import MonitoredNodeArray
 
 
 class StateChangeRequestClient(Node):
-    def __init__(self, robot_name='robot0'):
+    def __init__(self, robot_name='robot'):
         super().__init__('minimal_client_async')
         self.cli = self.create_client(MonitoredNodeArray, f'/{robot_name}/lifecycle_manager/change_monitored_nodes_state')
         while not self.cli.wait_for_service(timeout_sec=1.0):

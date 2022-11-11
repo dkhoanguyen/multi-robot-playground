@@ -15,7 +15,7 @@ namespace mrp_component_testing
   {
   public:
     MinimalServiceServer(rclcpp::Node::SharedPtr node,
-                         std::string service_name = "/robot0/get_members_from_team");
+                         std::string service_name = "/robot/get_members_from_team");
     ~MinimalServiceServer();
 
     void execute(std::shared_ptr<mrp_comms_msgs::srv::GetMembersInTeam::Request> &request,
