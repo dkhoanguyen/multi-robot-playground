@@ -1,6 +1,6 @@
 <class_libraries>
-    <library path="rvo">
-        <class type="mrp_motion_planner::SpotturnController" base_class_type="mrp_local_server_core::MotionPlannerInterface">
+    <library path="spotturn">
+        <class type="mrp_motion_planner::SpotTurn" base_class_type="mrp_local_server_core::MotionPlannerInterface">
             <description></description>
         </class>
     </library>

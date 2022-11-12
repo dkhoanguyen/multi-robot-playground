@@ -50,6 +50,7 @@ ament_target_dependencies(${library_name} ${dependencies})
 
 install(
   TARGETS ${library_name}
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -76,4 +77,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+
+pluginlib_export_plugin_description_file(mrp_local_server_core plugins.xml)
+ament_export_include_directories(include)
+ament_export_libraries(
+  ${library_name})
+ament_export_targets(
+    export_${PROJECT_NAME})
+ament_export_dependencies(${dependencies})
 ament_package()

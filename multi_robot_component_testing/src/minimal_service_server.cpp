@@ -16,7 +16,7 @@ namespace mrp_component_testing
   {
     std::cout << "MinimalServiceServer" << std::endl;
     std::cout << "Team ID: " << (int)request->team_id << std::endl;
-    response->member_name_list = {"robot0", "robot1", "robot2", "robot3"};
+    response->member_name_list = {"robot0", "robot1"};
     // std::cout << request->data << std::endl;
     // response->success = true;
     // response->message = "Hello";

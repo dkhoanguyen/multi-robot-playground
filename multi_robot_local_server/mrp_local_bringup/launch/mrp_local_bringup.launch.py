@@ -76,7 +76,10 @@ def generate_launch_description():
             output='screen',
             namespace=robot_name,
             arguments=['--ros-args', '--log-level', log_level],
-            parameters=[motion_planner_settings]
+            parameters=[
+                {'planner_name_list': motion_planner_settings['planners']['planner_name_list'],
+                 'planner_name_plugin_mapping': motion_planner_settings['planners']['planner_name_plugin_mapping'],
+                 'planner_plugin': motion_planner_settings['planners']['default_planner']}]
         )
     )
 

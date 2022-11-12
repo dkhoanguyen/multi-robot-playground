@@ -19,6 +19,9 @@ namespace mrp_motion_planner
     // Motion planner params
     declare_parameter<double>("planner_rate", 100.0); // Planner rate
     declare_parameter<std::string>("planner_plugin", "rvo");
+
+    robot_odom_ = std::make_shared<RobotOdom>();
+    robot_odom_->ready = false;
   }
 
   MotionPlannerServer::~MotionPlannerServer()
@@ -44,11 +47,14 @@ namespace mrp_motion_planner
     robot_odom_topic_name_ = robot_name_ + "/odom";
 
     // Extract planner names and definition from param server
-    for (unsigned int idx; idx < planner_names.size(); idx++)
+    for (unsigned int idx = 0; idx < planner_names.size(); idx++)
     {
       // Only add to map if the key does not exist
       if (planner_name_map_.find(planner_names.at(idx)) == planner_name_map_.end())
       {
+        mrp_common::Log::basicDebug(
+            get_node_logging_interface(),
+            "Adding " + planner_mapping.at(idx) + " to planner map");
         planner_name_map_[planner_names.at(idx)] = planner_mapping.at(idx);
       }
     }
@@ -67,6 +73,8 @@ namespace mrp_motion_planner
 
     // Initialise heartbeat
     initialiseHeartbeat();
+
+    // Should we load planner here ?
 
     return true;
   }
@@ -198,8 +206,17 @@ namespace mrp_motion_planner
     planner_name_ = planner_name;
     try
     {
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "Creating " + planner_name_);
       planner_ptr_ = loader_ptr_->createSharedInstance(planner_name_map_[planner_name_]);
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "Initialing " + planner_name_);
       planner_ptr_->initialise();
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "Successfully initialised " + planner_name_);
     }
     catch (pluginlib::PluginlibException &ex)
     {
@@ -272,6 +289,9 @@ namespace mrp_motion_planner
         loadPlanner(MotionPlannerServer::FALLBACK_PLANNER);
       }
 
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "Setting path");
       // Set path
       planner_ptr_->setPath(follow_path_action_server_->getCurrentGoal()->path.poses);
 
@@ -282,8 +302,14 @@ namespace mrp_motion_planner
         // Can't start until we have odom data of ourselves
         if (!robot_odom_->ready)
         {
-          return;
+          mrp_common::Log::basicWarn(
+              get_node_logging_interface(),
+              "Robot odom is not ready");
+          loop_rate.sleep();
+          continue;
         }
+
+        std::cout << "Robot odom ready" << std::endl;
 
         // We can't start until we receive all odom data from other team members
         if (!all_members_odom_ready_)
@@ -292,11 +318,18 @@ namespace mrp_motion_planner
           {
             if (!member_robots_odom_data_map_[robot_name]->ready)
             {
-              return;
+              mrp_common::Log::basicWarn(
+                  get_node_logging_interface(),
+                  "Member robot odom is not ready");
+              loop_rate.sleep();
+              all_members_odom_ready_ = false;
+              continue;
             }
           }
           all_members_odom_ready_ = true;
         }
+
+        std::cout << "Other robot odom ready" << std::endl;
 
         // If action server is inactive -> terminate
         if (follow_path_action_server_ == nullptr || !follow_path_action_server_->isServerActive())

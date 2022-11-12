@@ -1,5 +1,5 @@
-#ifndef MRP_LOCAL_SERVER_CORE_LOCAL_CONTROLLER_SERVER_HPP_
-#define MRP_LOCAL_SERVER_CORE_LOCAL_CONTROLLER_SERVER_HPP_
+#ifndef MRP_LOCAL_SERVER_CORE_LOCAL_MOTION_PLANNER_HPP_
+#define MRP_LOCAL_SERVER_CORE_LOCAL_MOTION_PLANNER_HPP_
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -32,6 +32,6 @@ namespace mrp_local_server_core
     // For accessing
     virtual bool reachGoal() = 0;
   };
-};
+}
 
 #endif
