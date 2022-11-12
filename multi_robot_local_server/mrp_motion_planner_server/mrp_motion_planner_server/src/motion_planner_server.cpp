@@ -12,6 +12,8 @@ namespace mrp_motion_planner
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
     planner_name_ = planner_name;
 
+    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_motion_planner::RVO");
+
     // Get all available plugins for planner
     declare_parameter<std::vector<std::string>>("planner_name_list", std::vector<std::string>());
     declare_parameter<std::vector<std::string>>("planner_name_plugin_mapping", std::vector<std::string>());
