@@ -24,6 +24,9 @@ namespace mrp_motion_planner
 
     robot_odom_ = std::make_shared<RobotOdom>();
     robot_odom_->ready = false;
+
+    robot_scan_ = std::make_shared<RobotLaserScan>();
+    robot_scan_->ready = false;
   }
 
   MotionPlannerServer::~MotionPlannerServer()
@@ -47,6 +50,8 @@ namespace mrp_motion_planner
     robot_name_ = get_namespace();
     robot_cmd_vel_topic_name_ = robot_name_ + "/cmd_vel";
     robot_odom_topic_name_ = robot_name_ + "/odom";
+    robot_scan_topic_name_ = robot_name_ + "/scan";
+    std::cout << robot_scan_topic_name_ << std::endl;
 
     // Extract planner names and definition from param server
     for (unsigned int idx = 0; idx < planner_names.size(); idx++)
@@ -90,6 +95,8 @@ namespace mrp_motion_planner
     robot_cmd_vel_pub_->on_activate();
 
     createOdomSubscriber();
+
+    createLaserScanSubscriber();
 
     // Request list of all member robots in the current team
     registerMemberRobots();
@@ -279,7 +286,7 @@ namespace mrp_motion_planner
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Begin computing control command");
-    try
+    // try
     {
       // Load planner first
       if (!loadPlanner(planner_name_))
@@ -311,11 +318,12 @@ namespace mrp_motion_planner
           continue;
         }
 
-        std::cout << "Robot odom ready" << std::endl;
+        // std::cout << "Robot odom ready" << std::endl;
 
         // We can't start until we receive all odom data from other team members
         if (!all_members_odom_ready_)
         {
+          bool reset_loop = false;
           for (const std::string &robot_name : member_robots_names_)
           {
             if (!member_robots_odom_data_map_[robot_name]->ready)
@@ -325,13 +333,30 @@ namespace mrp_motion_planner
                   "Member robot odom is not ready");
               loop_rate.sleep();
               all_members_odom_ready_ = false;
+              reset_loop = true;
               continue;
             }
+          }
+          if (reset_loop)
+          {
+            loop_rate.sleep();
+            continue;
           }
           all_members_odom_ready_ = true;
         }
 
-        std::cout << "Other robot odom ready" << std::endl;
+        // std::cout << "Other robot odom ready" << std::endl;
+
+        if (!robot_scan_->ready)
+        {
+          mrp_common::Log::basicWarn(
+              get_node_logging_interface(),
+              "Robot scan is not ready");
+          loop_rate.sleep();
+          continue;
+        }
+
+        // std::cout << "Robot scan ready" << std::endl;
 
         // If action server is inactive -> terminate
         if (follow_path_action_server_ == nullptr || !follow_path_action_server_->isServerActive())
@@ -361,11 +386,17 @@ namespace mrp_motion_planner
 
         if (reachEndOfPath())
         {
-          mrp_common::Log::basicInfo(
-              get_node_logging_interface(),
-              "Reach goal");
-          publishZeroVelocity();
+          // std::cout << "Reach goal" << std::endl;
+          // mrp_common::Log::basicInfo(
+          //     get_node_logging_interface(),
+          //     "Reach goal");
+          // publishZeroVelocity();
+          std::cout << "Heyyy" << std::endl;
           break;
+        }
+        else
+        {
+          std::cout << "WTF" << std::endl;
         }
 
         if (!loop_rate.sleep())
@@ -376,16 +407,20 @@ namespace mrp_motion_planner
         }
       }
     }
-    catch (const std::exception &e)
-    {
-      std::cerr << e.what() << '\n';
-    }
+    // catch (const std::exception &e)
+    // {
+    //   std::cout << "We captured an exception " << e.what() << std::endl;
+    //   std::cerr << e.what() << '\n';
+    // }
 
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Controller succeeded. Sending back result");
 
-    follow_path_action_server_->succeededCurrent();
+    std::shared_ptr<nav2_msgs::action::FollowPath::Result> result =
+        std::make_shared<nav2_msgs::action::FollowPath::Result>();
+    result->result = std_msgs::msg::Empty();
+            follow_path_action_server_->succeededCurrent(result);
   }
 
   void MotionPlannerServer::updatePath()
@@ -407,12 +442,15 @@ namespace mrp_motion_planner
       member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
     }
 
+    // std::cout << "Member Odom size: " << member_odom.size() << std::endl;
+
     // Get current scan
     sensor_msgs::msg::LaserScan current_scan;
     {
       std::unique_lock<std::recursive_mutex> lck(robot_scan_->mtx);
       current_scan = robot_scan_->current_scan;
     }
+    // std::cout << "Scan seems fine" << std::endl;
 
     geometry_msgs::msg::Twist control_velocity;
     planner_ptr_->calculateVelocityCommand(
@@ -421,17 +459,20 @@ namespace mrp_motion_planner
         current_scan,
         control_velocity);
 
-    // Create feedback
-    std::shared_ptr<nav2_msgs::action::FollowPath::Feedback> feedback =
-        std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
-    feedback->distance_to_goal = planner_ptr_->getDistanceToGoal(robot_current_odom.pose.pose);
-    feedback->speed = std::hypot(control_velocity.linear.x, control_velocity.linear.y);
+    // std::cout << "Linear velocity: " << control_velocity.linear.x << std::endl;
+    // std::cout << "Angular velocity: " << control_velocity.angular.z << std::endl;
+
+    // // Create feedback
+    // std::shared_ptr<nav2_msgs::action::FollowPath::Feedback> feedback =
+    //     std::make_shared<nav2_msgs::action::FollowPath::Feedback>();
+    // feedback->distance_to_goal = planner_ptr_->getDistanceToGoal(robot_current_odom.pose.pose);
+    // feedback->speed = std::hypot(control_velocity.linear.x, control_velocity.linear.y);
 
     // Publish control command
     robot_cmd_vel_pub_->publish(control_velocity);
 
-    // Publish feedback
-    follow_path_action_server_->publishFeedback(feedback);
+    // // Publish feedback
+    // follow_path_action_server_->publishFeedback(feedback);
   }
 
   bool MotionPlannerServer::reachEndOfPath()
@@ -474,7 +515,7 @@ namespace mrp_motion_planner
   {
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
-        "Subscribing to robot odom for this robot");
+        "Subscribing to robot odom for topic " + robot_odom_topic_name_);
     robot_odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
         robot_odom_topic_name_, 10,
         [this](const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -489,7 +530,7 @@ namespace mrp_motion_planner
   {
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
-        "Subscribing to laser scan for this robot");
+        "Subscribing to laser scan for topic " + robot_scan_topic_name_);
     robot_scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
         robot_scan_topic_name_, 10,
         [this](const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -583,9 +624,14 @@ namespace mrp_motion_planner
 
     for (const std::string robot_name : member_robots_names_)
     {
+      if (robot_name == robot_name_)
+      {
+        continue;
+      }
+      std::cout << "Registering robot " << robot_name << std::endl;
       member_robots_odom_data_map_[robot_name] = std::make_shared<RobotOdom>();
       member_robots_odom_sub_map_[robot_name] = create_subscription<nav_msgs::msg::Odometry>(
-          robot_name + "/odom", 10,
+          "/" + robot_name + "/odom", 10,
           [this, robot_name](const nav_msgs::msg::Odometry::SharedPtr msg)
           {
             std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);

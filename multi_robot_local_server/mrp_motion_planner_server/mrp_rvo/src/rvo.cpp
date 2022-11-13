@@ -19,22 +19,18 @@ namespace mrp_motion_planner
 
   void RVO::start()
   {
-
   }
 
   void RVO::stop()
   {
-
   }
 
   void RVO::resume()
   {
-
   }
 
   void RVO::pause()
   {
-    
   }
 
   void RVO::setLinearMax(const double &linear_max)
@@ -83,16 +79,17 @@ namespace mrp_motion_planner
 
     if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
     {
-      if (current_waypoint_indx_ < path_.size())
-      {
-        current_waypoint_indx_++;
-      }
-      else
+      if (++current_waypoint_indx_ == path_.size())
       {
         reach_goal_ = true;
+        // std::cout << current_waypoint_indx_ == path_.size() ? "True" : "False" << std::endl;
       }
       at_position_ = false;
     }
+    std::cout << "Path size: " << path_.size() << std::endl;
+    std::cout << "Path size == index: " << (int)(path_.size() == current_waypoint_indx_)<< std::endl;
+    std::cout << "Current waypoint: " << current_waypoint_indx_ << std::endl;
+    std::cout << "Reach goal: " << reach_goal_ << std::endl;
   }
 
   double RVO::getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose)
@@ -107,7 +104,7 @@ namespace mrp_motion_planner
   }
 
   double RVO::calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                           const geometry_msgs::msg::Pose &current_waypoint)
+                                      const geometry_msgs::msg::Pose &current_waypoint)
   {
     double distance = mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
 
@@ -158,7 +155,7 @@ namespace mrp_motion_planner
     return linear_vel;
   }
   double RVO::calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                            const geometry_msgs::msg::Pose &current_waypoint)
+                                       const geometry_msgs::msg::Pose &current_waypoint)
   {
     double x1 = current_pose.position.x;
     double x2 = current_waypoint.position.x;
