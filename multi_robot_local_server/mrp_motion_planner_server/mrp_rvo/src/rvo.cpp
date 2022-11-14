@@ -82,14 +82,9 @@ namespace mrp_motion_planner
       if (++current_waypoint_indx_ == path_.size())
       {
         reach_goal_ = true;
-        // std::cout << current_waypoint_indx_ == path_.size() ? "True" : "False" << std::endl;
       }
       at_position_ = false;
     }
-    std::cout << "Path size: " << path_.size() << std::endl;
-    std::cout << "Path size == index: " << (int)(path_.size() == current_waypoint_indx_)<< std::endl;
-    std::cout << "Current waypoint: " << current_waypoint_indx_ << std::endl;
-    std::cout << "Reach goal: " << reach_goal_ << std::endl;
   }
 
   double RVO::getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose)

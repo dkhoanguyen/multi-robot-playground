@@ -140,6 +140,8 @@ namespace mrp_motion_planner
     // Other utils functions
     void publishVelocity(const geometry_msgs::msg::Twist &control_velocity);
     void publishZeroVelocity();
+
+    void publishFeedback();
   };
 }
 
