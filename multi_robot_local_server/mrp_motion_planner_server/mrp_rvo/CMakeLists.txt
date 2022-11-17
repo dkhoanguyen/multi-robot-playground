@@ -26,6 +26,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(mrp_common REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3)
+find_package(ifopt REQUIRED)
+find_package(osqp REQUIRED)
 
 include_directories(
   include
@@ -39,14 +41,28 @@ set(dependencies
   geometry_msgs
   Eigen3
   mrp_common
+  osqp
+  ifopt
 )
 
 set(library_name rvo)
 add_library(${library_name} SHARED
   src/rvo.cpp
+  src/orca.cpp
 )
 
 ament_target_dependencies(${library_name} ${dependencies})
+
+set(executable_name test_rvo)
+add_executable(${executable_name}
+  src/main.cpp
+)
+
+ament_target_dependencies(${library_name} ${dependencies})
+
+target_link_libraries(${executable_name} 
+  ${library_name}
+)
 
 install(
   TARGETS ${library_name}
@@ -54,6 +70,9 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+install(TARGETS ${executable_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(FILES plugins.xml
   DESTINATION share

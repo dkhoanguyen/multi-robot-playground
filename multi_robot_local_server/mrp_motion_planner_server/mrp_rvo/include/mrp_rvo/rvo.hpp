@@ -13,6 +13,12 @@
 
 #include "mrp_common/utils.hpp"
 
+// #include "OsqpEigen/OsqpEigen.h"
+#include "osqp/osqp.h"
+#include "ifopt/variable_set.h"
+// #include "ceres/ceres.h"
+
+
 namespace mrp_motion_planner
 {
   class RVO : public mrp_local_server_core::MotionPlannerInterface

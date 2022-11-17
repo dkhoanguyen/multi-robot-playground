@@ -598,6 +598,7 @@ namespace mrp_motion_planner
 
     for (const std::string robot_name : member_robots_names_)
     {
+      // We ignore this robot
       if (robot_name == robot_name_)
       {
         continue;
