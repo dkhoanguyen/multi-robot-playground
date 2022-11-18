@@ -31,7 +31,7 @@ namespace mrp_orca
     return bounds;
   }
 
-  ORCAConstraint::ORCAConstraint() : ifopt::ConstraintSet(3, "constraints") {}
+  ORCAConstraint::ORCAConstraint() : ifopt::ConstraintSet(6, "constraints") {}
 
   ORCAConstraint::~ORCAConstraint() {}
 
@@ -42,6 +42,9 @@ namespace mrp_orca
     g(0) = 3 * x(0) + 2 * x(1);
     g(1) = -5 * x(0) + 3 * x(1);
     g(2) = -2 * x(0) - 11 * x(1);
+    g(3) = -2 * x(0) + 1 * x(1);
+    g(4) = x(0) - 2 * x(1);
+    g(5) = -4 * x(0) + x(1);
     return g;
   }
 
@@ -51,6 +54,9 @@ namespace mrp_orca
     b.at(0) = ifopt::Bounds(-ifopt::inf, 20.0);
     b.at(1) = ifopt::Bounds(-ifopt::inf, 17.0);
     b.at(2) = ifopt::Bounds(-ifopt::inf, -51.0);
+    b.at(3) = ifopt::Bounds(-ifopt::inf, 0.0);
+    b.at(4) = ifopt::Bounds(-ifopt::inf, 0.0);
+    b.at(5) = ifopt::Bounds(-ifopt::inf, 0.0);
     return b;
   }
 
@@ -68,6 +74,15 @@ namespace mrp_orca
 
       jac_block.coeffRef(2, 0) = -2.0;  // derivative of first constraint w.r.t x0
       jac_block.coeffRef(2, 1) = -11.0; // derivative of first constraint w.r.t x1
+      
+      jac_block.coeffRef(3, 0) = -2.0;  // derivative of first constraint w.r.t x0
+      jac_block.coeffRef(3, 1) = 1.0; // derivative of first constraint w.r.t x1
+
+      jac_block.coeffRef(4, 0) = 1.0;  // derivative of first constraint w.r.t x0
+      jac_block.coeffRef(4, 1) = -2.0; // derivative of first constraint w.r.t x1
+      
+      jac_block.coeffRef(5, 0) = -4.0;  // derivative of first constraint w.r.t x0
+      jac_block.coeffRef(5, 1) = 1.0; // derivative of first constraint w.r.t x1
     }
   }
 
@@ -86,7 +101,7 @@ namespace mrp_orca
     {
       Eigen::Vector2d x = GetVariables()->GetComponent("var_set1")->GetValues();
 
-      jac.coeffRef(0, 0) = -2.0 * x(0);   // derivative of cost w.r.t x0
+      jac.coeffRef(0, 0) = -2.0 * x(0); // derivative of cost w.r.t x0
       jac.coeffRef(0, 1) = -2.0 * x(1); // derivative of cost w.r.t x1
     }
   }
