@@ -14,7 +14,7 @@
 #include "mrp_common/utils.hpp"
 
 // #include "OsqpEigen/OsqpEigen.h"
-#include "osqp/osqp.h"
+// #include "osqp/osqp.h"
 #include "ifopt/variable_set.h"
 // #include "ceres/ceres.h"
 

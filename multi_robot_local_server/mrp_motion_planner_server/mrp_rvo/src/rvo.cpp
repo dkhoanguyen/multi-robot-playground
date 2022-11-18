@@ -2,6 +2,8 @@
 #include "ifopt/problem.h"
 #include "ifopt/ipopt_solver.h"
 #include "ifopt/test_vars_constr_cost.h"
+#include "mrp_rvo/orca.hpp"
+#include <chrono>
 
 namespace mrp_motion_planner
 {
@@ -23,25 +25,25 @@ namespace mrp_motion_planner
   void RVO::start()
   {
     ifopt::Problem nlp;
-    nlp.AddVariableSet  (std::make_shared<ifopt::ExVariables>());
-    nlp.AddConstraintSet(std::make_shared<ifopt::ExConstraint>());
-    nlp.AddCostSet      (std::make_shared<ifopt::ExCost>());
+    nlp.AddVariableSet  (std::make_shared<mrp_orca::ORCAVariables>());
+    nlp.AddConstraintSet(std::make_shared<mrp_orca::ORCAConstraint>());
+    nlp.AddCostSet      (std::make_shared<mrp_orca::ORCACost>());
     nlp.PrintCurrent();
 
     // 2. choose solver and options
     ifopt::IpoptSolver ipopt;
-    // ipopt.SetOption("linear_solver", "mumps");
-    // ipopt.SetOption("jacobian_approximation", "exact");
+    ipopt.SetOption("print_level", 0);
+    ipopt.SetOption("linear_solver", "mumps");
+    ipopt.SetOption("jacobian_approximation", "exact");
 
     // 3 . solve
+    auto t_start = std::chrono::high_resolution_clock::now();
     ipopt.Solve(nlp);
+    auto t_end = std::chrono::high_resolution_clock::now();
+    double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end-t_start).count();
     Eigen::VectorXd x = nlp.GetOptVariables()->GetValues();
-    std::cout << x.transpose() << std::endl;
-
-    // 4. test if solution correct
-    double eps = 1e-5; //double precision
-    assert(1.0-eps < x(0) && x(0) < 1.0+eps);
-    assert(0.0-eps < x(1) && x(1) < 0.0+eps);
+    std::cout << "Solution: "<< x.transpose() << std::endl;
+    std::cout << "Elapsed time (ms): " << elapsed_time_ms << std::endl;
   }
 
   void RVO::stop()

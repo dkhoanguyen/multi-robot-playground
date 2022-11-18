@@ -27,7 +27,6 @@ find_package(mrp_common REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3)
 find_package(ifopt REQUIRED)
-find_package(osqp REQUIRED)
 
 include_directories(
   include
@@ -41,7 +40,6 @@ set(dependencies
   geometry_msgs
   Eigen3
   mrp_common
-  osqp
   ifopt
 )
 

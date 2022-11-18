@@ -25,20 +25,24 @@ namespace mrp_orca
 
   class ORCAConstraint : public ifopt::ConstraintSet
   {
+  public:
     ORCAConstraint();
     ~ORCAConstraint();
 
     VectorXd GetValues() const override;
     VecBound GetBounds() const override;
+    void FillJacobianBlock(std::string var_set, Jacobian &jac_block) const override;
   };
 
-  // class ORCACost : public ifopt::CostTerm
-  // {
-  //   ORCACost();
-  //   ~ORCACost();
+  class ORCACost : public ifopt::CostTerm
+  {
+  public:
+    ORCACost();
+    ~ORCACost();
 
-  //   double GetCost() const override;
-  // };
+    double GetCost() const override;
+    void FillJacobianBlock(std::string var_set, Jacobian &jac) const override;
+  };
 }
 
 #endif
