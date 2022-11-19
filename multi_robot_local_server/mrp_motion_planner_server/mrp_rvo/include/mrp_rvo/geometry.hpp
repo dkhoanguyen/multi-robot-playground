@@ -3,66 +3,84 @@
 
 #include <Eigen/Dense>
 
-namespace mrp_rvo
+namespace mrp_orca
 {
-  class Line
+  namespace common
   {
-  public:
-    Line(Eigen::Vector2d normal, Eigen::Vector2d point)
-        : normal_(normal),
-          point_(point){};
-    ~Line()
+    class Line
     {
-      // Construct line equation from point and normal
-      a_ = normal_(0);
-      b_ = normal_(1);
-
-      c_ = a_ * point_(0) + b_ * point_(1);
-    };
-
-    Eigen::Vector2d point() const
-    {
-      return point_;
-    }
-
-    Eigen::Vector2d normal() const
-    {
-      return normal_;
-    }
-
-    double a() const
-    {
-      return a_;
-    }
-
-    double b() const
-    {
-      return b_;
-    }
-
-    double c() const
-    {
-      return c_;
-    }
-
-  protected:
-    Eigen::Vector2d normal_;
-    Eigen::Vector2d point_;
-    
-    // Coefficients of line equation ax + by = c
-    double a_;
-    double b_;
-    double c_;
-  };
-
-  class HalfPlane
-  {
     public:
+      Line(Eigen::Vector2d normal, Eigen::Vector2d point)
+          : normal_(normal),
+            point_(point){};
+      ~Line()
+      {
+        // Construct line equation from point and normal
+        a_ = normal_(0);
+        b_ = normal_(1);
+
+        // Line equation: a(x - x0) + b(y - y0) = 0
+        c_ = a_ * point_(0) + b_ * point_(1);
+      };
+
+      Eigen::Vector2d point() const
+      {
+        return point_;
+      }
+
+      Eigen::Vector2d normal() const
+      {
+        return normal_;
+      }
+
+      double a() const
+      {
+        return a_;
+      }
+
+      double b() const
+      {
+        return b_;
+      }
+
+      double c() const
+      {
+        return c_;
+      }
 
     protected:
-      bool upper_half_;
+      Eigen::Vector2d normal_;
+      Eigen::Vector2d point_;
 
-  };
+      // Constants of line equation ax + by = c
+      double a_;
+      double b_;
+      double c_;
+    };
+
+    class HalfPlane
+    {
+    public:
+      HalfPlane(Line line, Eigen::Vector2d direction)
+          : line_(line), direction_(direction){};
+      ~HalfPlane(){};
+
+      Line line() const
+      {
+        return line_;
+      }
+
+      Eigen::Vector2d direction() const
+      {
+        return direction_;
+      }
+
+    protected:
+      Line line_;
+      Eigen::Vector2d direction_;
+    };
+  }
+
 }
 
 #endif

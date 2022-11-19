@@ -5,8 +5,6 @@
 #include "mrp_rvo/orca.hpp"
 #include <chrono>
 
-#include "mrp_rvo/geometry.hpp"
-
 namespace mrp_motion_planner
 {
   RVO::RVO()

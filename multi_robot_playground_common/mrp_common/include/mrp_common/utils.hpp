@@ -6,6 +6,8 @@
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Transform.h"
 
+#include <Eigen/Dense>
+
 namespace mrp_common
 {
   class TransformUtils
@@ -21,6 +23,8 @@ namespace mrp_common
     static double euclideanDistance(const geometry_msgs::msg::Pose &first,
                                     const geometry_msgs::msg::Pose &second);
     static double yawFromPose(const geometry_msgs::msg::Pose &pose);
+
+    static Eigen::Vector2d projectToXY(const double &length, const double &theta);
   };
 }
 

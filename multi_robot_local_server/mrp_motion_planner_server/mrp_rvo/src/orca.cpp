@@ -74,15 +74,15 @@ namespace mrp_orca
 
       jac_block.coeffRef(2, 0) = -2.0;  // derivative of first constraint w.r.t x0
       jac_block.coeffRef(2, 1) = -11.0; // derivative of first constraint w.r.t x1
-      
-      jac_block.coeffRef(3, 0) = -2.0;  // derivative of first constraint w.r.t x0
-      jac_block.coeffRef(3, 1) = 1.0; // derivative of first constraint w.r.t x1
+
+      jac_block.coeffRef(3, 0) = -2.0; // derivative of first constraint w.r.t x0
+      jac_block.coeffRef(3, 1) = 1.0;  // derivative of first constraint w.r.t x1
 
       jac_block.coeffRef(4, 0) = 1.0;  // derivative of first constraint w.r.t x0
       jac_block.coeffRef(4, 1) = -2.0; // derivative of first constraint w.r.t x1
-      
-      jac_block.coeffRef(5, 0) = -4.0;  // derivative of first constraint w.r.t x0
-      jac_block.coeffRef(5, 1) = 1.0; // derivative of first constraint w.r.t x1
+
+      jac_block.coeffRef(5, 0) = -4.0; // derivative of first constraint w.r.t x0
+      jac_block.coeffRef(5, 1) = 1.0;  // derivative of first constraint w.r.t x1
     }
   }
 
@@ -104,5 +104,54 @@ namespace mrp_orca
       jac.coeffRef(0, 0) = -2.0 * x(0); // derivative of cost w.r.t x0
       jac.coeffRef(0, 1) = -2.0 * x(1); // derivative of cost w.r.t x1
     }
+  }
+
+  ORCA::ORCA()
+  {
+  }
+
+  ORCA::~ORCA()
+  {
+  }
+
+  mrp_orca::common::HalfPlane ORCA::construct(
+      const nav_msgs::msg::Odometry &odom_A,
+      const nav_msgs::msg::Odometry &odom_B,
+      const double &radius_A, const double &radius_B,
+      const double &delta_tau)
+  {
+    // Current position of each robot
+    // x,y,theta
+    Eigen::Vector3d A_2d_pose{
+        odom_A.pose.pose.position.x,
+        odom_A.pose.pose.position.y,
+        mrp_common::GeometryUtils::yawFromPose(odom_A.pose.pose),
+    };
+
+    Eigen::Vector3d B_2d_pose{
+        odom_B.pose.pose.position.x,
+        odom_B.pose.pose.position.y,
+        mrp_common::GeometryUtils::yawFromPose(odom_B.pose.pose),
+    };
+
+    // Get Linear velocity of each robot in the x direction for now
+    // and convert that into a vector with x y component
+    Eigen::Vector2d A_vel_vector = mrp_common::GeometryUtils::projectToXY(
+        odom_A.twist.twist.linear.x, A_2d_pose(2));
+
+    Eigen::Vector2d B_vel_vector = mrp_common::GeometryUtils::projectToXY(
+        odom_B.twist.twist.linear.x, B_2d_pose(2));
+
+    // Start constructing the ORCA half plane
+    // First find the relative velocity
+    Eigen::Vector2d rel_vel = A_vel_vector - B_vel_vector;
+
+    // Then construct the truncated collision cone
+    // Relative angle from A to B
+    double relative_heading = atan2(rel_vel(1),rel_vel(0));
+
+    // Distance from A to B
+    double distance_A_to_B = mrp_common::GeometryUtils::euclideanDistance(
+        odom_A.pose.pose, odom_B.pose.pose);
   }
 } // namespace mrp_orca

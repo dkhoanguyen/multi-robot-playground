@@ -23,6 +23,8 @@ find_package(rclcpp_components REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3 REQUIRED)
 # include_directories(
 #   include
 # )
@@ -34,6 +36,7 @@ set(dependencies
   rclcpp_lifecycle
   lifecycle_msgs
   geometry_msgs
+  Eigen3
 )
 
 set(HEADER_FILES 
@@ -53,7 +56,8 @@ add_library(${library_name} SHARED
 
 target_include_directories(${library_name} PUBLIC
 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-$<INSTALL_INTERFACE:include>)
+$<INSTALL_INTERFACE:include>
+"${Eigen3_INCLUDE_DIRS}")
 
 
 ament_target_dependencies(${library_name} ${dependencies})
@@ -91,5 +95,6 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_dependencies(${dependencies})
 ament_export_libraries(${library_name})
 ament_package()

@@ -34,4 +34,12 @@ namespace mrp_common
     m.getRPY(roll, pitch, yaw);
     return yaw;
   }
+
+  Eigen::Vector2d GeometryUtils::projectToXY(const double &length, const double &theta)
+  {
+    return Eigen::Vector2d{
+      length * cos(theta),
+      length * sin(theta)
+    };
+  }
 }

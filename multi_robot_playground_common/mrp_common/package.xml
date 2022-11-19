@@ -8,11 +8,15 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
   <build_depend>mrp_common_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>rclcpp_lifecycle</build_depend>
   <build_depend>lifecycle_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <depend>eigen</depend>
+
+  <buildtool_export_depend>eigen3_cmake_module</buildtool_export_depend>
 
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>mrp_common_msgs</exec_depend>
