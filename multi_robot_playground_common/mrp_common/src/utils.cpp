@@ -7,7 +7,7 @@ namespace mrp_common
   {
     return base_frame.inverseTimes(child_frame);
   }
-  
+
   double GeometryUtils::euclideanDistance(const geometry_msgs::msg::Pose &first,
                                           const geometry_msgs::msg::Pose &second)
   {
@@ -38,8 +38,35 @@ namespace mrp_common
   Eigen::Vector2d GeometryUtils::projectToXY(const double &length, const double &theta)
   {
     return Eigen::Vector2d{
-      length * cos(theta),
-      length * sin(theta)
-    };
+        length * cos(theta),
+        length * sin(theta)};
+  }
+
+  bool GeometryUtils::vectorIsInside(const Eigen::Vector2d &target_vector,
+                                     const Eigen::Vector2d &lower_bound,
+                                     const Eigen::Vector2d &upper_bound)
+  {
+    Eigen::Vector3d middle(
+      target_vector(0),
+      target_vector(1),
+      0
+    );
+
+    Eigen::Vector3d lower(
+      lower_bound(0),
+      lower_bound(1),
+      0
+    );
+
+    Eigen::Vector3d upper(
+      upper_bound(0),
+      upper_bound(1),
+      0
+    );
+
+    Eigen::Vector3d c_lm = lower.cross(middle);
+    Eigen::Vector3d c_mu = middle.cross(upper);
+
+    return c_lm.dot(c_mu) > 0;
   }
 }

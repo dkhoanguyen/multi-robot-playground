@@ -25,6 +25,10 @@ namespace mrp_common
     static double yawFromPose(const geometry_msgs::msg::Pose &pose);
 
     static Eigen::Vector2d projectToXY(const double &length, const double &theta);
+
+    static bool vectorIsInside(const Eigen::Vector2d &target_vector,
+                               const Eigen::Vector2d &lower_bound,
+                               const Eigen::Vector2d &upper_bound);
   };
 }
 

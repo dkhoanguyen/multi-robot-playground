@@ -62,7 +62,8 @@ namespace mrp_orca
         const nav_msgs::msg::Odometry &odom_A,
         const nav_msgs::msg::Odometry &odom_B,
         const double &radius_A, const double &radius_B,
-        const double &delta_tau);
+        const double &delta_tau,
+        const double &weight);
 
   protected:
   };

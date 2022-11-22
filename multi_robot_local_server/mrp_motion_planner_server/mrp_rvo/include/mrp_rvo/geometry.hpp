@@ -2,6 +2,7 @@
 #define MRP_RVO__GEOMETRY_HPP_
 
 #include <Eigen/Dense>
+#include <iostream>
 
 namespace mrp_orca
 {
@@ -12,16 +13,16 @@ namespace mrp_orca
     public:
       Line(Eigen::Vector2d normal, Eigen::Vector2d point)
           : normal_(normal),
-            point_(point){};
-      ~Line()
+            point_(point)
       {
-        // Construct line equation from point and normal
+        // Construct line equation from point d and normal
         a_ = normal_(0);
         b_ = normal_(1);
 
         // Line equation: a(x - x0) + b(y - y0) = 0
         c_ = a_ * point_(0) + b_ * point_(1);
       };
+      ~Line(){};
 
       Eigen::Vector2d point() const
       {
