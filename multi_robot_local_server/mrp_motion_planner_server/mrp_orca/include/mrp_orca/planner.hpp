@@ -61,6 +61,13 @@ namespace mrp_orca
                                    const geometry_msgs::msg::Pose &current_waypoint);
     double calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
                                     const geometry_msgs::msg::Pose &current_waypoint);
+    Eigen::Vector2d calculateRawVelocity(const geometry_msgs::msg::Pose &current_pose,
+                                         const geometry_msgs::msg::Pose &current_waypoint);
+
+    Eigen::Vector2d getOptimalVelocity(const geometry_msgs::msg::Pose &current_pose);
+    bool checkCollision(const Eigen::Vector2d &optimal_velocity,
+                        const mrp_orca::geometry::HalfPlane &orca_plane);
+    void pickNewVelocity();
   };
 } // namespace mrp_orca
 

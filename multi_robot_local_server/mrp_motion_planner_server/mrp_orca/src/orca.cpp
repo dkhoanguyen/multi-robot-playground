@@ -2,7 +2,8 @@
 
 namespace mrp_orca
 {
-  mrp_orca::geometry::HalfPlane ORCA::construct(
+  bool ORCA::construct(
+      mrp_orca::geometry::HalfPlane &orca_plane,
       const nav_msgs::msg::Odometry &odom_A,
       const nav_msgs::msg::Odometry &odom_B,
       const double &radius_A, const double &radius_B,
@@ -53,11 +54,26 @@ namespace mrp_orca
 
     // Relative velocity
     Eigen::Vector2d relative_v = A_vel_vector - B_vel_vector;
-    Eigen::Vector2d u{0, 0};
 
+    // Ok so before we carry on let's check if there is a collision
+    // If relative vector is not bounded by the truncated VO
+    if (!mrp_common::GeometryUtils::vectorIsInside(
+            relative_v,
+            mrp_common::GeometryUtils::projectToXY(side_edge, lower_angle),
+            mrp_common::GeometryUtils::projectToXY(side_edge, upper_angle)))
+    {
+      return false;
+    }
+    Eigen::Vector2d u(0,0);
     // Check if relative v can be projected onto the circle
     if (bottom_circle.dot(relative_v - bottom_circle) < 0)
     {
+      // Relative v lies in front of the circle 
+      // Check if relative v is inside the circle
+      if ((relative_v - bottom_circle).norm() > bottom_radius)
+      {
+        return false;
+      }
       Eigen::Vector2d relative_to_center = relative_v - bottom_circle;
       u = bottom_circle + (relative_to_center / relative_to_center.norm()) * bottom_radius;
       u = u - relative_v;
@@ -90,6 +106,7 @@ namespace mrp_orca
     // Construct ORCA halfplane
     geometry::Line orca_line(weighted_u, orca_point);
     geometry::HalfPlane orca(orca_line, weighted_u);
-    return orca;
+    orca_plane = orca;
+    return true;
   }
 }

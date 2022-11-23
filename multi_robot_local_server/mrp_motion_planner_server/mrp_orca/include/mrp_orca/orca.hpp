@@ -13,7 +13,8 @@ namespace mrp_orca
     // Construct ORCA half plane of B induced by A, given
     // A current position and velocity vector
     // B current position and velocity vector
-    static mrp_orca::geometry::HalfPlane construct(
+    static bool construct(
+        mrp_orca::geometry::HalfPlane &orca_plane,
         const nav_msgs::msg::Odometry &odom_A,
         const nav_msgs::msg::Odometry &odom_B,
         const double &radius_A, const double &radius_B,

@@ -61,6 +61,8 @@ namespace mrp_orca
     class HalfPlane
     {
     public:
+      HalfPlane() : line_(Line(Eigen::Vector2d(0, 1), Eigen::Vector2d(0, 0))),
+                    direction_(Eigen::Vector2d(0, 1)){};
       HalfPlane(Line line, Eigen::Vector2d direction)
           : line_(line), direction_(direction){};
       ~HalfPlane(){};
