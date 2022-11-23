@@ -440,7 +440,7 @@ namespace mrp_motion_planner
 
     geometry_msgs::msg::Twist control_velocity;
     planner_ptr_->calculateVelocityCommand(
-        robot_current_odom.pose.pose,
+        robot_current_odom,
         member_odom,
         current_scan,
         control_velocity);

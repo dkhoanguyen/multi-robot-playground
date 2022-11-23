@@ -40,7 +40,7 @@ namespace mrp_motion_planner
 
     void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path);
     void calculateVelocityCommand(
-        const geometry_msgs::msg::Pose &current_pose,
+        const nav_msgs::msg::Odometry &current_odom,
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
         sensor_msgs::msg::LaserScan &scan,
         geometry_msgs::msg::Twist &vel_cmd);

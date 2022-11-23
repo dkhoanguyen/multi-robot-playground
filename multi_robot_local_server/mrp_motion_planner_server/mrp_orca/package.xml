@@ -1,18 +1,19 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>spotturn_controller</name>
+  <name>mrp_orca</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="khoanguyendacdang2198@gmail.com">khoa</maintainer>
+  <maintainer email="root@todo.todo">root</maintainer>
   <license>TODO: License declaration</license>
 
-  <buildtool_depend>ament_cmake_ros</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>mrp_local_server_core</depend>
   <depend>pluginlib</depend>
   <depend>geometry_msgs</depend>
   <depend>mrp_common</depend>
+  <depend>ifopt</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

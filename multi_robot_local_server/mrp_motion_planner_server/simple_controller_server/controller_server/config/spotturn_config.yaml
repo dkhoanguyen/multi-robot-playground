@@ -1,6 +1,0 @@
-spotturn_controller:
-  turtlebot3:
-    max_linear: 0.22
-    max_angular: 2.5
-    linear_err: 0.005
-    angular_err: 0.009

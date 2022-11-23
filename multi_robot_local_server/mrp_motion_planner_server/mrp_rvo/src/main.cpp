@@ -10,8 +10,8 @@
 
 int main(int argc, char **argv)
 {
-  // mrp_motion_planner::RVO rvo;
-  // rvo.start();
+  mrp_motion_planner::RVO rvo;
+  rvo.start();
 
   nav_msgs::msg::Odometry odom_A;
   odom_A.pose.pose.position.x = 0;

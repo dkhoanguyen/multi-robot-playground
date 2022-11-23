@@ -1,6 +1,0 @@
-controller_name:
-  - 'spotturn_controller'
-controller_mapping:
-  - 'spotturn_controller::SpotturnController'
-general_settings:
-  cmd_vel_frequency: 10 #Hz

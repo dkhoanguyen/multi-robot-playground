@@ -21,7 +21,7 @@ namespace mrp_local_server_core
     // We should change laser scan to cost map in the future
     virtual void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path) = 0;
     virtual void calculateVelocityCommand(
-        const geometry_msgs::msg::Pose &current_pose,
+        const nav_msgs::msg::Odometry &current_odom,
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
         sensor_msgs::msg::LaserScan &scan,
         geometry_msgs::msg::Twist &vel_cmd) = 0;

@@ -28,7 +28,7 @@ namespace mrp_motion_planner
     nlp.AddVariableSet  (std::make_shared<mrp_orca::ORCAVariables>());
     nlp.AddConstraintSet(std::make_shared<mrp_orca::ORCAConstraint>());
     nlp.AddCostSet      (std::make_shared<mrp_orca::ORCACost>());
-    nlp.PrintCurrent();
+    // nlp.PrintCurrent();
 
     // 2. choose solver and options
     ifopt::IpoptSolver ipopt;
@@ -89,7 +89,7 @@ namespace mrp_motion_planner
   }
 
   void RVO::calculateVelocityCommand(
-      const geometry_msgs::msg::Pose &current_pose,
+      const nav_msgs::msg::Odometry &current_odom,
       const std::vector<nav_msgs::msg::Odometry> &members_odom,
       sensor_msgs::msg::LaserScan &scan,
       geometry_msgs::msg::Twist &vel_cmd)
@@ -99,8 +99,8 @@ namespace mrp_motion_planner
       return;
     }
     geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
-    vel_cmd.angular.z = calculateAngularVelocity(current_pose, current_waypoint);
-    vel_cmd.linear.x = calculateLinearVelocity(current_pose, current_waypoint);
+    vel_cmd.angular.z = calculateAngularVelocity(current_odom.pose.pose, current_waypoint);
+    vel_cmd.linear.x = calculateLinearVelocity(current_odom.pose.pose, current_waypoint);
 
     if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
     {
