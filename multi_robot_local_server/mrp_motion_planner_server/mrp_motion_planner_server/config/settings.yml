@@ -3,10 +3,10 @@ general:
     heartbeat: 1000.0
 
 planners:
-  default_planner: rvo
+  default_planner: orca
   planner_name_list:
     - spotturn
-    - rvo
+    - orca
   planner_name_plugin_mapping:
     - mrp_motion_planner::SpotTurn
-    - mrp_motion_planner::RVO
+    - mrp_orca::MotionPlaner

@@ -61,10 +61,14 @@ namespace mrp_orca
                                    const geometry_msgs::msg::Pose &current_waypoint);
     double calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
                                     const geometry_msgs::msg::Pose &current_waypoint);
-    Eigen::Vector2d calculateRawVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                         const geometry_msgs::msg::Pose &current_waypoint);
+    Eigen::Vector2d calculateVelocityToTarget(const geometry_msgs::msg::Pose &current_pose,
+                                              const geometry_msgs::msg::Pose &current_waypoint);
+    Eigen::Vector2d calculateOptimalVelocity(const geometry_msgs::msg::Pose &current_pose,
+                                             const geometry_msgs::msg::Pose &current_waypoint);
 
-    Eigen::Vector2d getOptimalVelocity(const geometry_msgs::msg::Pose &current_pose);
+    Eigen::Vector2d calculateCmdVelFromVelVect(const Eigen::Vector2d &vel_vect,
+                                               const geometry_msgs::msg::Pose &current_pose);
+
     bool checkCollision(const Eigen::Vector2d &optimal_velocity,
                         const mrp_orca::geometry::HalfPlane &orca_plane);
     void pickNewVelocity();

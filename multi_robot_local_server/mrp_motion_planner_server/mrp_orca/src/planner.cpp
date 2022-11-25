@@ -44,6 +44,15 @@ namespace mrp_orca
       sensor_msgs::msg::LaserScan &scan,
       geometry_msgs::msg::Twist &vel_cmd)
   {
+    // Ignore motion comamnd if we are at target
+    if (current_waypoint_indx_ == path_.size())
+    {
+      return;
+    }
+
+    // Else extract the next target location
+    geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
+
     std::vector<mrp_orca::geometry::HalfPlane> orca_planes;
     for (const nav_msgs::msg::Odometry member_odom : members_odom)
     {
@@ -59,25 +68,42 @@ namespace mrp_orca
                 orca_plane, current_odom, member_odom,
                 robot_radius_, robot_radius_, delta_tau_, 0.5))
         {
+          // We only append the orca_plane if it is valid
+          orca_planes.push_back(orca_plane);
         }
       }
     }
 
-    Eigen::Vector2d robot_vel_vector = mrp_common::GeometryUtils::projectToXY(
-        sqrt(std::pow(current_odom.twist.twist.linear.x, 2) + std::pow(current_odom.twist.twist.linear.y, 2)),
-        mrp_common::GeometryUtils::yawFromPose(current_odom.pose.pose));
+    // If there is no immediate collision, get the optimal velocity to target
+    if (orca_planes.size() == 0)
+    {
+      // Get optimal velocity to target
+      Eigen::Vector2d vel_to_target = calculateVelocityToTarget(
+          current_odom.pose.pose,
+          current_waypoint);
+      // Maybe let's reconsider this at some point in the future
+      vel_cmd.angular.z = vel_to_target(0);
+      vel_cmd.linear.x = vel_to_target(1);
+      return;
+    }
+
+    // If there is a collision in the near future
+    // Solve the linear programming optimisation to find the optimal velocity vector
+    // that is close to the desired velocity to target
+    Eigen::Vector2d opt_vel_vector = calculateOptimalVelocity(current_odom.pose.pose,
+                                                              current_waypoint);
 
     // Create orca variable object
     std::shared_ptr<mrp_orca::solver::Variables>
         orca_variables_ptr = std::make_shared<mrp_orca::solver::Variables>();
     // Optimise from robot current velocity (which is the optimised velocity toward the target position)
-    orca_variables_ptr->SetVariables(robot_vel_vector);
+    orca_variables_ptr->SetVariables(opt_vel_vector);
 
     // Create orca cost function
     std::shared_ptr<mrp_orca::solver::Cost>
         orca_cost_ptr = std::make_shared<mrp_orca::solver::Cost>();
     // Set optimal velocity for cost function (x - xopt)^2 + (y - yopt)^2
-    orca_cost_ptr->SetOptimalVelocity(robot_vel_vector);
+    orca_cost_ptr->SetOptimalVelocity(opt_vel_vector);
 
     // Create orca constraints
     std::shared_ptr<mrp_orca::solver::Constraint>
@@ -87,6 +113,27 @@ namespace mrp_orca
     // Create solver and solve for optimal velocity
     Eigen::Vector2d non_collision_velocity = mrp_orca::solver::Solver::solve(
         orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
+
+    // Transform the vector to linear and angular velocity
+    Eigen::Vector2d applied_vel = calculateCmdVelFromVelVect(non_collision_velocity,
+                                                             current_odom.pose.pose);
+
+    // Update cmd vel
+    vel_cmd.linear.x = applied_vel(0);
+    vel_cmd.angular.z = applied_vel(1);
+
+    if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
+    {
+      if (current_waypoint_indx_ < path_.size())
+      {
+        current_waypoint_indx_++;
+      }
+      else
+      {
+        reach_goal_ = true;
+      }
+      at_position_ = false;
+    }
   }
 
   // For feedback
@@ -198,8 +245,16 @@ namespace mrp_orca
     return angular_vel;
   }
 
-  Eigen::Vector2d MotionPlanner::calculateRawVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                                      const geometry_msgs::msg::Pose &current_waypoint)
+  Eigen::Vector2d MotionPlanner::calculateVelocityToTarget(const geometry_msgs::msg::Pose &current_pose,
+                                                           const geometry_msgs::msg::Pose &current_waypoint)
+  {
+    return Eigen::Vector2d(
+        calculateAngularVelocity(current_pose, current_waypoint),
+        calculateLinearVelocity(current_pose, current_waypoint));
+  }
+
+  Eigen::Vector2d MotionPlanner::calculateOptimalVelocity(const geometry_msgs::msg::Pose &current_pose,
+                                                          const geometry_msgs::msg::Pose &current_waypoint)
   {
     double distance = mrp_common::GeometryUtils::euclideanDistance(current_pose, current_waypoint);
 
@@ -232,17 +287,33 @@ namespace mrp_orca
       linear_vel = max_linear_vel_;
     }
 
+    // Transform from polar coordinate to cartesian coordinate
     return mrp_common::GeometryUtils::projectToXY(linear_vel, theta);
   }
 
-  Eigen::Vector2d MotionPlanner::getOptimalVelocity(const geometry_msgs::msg::Pose &current_pose)
+  Eigen::Vector2d MotionPlanner::calculateCmdVelFromVelVect(
+      const Eigen::Vector2d &vel_vect,
+      const geometry_msgs::msg::Pose &current_pose)
   {
-    if (current_waypoint_indx_ == path_.size())
+    double current_yaw = mrp_common::GeometryUtils::yawFromPose(current_pose);
+    double theta = atan2(vel_vect(1), vel_vect(0)) - current_yaw;
+    double linear = vel_vect.norm();
+
+    if (linear > max_linear_vel_)
     {
-      return Eigen::Vector2d(0, 0);
+      linear = max_linear_vel_;
     }
-    geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
-    return calculateRawVelocity(current_pose, current_waypoint);
+
+    if (theta > M_PI)
+    {
+      theta = theta - 2 * M_PI;
+    }
+    else if (theta < -M_PI)
+    {
+      theta = theta + 2 * M_PI;
+    }
+
+    return Eigen::Vector2d(linear, theta);
   }
 
   bool MotionPlanner::checkCollision(const Eigen::Vector2d &optimal_velocity,
