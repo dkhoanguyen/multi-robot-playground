@@ -1,6 +1,9 @@
 #ifndef MRP_ORCA__PLANNER_HPP_
 #define MRP_ORCA__PLANNER_HPP_
 
+#include <atomic>
+#include <memory>
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
@@ -54,8 +57,8 @@ namespace mrp_orca
     double linear_error_;
     double angular_error_;
 
-    bool at_position_;
-    bool reach_goal_;
+    std::atomic<bool> at_position_;
+    std::atomic<bool> reach_goal_;
 
     double calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
                                    const geometry_msgs::msg::Pose &current_waypoint);

@@ -22,6 +22,7 @@ namespace mrp_orca
 
   void MotionPlanner::initialise()
   {
+    
   }
   void MotionPlanner::start()
   {

@@ -27,7 +27,7 @@ find_package(pluginlib REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(mrp_common REQUIRED)
-find_package(mrp_rvo REQUIRED)
+find_package(mrp_orca REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(mrp_motion_planner_msgs REQUIRED)
 find_package(mrp_comms_msgs REQUIRED)
@@ -52,7 +52,7 @@ set(dependencies
   nav2_msgs
   mrp_common
   mrp_common_msgs
-  mrp_rvo
+  mrp_orca
   mrp_motion_planner_msgs
   mrp_comms_msgs
 )

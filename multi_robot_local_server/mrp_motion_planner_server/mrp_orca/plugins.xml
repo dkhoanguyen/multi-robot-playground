@@ -1,6 +1,6 @@
 <class_libraries>
-    <library path="orca">
-        <class type="mrp_orca::Planner" base_class_type="mrp_local_server_core::MotionPlannerInterface">
+    <library path="mrp_orca">
+        <class type="mrp_orca::MotionPlanner" base_class_type="mrp_local_server_core::MotionPlannerInterface">
             <description></description>
         </class>
     </library>

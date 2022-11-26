@@ -10,6 +10,12 @@ namespace mrp_orca
   class ORCA
   {
   public:
+    enum class Result
+    {
+      VALID,
+      NO_IMMEDIATE_COLLISION,
+      NO_COLLISION
+    };
     // Construct ORCA half plane of B induced by A, given
     // A current position and velocity vector
     // B current position and velocity vector

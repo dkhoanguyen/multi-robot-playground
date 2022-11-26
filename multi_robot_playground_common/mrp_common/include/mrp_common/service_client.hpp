@@ -37,6 +37,7 @@ namespace mrp_common
           service_name_,
           rmw_qos_profile_default,
           callback_group_);
+      response_ready_ = false;
     }
 
     virtual ~ServiceClient() {}

@@ -2,7 +2,7 @@
 
 namespace mrp_motion_planner
 {
-  const std::string MotionPlannerServer::FALLBACK_PLANNER = "rvo";
+  const std::string MotionPlannerServer::FALLBACK_PLANNER = "spotturn";
   MotionPlannerServer::MotionPlannerServer(const std::string &planner_name)
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
@@ -12,7 +12,7 @@ namespace mrp_motion_planner
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
     planner_name_ = planner_name;
 
-    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_motion_planner::RVO");
+    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_orca::MotionPlanner");
 
     // Get all available plugins for planner
     declare_parameter<std::vector<std::string>>("planner_name_list", std::vector<std::string>());
@@ -20,7 +20,7 @@ namespace mrp_motion_planner
 
     // Motion planner params
     declare_parameter<double>("planner_rate", 100.0); // Planner rate
-    declare_parameter<std::string>("planner_plugin", "rvo");
+    declare_parameter<std::string>("planner_plugin", "orca");
 
     robot_odom_ = std::make_shared<RobotOdom>();
     robot_odom_->ready = false;
