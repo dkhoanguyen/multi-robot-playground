@@ -13,7 +13,8 @@ namespace mrp_lifecycle_manager
                                      std::chrono::milliseconds heartbeat_timeout)
       : rclcpp_lifecycle::LifecycleNode("lifecycle_manager", options),
         executor_ptr_(executor_ptr),
-        heartbeat_timeout_(heartbeat_timeout)
+        heartbeat_timeout_(heartbeat_timeout),
+        auto_start_(false)
   {
     // Main normal state
     transition_state_map_[LifecycleTransition::CREATE] = LifecycleState::PRIMARY_STATE_UNCONFIGURED;
@@ -44,6 +45,26 @@ namespace mrp_lifecycle_manager
   {
     execution_future_ = std::async(std::launch::async, [this]()
                                    { executor_ptr_->spin(); });
+  }
+
+  void LifecycleManager::start()
+  {
+    bool autostart = get_parameter("autostart").as_bool();
+    if (autostart)
+    {
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "Auto configuring lifecycle_manager");
+      rclcpp_lifecycle::State state = configure();
+      // Only activate if configure successfully
+      if (state.id() != (uint8_t)transition_state_map_[LifecycleTransition::CONFIGURE])
+      {
+      }
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "Auto activating lifecycle_manager");
+      state = activate();
+    }
   }
 
   bool LifecycleManager::registerLifecycleNode(const std::string &node_name,
@@ -186,6 +207,7 @@ namespace mrp_lifecycle_manager
     // Get necessary parameters
     bool auto_start = false;
     get_parameter("autostart", auto_start);
+    
     std::vector<double> heartbeat_interval;
     get_parameter("heartbeat_interval", heartbeat_interval);
 
@@ -350,10 +372,10 @@ namespace mrp_lifecycle_manager
     if (!system_active_)
     {
       mrp_common::Log::basicError(
-        get_node_logging_interface(),
-        "Lifecycle Manager is inactive. Rejecting this request.");
-        response->success = false;
-        return;
+          get_node_logging_interface(),
+          "Lifecycle Manager is inactive. Rejecting this request.");
+      response->success = false;
+      return;
     }
 
     bool success = true;

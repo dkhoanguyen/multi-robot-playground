@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
       std::make_shared<mrp_lifecycle_manager::LifecycleManager>(executor,
                                                                 options,
                                                                 std::chrono::milliseconds(2000));
+  lifecycle_manager->start();
   executor->spin();
   rclcpp::shutdown();
   return 0;

@@ -39,6 +39,8 @@ namespace mrp_lifecycle_manager
 
     void spin();
 
+    void start();
+
     bool registerLifecycleNode(const std::string &node_name,
                                const std::chrono::milliseconds &heartbeat_interval);
     bool removeLifecycleNode(const std::string &node_name);
@@ -140,6 +142,7 @@ namespace mrp_lifecycle_manager
       std::shared_ptr<LifecycleManagerClient> lifecyle_manager_client_;
     };
 
+    bool auto_start_{false};
     bool system_active_{false};
     std::future<void> execution_future_;
 

@@ -5,18 +5,15 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, GroupAction)
+from launch.actions import (DeclareLaunchArgument, GroupAction, OpaqueFunction)
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import SetParameter, Node
 
-
-def generate_launch_description():
-    ld = LaunchDescription()
-
+def prepare_launch(context):
     # Declare launch configurations
     robot_name = LaunchConfiguration('robot_name')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    auto_start = LaunchConfiguration('autostart')
+    autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
     log_level = LaunchConfiguration('log_level')
@@ -29,7 +26,7 @@ def generate_launch_description():
         description='Use simulation (Gazebo) clock if true')
     declare_auto_start_arg = DeclareLaunchArgument(
         'autostart',
-        default_value='false')
+        default_value='true')
     declare_container_name_arg = DeclareLaunchArgument(
         'container_name',
         default_value='servers_container')
@@ -57,8 +54,9 @@ def generate_launch_description():
     # Preparing to load node
     node_actions = [
         SetParameter("use_sim_time", use_sim_time),
+        SetParameter("autostart", autostart),
     ]
-
+    
     # Load components
     # Motion planner
     motion_planner_server_pkg = get_package_share_directory(
@@ -100,6 +98,7 @@ def generate_launch_description():
             arguments=['--ros-args', '--log-level', log_level],
             parameters=[{'node_names': components_list},
                         {'heartbeat_interval': heartbeat_list},
+                        {'autostart': autostart},
                         lifecycle_manager_settings['general']]))
 
     node_actions.append(
@@ -113,11 +112,16 @@ def generate_launch_description():
 
     load_nodes = GroupAction(node_actions)
 
-    ld.add_action(declare_robot_name_arg)
-    ld.add_action(declare_use_sim_time_arg)
-    ld.add_action(declare_auto_start_arg)
-    ld.add_action(declare_container_name_arg)
-    ld.add_action(declare_log_level_arg)
+    return [
+        declare_robot_name_arg,
+        declare_use_sim_time_arg,
+        declare_auto_start_arg,
+        declare_container_name_arg,
+        declare_log_level_arg,
+        load_nodes
+    ]
 
-    ld.add_action(load_nodes)
-    return ld
+def generate_launch_description():
+    return LaunchDescription([
+        OpaqueFunction(function=prepare_launch)
+    ])

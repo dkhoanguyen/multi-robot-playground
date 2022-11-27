@@ -73,6 +73,11 @@ TEST_F(PlannerTest, calcLinearVelocity)
   EXPECT_EQ(planner.exposeCalculateLinearVelocity(pose, waypoint), 5);
 }
 
+TEST_F(PlannerTest, calcAngularVelocity)
+{
+  
+}
+
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

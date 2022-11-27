@@ -1,4 +1,4 @@
 general:
-  autostart: false
+  autostart: true
   monitor_rate: 1000
   attempt_respawn_reconnection: false
