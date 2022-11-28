@@ -55,15 +55,10 @@ namespace mrp_lifecycle_manager
       mrp_common::Log::basicInfo(
           get_node_logging_interface(),
           "Auto configuring lifecycle_manager");
-      rclcpp_lifecycle::State state = configure();
-      // Only activate if configure successfully
-      if (state.id() != (uint8_t)transition_state_map_[LifecycleTransition::CONFIGURE])
-      {
-      }
-      mrp_common::Log::basicInfo(
-          get_node_logging_interface(),
-          "Auto activating lifecycle_manager");
-      state = activate();
+      configure();
+      std::cout << "Activating servers" << std::endl;
+      activate();
+      std::cout << "Done activating servers" << std::endl;
     }
   }
 
@@ -207,7 +202,7 @@ namespace mrp_lifecycle_manager
     // Get necessary parameters
     bool auto_start = false;
     get_parameter("autostart", auto_start);
-    
+
     std::vector<double> heartbeat_interval;
     get_parameter("heartbeat_interval", heartbeat_interval);
 

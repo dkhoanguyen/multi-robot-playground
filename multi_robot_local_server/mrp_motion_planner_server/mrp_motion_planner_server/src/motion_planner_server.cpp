@@ -81,7 +81,9 @@ namespace mrp_motion_planner
     initialiseHeartbeat();
 
     // Should we load planner here ?
-
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Motion planner server initialises successfully");
     return true;
   }
 
@@ -135,6 +137,7 @@ namespace mrp_motion_planner
     {
       return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::FAILURE;
     }
+    std::cout << "Yooyoy" << std::endl;
     return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
   }
 

@@ -49,7 +49,9 @@ namespace mrp_common
       // Wait for service server to response
       // Question: Should this function be a blocking function ?
       // We should handle server timeout cases
-      Log::basicInfo(node_logging_interface_, "Checking if server is ready.");
+      Log::basicInfo(
+        node_logging_interface_, 
+        "Checking if service server " + service_name_ + " is ready.");
       while (!service_client_->wait_for_service(std::chrono::seconds(1)))
       {
         if (!rclcpp::ok())
@@ -60,7 +62,6 @@ namespace mrp_common
         Log::basicInfo(node_logging_interface_, "Waiting for service to appear...");
       }
       response_ready_ = false;
-
       // If isolated spin then we spin up a separate executor and start sending request
       if (isolated_spin_)
       {
@@ -79,9 +80,9 @@ namespace mrp_common
           request, std::bind(&ServiceClient::responseCallback, this,
                              std::placeholders::_1));
 
-      Log::basicInfo(node_logging_interface_, "Waiting for response");
+      Log::basicInfo(node_logging_interface_, "Waiting for response from service " + service_name_);
       while (result_future.wait_for(timeout) != std::future_status::ready);
-      Log::basicInfo(node_logging_interface_, "Response ready.");
+      Log::basicInfo(node_logging_interface_, "Response ready for service " + service_name_);
       response = result_future.get();
       return true;
     }
