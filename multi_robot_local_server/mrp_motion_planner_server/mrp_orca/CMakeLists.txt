@@ -78,8 +78,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_orca ${library_name})
 
   # Test Linear solver
-  ament_add_gtest(test_solver test/test_solver.cpp)
-  target_link_libraries(test_solver ${library_name})
+  # ament_add_gtest(test_solver test/test_solver.cpp)
+  # target_link_libraries(test_solver ${library_name})
 
   # Test planner
 endif()

@@ -27,8 +27,8 @@ namespace mrp_orca
   ifopt::Component::VecBound ORCAVariables::GetBounds() const
   {
     VecBound bounds(ifopt::Component::GetRows());
-    bounds.at(0) = ifopt::Bounds(1.9, 2);
-    bounds.at(1) = ifopt::Bounds(1.9, 2);
+    bounds.at(0) = ifopt::Bounds(-0.1, 0.1);
+    bounds.at(1) = ifopt::Bounds(-0.1, 0.1);
     return bounds;
   }
 
@@ -40,14 +40,14 @@ namespace mrp_orca
   {
     Eigen::VectorXd g(ifopt::Component::GetRows());
     Eigen::Vector2d x = GetVariables()->GetComponent("var_set1")->GetValues();
-    g(0) = 0 * x(0) - 0.285 * x(1);
+    g(0) = -0.0114 * x(0) - 0 * x(1);
     return g;
   }
 
   ifopt::Component::VecBound ORCAConstraint::GetBounds() const
   {
     ifopt::Component::VecBound b(ifopt::Component::GetRows());
-    b.at(0) = ifopt::Bounds(-0.204,ifopt::inf);
+    b.at(0) = ifopt::Bounds(-0.001,ifopt::inf);
     return b;
   }
 
@@ -57,8 +57,8 @@ namespace mrp_orca
     {
       Eigen::Vector2d x = GetVariables()->GetComponent("var_set1")->GetValues();
 
-      jac_block.coeffRef(0, 0) = 0.0; // derivative of first constraint w.r.t x0
-      jac_block.coeffRef(0, 1) = - 0.285; // derivative of first constraint w.r.t x1
+      jac_block.coeffRef(0, 0) = -0.0114; // derivative of first constraint w.r.t x0
+      jac_block.coeffRef(0, 1) = 0.0; // derivative of first constraint w.r.t x1
     }
   }
 
@@ -68,7 +68,7 @@ namespace mrp_orca
   double ORCACost::GetCost() const
   {
     Eigen::Vector2d x = GetVariables()->GetComponent("var_set1")->GetValues();
-    return -std::pow(x(0), 2) - std::pow(x(1), 2);
+    return std::pow(x(0) - 0.1, 2) + std::pow(x(1) - 0, 2);
   }
 
   void ORCACost::FillJacobianBlock(std::string var_set, Jacobian &jac) const
@@ -77,8 +77,8 @@ namespace mrp_orca
     {
       Eigen::Vector2d x = GetVariables()->GetComponent("var_set1")->GetValues();
 
-      jac.coeffRef(0, 0) = -2.0 * x(0); // derivative of cost w.r.t x0
-      jac.coeffRef(0, 1) = -2.0 * x(1); // derivative of cost w.r.t x1
+      jac.coeffRef(0, 0) = 2.0 * (x(0) - 0.1); // derivative of cost w.r.t x0
+      jac.coeffRef(0, 1) = 2.0 * x(1); // derivative of cost w.r.t x1
     }
   }
 

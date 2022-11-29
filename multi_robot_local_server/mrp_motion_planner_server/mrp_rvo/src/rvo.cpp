@@ -42,8 +42,8 @@ namespace mrp_motion_planner
     // std::cout << "Status: " << status << std::endl;
     // auto t_end = std::chrono::high_resolution_clock::now();
     // double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end-t_start).count();
-    // Eigen::VectorXd x = nlp.GetOptVariables()->GetValues();
-    // std::cout << "Solution: "<< x.transpose() << std::endl;
+    Eigen::VectorXd x = nlp.GetOptVariables()->GetValues();
+    std::cout << "Solution: "<< x.transpose() << std::endl;
     // std::cout << "Elapsed time (ms): " << elapsed_time_ms << std::endl;
   }
 

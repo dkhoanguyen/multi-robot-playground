@@ -1,4 +1,5 @@
 #include "mrp_orca/solver.hpp"
+#include <iostream>
 
 namespace mrp_orca
 {
@@ -29,6 +30,8 @@ namespace mrp_orca
     ifopt::Component::VecBound Variables::GetBounds() const
     {
       VecBound bounds(ifopt::Component::GetRows());
+      std::cout << "Lower bound: " << vel_lower_bound_.transpose() << std::endl;
+      std::cout << "Upper bound: " << vel_upper_bound_.transpose() << std::endl;
       bounds.at(0) = ifopt::Bounds(vel_lower_bound_(0), vel_upper_bound_(0));
       bounds.at(1) = ifopt::Bounds(vel_lower_bound_(1), vel_upper_bound_(1));
       return bounds;
@@ -38,9 +41,11 @@ namespace mrp_orca
                               const Eigen::Vector2d &vel_upper_bound)
     {
       vel_lower_bound_ = vel_lower_bound;
-      vel_upper_bound_ = vel_lower_bound;
+      vel_upper_bound_ = vel_upper_bound;
     }
 
+
+    // Constraints //
     Constraint::Constraint(int num)
         : ifopt::ConstraintSet(num, CONSTRAINTSET_NAME),
           num_constraints_(num)
@@ -67,6 +72,7 @@ namespace mrp_orca
       for (unsigned int i = 0; i < orca_halfplanes_.size(); i++)
       {
         bounds.at(i) = ifopt::Bounds(orca_halfplanes_.at(i).line().c(), ifopt::inf);
+        std::cout << "c: " << orca_halfplanes_.at(i).line().c() << std::endl; 
       }
       return bounds;
     }
@@ -79,6 +85,9 @@ namespace mrp_orca
         {
           jac_block.coeffRef(i, 0) = orca_halfplanes_.at(i).line().a(); // derivative of the ith constraint w.r.t x0
           jac_block.coeffRef(i, 1) = orca_halfplanes_.at(i).line().b(); // derivative of the ith constraint w.r.t x1
+
+          std::cout << "a: " << orca_halfplanes_.at(i).line().a() << std::endl; 
+          std::cout << "b: " << orca_halfplanes_.at(i).line().b() << std::endl; 
         }
       }
     }
@@ -99,7 +108,7 @@ namespace mrp_orca
     double Cost::GetCost() const
     {
       Eigen::Vector2d x = GetVariables()->GetComponent(VARSET_NAME)->GetValues();
-      return -std::pow(x(0) - optimal_vel_(0), 2) - std::pow(x(1) - optimal_vel_(1), 2);
+      return (x  - optimal_vel_).norm();
     }
 
     void Cost::FillJacobianBlock(std::string var_set, Jacobian &jac) const
@@ -108,8 +117,8 @@ namespace mrp_orca
       {
         Eigen::Vector2d x = GetVariables()->GetComponent(VARSET_NAME)->GetValues();
 
-        jac.coeffRef(0, 0) = -2.0 * (x(0) - optimal_vel_(0)); // derivative of cost w.r.t x0
-        jac.coeffRef(0, 1) = -2.0 * (x(1) - optimal_vel_(1)); // derivative of cost w.r.t x1
+        jac.coeffRef(0, 0) = 2.0 * (x(0) - optimal_vel_(0)); // derivative of cost w.r.t x0
+        jac.coeffRef(0, 1) = 2.0 * (x(1) - optimal_vel_(1)); // derivative of cost w.r.t x1
       }
     }
 
@@ -118,6 +127,8 @@ namespace mrp_orca
       optimal_vel_ = optimal_vel;
     }
 
+
+    // SOLVER //
     Solver::Solver()
     {
     }
@@ -135,7 +146,7 @@ namespace mrp_orca
       nlp.AddVariableSet(variables);
       nlp.AddConstraintSet(constraints);
       nlp.AddCostSet(cost);
-      
+
       // 2. choose solver and options
       ifopt::IpoptSolver ipopt;
       ipopt.SetOption("print_level", 0);
@@ -143,11 +154,11 @@ namespace mrp_orca
       ipopt.SetOption("jacobian_approximation", "exact");
 
       int status = ipopt.Solve(nlp);
-      if(status == 0)
+      if (status == 0)
       {
         return nlp.GetOptVariables()->GetValues();
       }
-      return Eigen::Vector2d(0,0);
+      return Eigen::Vector2d(0, 0);
     }
   }
 }

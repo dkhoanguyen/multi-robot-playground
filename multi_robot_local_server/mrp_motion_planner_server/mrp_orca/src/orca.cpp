@@ -63,18 +63,18 @@ namespace mrp_orca
             mrp_common::GeometryUtils::projectToXY(side_edge, lower_angle),
             mrp_common::GeometryUtils::projectToXY(side_edge, upper_angle)))
     {
-      std::cout << "Relative velocity is not bounded by the truncated VO (angle)" << std::endl;
+      // std::cout << "Relative velocity is not bounded by the truncated VO (angle)" << std::endl;
       return false;
     }
-    Eigen::Vector2d u(0,0);
+    Eigen::Vector2d u(0, 0);
     // Check if relative v can be projected onto the circle
     if (bottom_circle.dot(relative_v - bottom_circle) < 0)
     {
-      // Relative v lies in front of the circle 
+      // Relative v lies in front of the circle
       // Check if relative v is inside the circle
       if ((relative_v - bottom_circle).norm() > bottom_radius)
       {
-        std::cout << "Relative velocity is not bounded by the truncated VO (radius)" << std::endl;
+        // std::cout << "Relative velocity is not bounded by the truncated VO (radius)" << std::endl;
         return false;
       }
       Eigen::Vector2d relative_to_center = relative_v - bottom_circle;
@@ -87,6 +87,7 @@ namespace mrp_orca
       double angle_to_relative_v = atan2(relative_v(1), relative_v(0));
       if (std::abs(upper_angle - angle_to_relative_v) < std::abs(angle_to_relative_v - lower_angle))
       {
+        std::cout << "Projected to upper" << std::endl;
         double side_length = relative_v.norm() * cos(upper_angle - angle_to_relative_v);
         Eigen::Vector2d projected_v{
             side_length * cos(upper_angle),
@@ -105,6 +106,9 @@ namespace mrp_orca
 
     Eigen::Vector2d weighted_u = weight * u;
     Eigen::Vector2d orca_point = A_vel_vector + weighted_u;
+
+    std::cout << "u: " << weighted_u << std::endl;
+    std::cout << "orca point: " << orca_point << std::endl;
 
     // Construct ORCA halfplane
     geometry::Line orca_line(weighted_u, orca_point);
