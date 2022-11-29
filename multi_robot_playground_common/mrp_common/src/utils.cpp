@@ -1,4 +1,5 @@
 #include "mrp_common/utils.hpp"
+#include <iostream>
 
 namespace mrp_common
 {

@@ -102,7 +102,7 @@ namespace mrp_orca
     double Cost::GetCost() const
     {
       Eigen::Vector2d x = GetVariables()->GetComponent(VARSET_NAME)->GetValues();
-      return -std::pow(x(0), 2) - std::pow(x(1), 2);
+      return std::pow(x(0) - optimal_vel_(0), 2) + std::pow(x(1) - optimal_vel_(1), 2);
     }
 
     void Cost::FillJacobianBlock(std::string var_set, Jacobian &jac) const
@@ -111,8 +111,8 @@ namespace mrp_orca
       {
         Eigen::Vector2d x = GetVariables()->GetComponent(VARSET_NAME)->GetValues();
 
-        jac.coeffRef(0, 0) = -2.0 * (x(0)); // derivative of cost w.r.t x0
-        jac.coeffRef(0, 1) = -2.0 * (x(1)); // derivative of cost w.r.t x1
+        jac.coeffRef(0, 0) = 2.0 * (x(0) - optimal_vel_(0)); // derivative of cost w.r.t x0
+        jac.coeffRef(0, 1) = 2.0 * (x(1) - optimal_vel_(1)); // derivative of cost w.r.t x1
       }
     }
 
