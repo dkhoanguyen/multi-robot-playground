@@ -89,18 +89,18 @@ def main(args=None):
     }
     robot0_waypoints.append(robot0_waypoint1)
 
-    robot0_waypoint2 = {}
-    robot0_waypoint2['position'] = {
-        'x' : 0.0,
-        'y' : 0.0,
-        'z' : 0.0
-    }
-    robot0_waypoint2['orientation'] = {
-        'r' : 0.0,
-        'p' : 0.0,
-        'y' : 0.0
-    }
-    robot0_waypoints.append(robot0_waypoint2)
+    # robot0_waypoint2 = {}
+    # robot0_waypoint2['position'] = {
+    #     'x' : 0.0,
+    #     'y' : 0.0,
+    #     'z' : 0.0
+    # }
+    # robot0_waypoint2['orientation'] = {
+    #     'r' : 0.0,
+    #     'p' : 0.0,
+    #     'y' : 0.0
+    # }
+    # robot0_waypoints.append(robot0_waypoint2)
     
 
     action_client = PathRequestClient()

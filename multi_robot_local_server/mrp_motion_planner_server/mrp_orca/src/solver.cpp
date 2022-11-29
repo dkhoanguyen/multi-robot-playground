@@ -30,8 +30,6 @@ namespace mrp_orca
     ifopt::Component::VecBound Variables::GetBounds() const
     {
       VecBound bounds(ifopt::Component::GetRows());
-      std::cout << "Lower bound: " << vel_lower_bound_.transpose() << std::endl;
-      std::cout << "Upper bound: " << vel_upper_bound_.transpose() << std::endl;
       bounds.at(0) = ifopt::Bounds(vel_lower_bound_(0), vel_upper_bound_(0));
       bounds.at(1) = ifopt::Bounds(vel_lower_bound_(1), vel_upper_bound_(1));
       return bounds;
@@ -72,7 +70,6 @@ namespace mrp_orca
       for (unsigned int i = 0; i < orca_halfplanes_.size(); i++)
       {
         bounds.at(i) = ifopt::Bounds(orca_halfplanes_.at(i).line().c(), ifopt::inf);
-        std::cout << "c: " << orca_halfplanes_.at(i).line().c() << std::endl; 
       }
       return bounds;
     }
@@ -85,9 +82,6 @@ namespace mrp_orca
         {
           jac_block.coeffRef(i, 0) = orca_halfplanes_.at(i).line().a(); // derivative of the ith constraint w.r.t x0
           jac_block.coeffRef(i, 1) = orca_halfplanes_.at(i).line().b(); // derivative of the ith constraint w.r.t x1
-
-          std::cout << "a: " << orca_halfplanes_.at(i).line().a() << std::endl; 
-          std::cout << "b: " << orca_halfplanes_.at(i).line().b() << std::endl; 
         }
       }
     }
@@ -108,7 +102,7 @@ namespace mrp_orca
     double Cost::GetCost() const
     {
       Eigen::Vector2d x = GetVariables()->GetComponent(VARSET_NAME)->GetValues();
-      return (x  - optimal_vel_).norm();
+      return -std::pow(x(0), 2) - std::pow(x(1), 2);
     }
 
     void Cost::FillJacobianBlock(std::string var_set, Jacobian &jac) const
@@ -117,8 +111,8 @@ namespace mrp_orca
       {
         Eigen::Vector2d x = GetVariables()->GetComponent(VARSET_NAME)->GetValues();
 
-        jac.coeffRef(0, 0) = 2.0 * (x(0) - optimal_vel_(0)); // derivative of cost w.r.t x0
-        jac.coeffRef(0, 1) = 2.0 * (x(1) - optimal_vel_(1)); // derivative of cost w.r.t x1
+        jac.coeffRef(0, 0) = -2.0 * (x(0)); // derivative of cost w.r.t x0
+        jac.coeffRef(0, 1) = -2.0 * (x(1)); // derivative of cost w.r.t x1
       }
     }
 

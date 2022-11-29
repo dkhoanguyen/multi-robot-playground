@@ -159,7 +159,7 @@ TEST(ORCACollision, CorrectORCAPlane)
 
   nav_msgs::msg::Odometry odom_B;
   // Position B vector [4,1]
-  odom_B.pose.pose.position.x = 2 - 1.703;
+  odom_B.pose.pose.position.x = 2 - 1.903;
   odom_B.pose.pose.position.y = 0;
   odom_B.pose.pose.position.z = 0;
 
@@ -200,7 +200,7 @@ TEST(ORCACollision, PlanVelocity)
 
   nav_msgs::msg::Odometry odom_B;
   // Position B vector [4,1]
-  odom_B.pose.pose.position.x = 2 - 1.703;
+  odom_B.pose.pose.position.x = 2 - 1.7503;
   odom_B.pose.pose.position.y = 0;
   odom_B.pose.pose.position.z = 0;
 

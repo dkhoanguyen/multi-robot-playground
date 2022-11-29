@@ -28,7 +28,7 @@ robots:
     - name: robot0
       namespace: robot0
       radius: 0.2
-      x: 2
+      x: 1
       y: 0
       yaw: -3.14
       model_package: modified_turtlebot3_gazebo

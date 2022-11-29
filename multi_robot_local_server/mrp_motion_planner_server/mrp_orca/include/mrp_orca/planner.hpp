@@ -9,6 +9,7 @@
 
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
 
@@ -50,6 +51,7 @@ namespace mrp_orca
 
     int current_waypoint_indx_;
     std::vector<geometry_msgs::msg::PoseStamped> path_;
+    geometry_msgs::msg::Pose temporary_waypoint_;
 
     double max_linear_vel_;
     double max_angular_vel_;
@@ -59,6 +61,7 @@ namespace mrp_orca
 
     std::atomic<bool> at_position_;
     std::atomic<bool> reach_goal_;
+    std::atomic<bool> moving_to_temp_;
 
     double calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
                                    const geometry_msgs::msg::Pose &current_waypoint);
@@ -74,7 +77,8 @@ namespace mrp_orca
 
     bool checkCollision(const Eigen::Vector2d &optimal_velocity,
                         const mrp_orca::geometry::HalfPlane &orca_plane);
-    void pickNewVelocity();
+    void approximateTemporaryWaypoint(const geometry_msgs::msg::Pose &current_pose,
+                                      const Eigen::Vector2d &vel_vect);
   };
 } // namespace mrp_orca
 
