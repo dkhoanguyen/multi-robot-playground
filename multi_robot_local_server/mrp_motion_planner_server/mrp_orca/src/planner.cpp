@@ -1,9 +1,10 @@
 #include "mrp_orca/planner.hpp"
+#include <iostream>
 
 namespace mrp_orca
 {
   MotionPlanner::MotionPlanner()
-      : robot_radius_(0.5),
+      : robot_radius_(0.05),
         observable_range_(2),
         delta_tau_(2),
         current_waypoint_indx_(0),
@@ -45,6 +46,7 @@ namespace mrp_orca
       sensor_msgs::msg::LaserScan &scan,
       geometry_msgs::msg::Twist &vel_cmd)
   {
+    std::cout << "Calculating velocity command " << std::endl;
     // Ignore motion comamnd if we are at target
     if (current_waypoint_indx_ == path_.size())
     {
@@ -70,6 +72,7 @@ namespace mrp_orca
                 robot_radius_, robot_radius_, delta_tau_, 0.5))
         {
           // We only append the orca_plane if it is valid
+          std::cout << orca_plane.line().normal() << std::endl;
           orca_planes.push_back(orca_plane);
         }
       }
@@ -122,6 +125,10 @@ namespace mrp_orca
     // Update cmd vel
     vel_cmd.linear.x = applied_vel(0);
     vel_cmd.angular.z = applied_vel(1);
+
+    std::cout << "Current waypoint index: " << current_waypoint_indx_ << std::endl; 
+    std::cout << "Current linear: " << vel_cmd.linear.x << std::endl;
+    std::cout << "Current angular: " << vel_cmd.angular.z << std::endl;
 
     if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
     {

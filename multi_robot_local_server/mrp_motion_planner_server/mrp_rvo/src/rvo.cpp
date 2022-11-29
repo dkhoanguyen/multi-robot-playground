@@ -36,14 +36,15 @@ namespace mrp_motion_planner
     ipopt.SetOption("linear_solver", "mumps");
     ipopt.SetOption("jacobian_approximation", "exact");
 
-    // 3 . solve
-    auto t_start = std::chrono::high_resolution_clock::now();
-    ipopt.Solve(nlp);
-    auto t_end = std::chrono::high_resolution_clock::now();
-    double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end-t_start).count();
-    Eigen::VectorXd x = nlp.GetOptVariables()->GetValues();
-    std::cout << "Solution: "<< x.transpose() << std::endl;
-    std::cout << "Elapsed time (ms): " << elapsed_time_ms << std::endl;
+    // // 3 . solve
+    // auto t_start = std::chrono::high_resolution_clock::now();
+    int status  = ipopt.Solve(nlp);
+    // std::cout << "Status: " << status << std::endl;
+    // auto t_end = std::chrono::high_resolution_clock::now();
+    // double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end-t_start).count();
+    // Eigen::VectorXd x = nlp.GetOptVariables()->GetValues();
+    // std::cout << "Solution: "<< x.transpose() << std::endl;
+    // std::cout << "Elapsed time (ms): " << elapsed_time_ms << std::endl;
   }
 
   void RVO::stop()

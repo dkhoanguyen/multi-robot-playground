@@ -1,4 +1,5 @@
 #include "mrp_orca/orca.hpp"
+#include <iostream>
 
 namespace mrp_orca
 {
@@ -62,6 +63,7 @@ namespace mrp_orca
             mrp_common::GeometryUtils::projectToXY(side_edge, lower_angle),
             mrp_common::GeometryUtils::projectToXY(side_edge, upper_angle)))
     {
+      std::cout << "Relative velocity is not bounded by the truncated VO (angle)" << std::endl;
       return false;
     }
     Eigen::Vector2d u(0,0);
@@ -72,6 +74,7 @@ namespace mrp_orca
       // Check if relative v is inside the circle
       if ((relative_v - bottom_circle).norm() > bottom_radius)
       {
+        std::cout << "Relative velocity is not bounded by the truncated VO (radius)" << std::endl;
         return false;
       }
       Eigen::Vector2d relative_to_center = relative_v - bottom_circle;

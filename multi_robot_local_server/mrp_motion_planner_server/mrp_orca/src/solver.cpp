@@ -135,16 +135,19 @@ namespace mrp_orca
       nlp.AddVariableSet(variables);
       nlp.AddConstraintSet(constraints);
       nlp.AddCostSet(cost);
-      nlp.PrintCurrent();
-
+      
       // 2. choose solver and options
       ifopt::IpoptSolver ipopt;
       ipopt.SetOption("print_level", 0);
       ipopt.SetOption("linear_solver", "mumps");
       ipopt.SetOption("jacobian_approximation", "exact");
 
-      ipopt.Solve(nlp);
-      return nlp.GetOptVariables()->GetValues();
+      int status = ipopt.Solve(nlp);
+      if(status == 0)
+      {
+        return nlp.GetOptVariables()->GetValues();
+      }
+      return Eigen::Vector2d(0,0);
     }
   }
 }

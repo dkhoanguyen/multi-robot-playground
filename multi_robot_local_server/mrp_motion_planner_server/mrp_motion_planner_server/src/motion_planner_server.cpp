@@ -2,7 +2,7 @@
 
 namespace mrp_motion_planner
 {
-  const std::string MotionPlannerServer::FALLBACK_PLANNER = "spotturn";
+  const std::string MotionPlannerServer::FALLBACK_PLANNER = "orca";
   MotionPlannerServer::MotionPlannerServer(const std::string &planner_name)
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
