@@ -27,6 +27,15 @@ namespace mrp_orca
         const double &delta_tau,
         const double &weight);
 
+    static bool localConstruct(
+        mrp_orca::geometry::HalfPlane &output_orca,
+        const Eigen::Vector2d &desired_vel_A,
+        const nav_msgs::msg::Odometry &odom_B,
+        const double &radius_A, 
+        const double &radius_B,
+        const double &delta_tau,
+        const double &weight);
+
   protected:
   };
 }

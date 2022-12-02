@@ -1,5 +1,6 @@
 #include "mrp_orca/planner.hpp"
 #include <iostream>
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace mrp_orca
 {
@@ -53,6 +54,8 @@ namespace mrp_orca
 
     // If we are moving towards temporary waypoint
     // Skip the calculation of the ORCA planes and commence moving until we reach the target
+    // In the future this should not be like this
+    // ORCA should run at a lower frequency than control signal
     if (moving_to_temp_)
     {
       // std::cout << "Moving to temporary waypoint " << std::endl;
@@ -91,7 +94,7 @@ namespace mrp_orca
             current_waypoint);
         nav_msgs::msg::Odometry temp_current_odom = current_odom;
         // Maybe let's reconsider this at some point in the future
-        temp_current_odom.twist.twist.linear.x = vel_to_target(0);
+        temp_current_odom.twist.twist.linear.x = vel_to_target.norm();
 
         tf2::Quaternion quad;
         quad.setRPY(0, 0, std::atan2(current_waypoint.position.y - current_odom.pose.pose.position.y, current_waypoint.position.x - current_odom.pose.pose.position.x));
@@ -331,8 +334,26 @@ namespace mrp_orca
       linear_vel = max_linear_vel_;
     }
 
-    // Transform from polar coordinate to cartesian coordinate
-    return mrp_common::GeometryUtils::projectToXY(linear_vel, theta);
+    // Transform from polar coordinate to cartesian coordinate 
+    Eigen::Vector2d projected_vel = mrp_common::GeometryUtils::projectToXY(linear_vel, theta);
+    // Transform to world frame
+
+    geometry_msgs::msg::Pose vel_pos;
+    vel_pos.position.x = projected_vel(0);
+    vel_pos.position.y = projected_vel(1);
+
+    tf2::Transform t_w_r, t_r_v;
+    tf2::fromMsg(current_pose, t_w_r);
+    tf2::fromMsg(vel_pos, t_r_v);
+
+    tf2::Transform t_w_vel = t_w_r * t_r_v;
+    geometry_msgs::msg::Pose transformed_vel;
+    tf2::toMsg(t_w_vel,transformed_vel);
+
+    // std::cout << "Transformed vel x: " <<  transformed_vel.position.x << ", y: " << transformed_vel.position.y << std::endl;
+
+    // std::cout << "Optimal velocity: " << projected_vel.transpose() << std::endl;
+    return projected_vel;
   }
 
   Eigen::Vector2d MotionPlanner::calculateCmdVelFromVelVect(

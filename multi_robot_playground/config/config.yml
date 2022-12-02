@@ -17,9 +17,9 @@ robots:
     - name: robot
       namespace: robot
       radius: 0.2
-      x: 0
+      x: 1
       y: 0
-      yaw: 0
+      yaw: -3.14
       model_package: modified_turtlebot3_gazebo
       path_to_model: models/turtlebot3_burger/model.sdf
       urdf_package: turtlebot3_description
@@ -28,9 +28,9 @@ robots:
     - name: robot0
       namespace: robot0
       radius: 0.2
-      x: 1
+      x: 0
       y: 0
-      yaw: -3.14
+      yaw: 0
       model_package: modified_turtlebot3_gazebo
       path_to_model: models/turtlebot3_burger/model.sdf
       urdf_package: turtlebot3_description
