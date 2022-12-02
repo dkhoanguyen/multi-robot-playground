@@ -5,6 +5,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2/LinearMath/Transform.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include <Eigen/Dense>
 
@@ -13,8 +14,13 @@ namespace mrp_common
   class TransformUtils
   {
   public:
-    static tf2::Transform toLocalFrame(const tf2::Transform base_frame,
-                                       const tf2::Transform child_frame);
+    static geometry_msgs::msg::Pose toLocalFrame(
+        const geometry_msgs::msg::Pose base_frame,
+        const geometry_msgs::msg::Pose child_frame);
+
+    static geometry_msgs::msg::Pose toGlobalFrame(
+        const geometry_msgs::msg::Pose base_frame,
+        const geometry_msgs::msg::Pose child_frame);
   };
 
   class GeometryUtils

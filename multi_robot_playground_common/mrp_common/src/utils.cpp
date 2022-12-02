@@ -3,10 +3,30 @@
 
 namespace mrp_common
 {
-  tf2::Transform TransformUtils::toLocalFrame(const tf2::Transform base_frame,
-                                              const tf2::Transform child_frame)
+  geometry_msgs::msg::Pose TransformUtils::toLocalFrame(
+      const geometry_msgs::msg::Pose base_frame,
+      const geometry_msgs::msg::Pose child_frame)
   {
-    return base_frame.inverseTimes(child_frame);
+    tf2::Transform t_base, t_child, t_out;
+    geometry_msgs::msg::Pose out_pose;
+    tf2::fromMsg(base_frame, t_base);
+    tf2::fromMsg(child_frame, t_child);
+    t_out = t_base.inverseTimes(t_child);
+    tf2::toMsg(t_out, out_pose);
+    return out_pose;
+  }
+
+  geometry_msgs::msg::Pose TransformUtils::toGlobalFrame(
+      const geometry_msgs::msg::Pose base_frame,
+      const geometry_msgs::msg::Pose child_frame)
+  {
+    tf2::Transform t_base, t_child, t_out;
+    geometry_msgs::msg::Pose out_pose;
+    tf2::fromMsg(base_frame, t_base);
+    tf2::fromMsg(child_frame, t_child);
+    t_out = t_base * t_child;
+    tf2::toMsg(t_out, out_pose);
+    return out_pose;
   }
 
   double GeometryUtils::euclideanDistance(const geometry_msgs::msg::Pose &first,
@@ -48,22 +68,19 @@ namespace mrp_common
                                      const Eigen::Vector2d &upper_bound)
   {
     Eigen::Vector3d middle(
-      target_vector(0),
-      target_vector(1),
-      0
-    );
+        target_vector(0),
+        target_vector(1),
+        0);
 
     Eigen::Vector3d lower(
-      lower_bound(0),
-      lower_bound(1),
-      0
-    );
+        lower_bound(0),
+        lower_bound(1),
+        0);
 
     Eigen::Vector3d upper(
-      upper_bound(0),
-      upper_bound(1),
-      0
-    );
+        upper_bound(0),
+        upper_bound(1),
+        0);
 
     Eigen::Vector3d c_lm = lower.cross(middle);
     Eigen::Vector3d c_mu = middle.cross(upper);

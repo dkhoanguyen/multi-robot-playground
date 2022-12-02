@@ -63,6 +63,12 @@ namespace mrp_orca
     std::atomic<bool> reach_goal_;
     std::atomic<bool> moving_to_temp_;
 
+    void plan(
+        const nav_msgs::msg::Odometry &current_odom,
+        const std::vector<nav_msgs::msg::Odometry> &members_odom,
+        sensor_msgs::msg::LaserScan &scan,
+        geometry_msgs::msg::Twist &vel_cmd);
+
     double calculateLinearVelocity(const geometry_msgs::msg::Pose &current_pose,
                                    const geometry_msgs::msg::Pose &current_waypoint);
     double calculateAngularVelocity(const geometry_msgs::msg::Pose &current_pose,
