@@ -83,8 +83,9 @@ namespace mrp_orca
 
     bool checkCollision(const Eigen::Vector2d &optimal_velocity,
                         const mrp_orca::geometry::HalfPlane &orca_plane);
-    void approximateTemporaryWaypoint(const geometry_msgs::msg::Pose &current_pose,
-                                      const Eigen::Vector2d &vel_vect);
+    geometry_msgs::msg::Pose approximateTemporaryWaypoint(
+        const geometry_msgs::msg::Pose &current_pose,
+        const Eigen::Vector2d &vel_vect);
   };
 } // namespace mrp_orca
 

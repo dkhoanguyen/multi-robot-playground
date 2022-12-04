@@ -1,6 +1,5 @@
 #include "mrp_orca/planner.hpp"
 #include <iostream>
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 namespace mrp_orca
 {
@@ -53,136 +52,6 @@ namespace mrp_orca
     }
 
     return plan(current_odom, members_odom, scan, vel_cmd);
-
-    // // If we are moving towards temporary waypoint
-    // // Skip the calculation of the ORCA planes and commence moving until we reach the target
-    // // In the future this should not be like this
-    // // ORCA should run at a lower frequency than control signal
-    // if (moving_to_temp_)
-    // {
-    //   // std::cout << "Moving to temporary waypoint " << std::endl;
-    //   Eigen::Vector2d vel_to_target = calculateVelocityToTarget(
-    //       current_odom.pose.pose,
-    //       temporary_waypoint_);
-    //   // Maybe let's reconsider this at some point in the future
-    //   vel_cmd.angular.z = vel_to_target(0);
-    //   vel_cmd.linear.x = vel_to_target(1);
-
-    //   if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
-    //   {
-    //     at_position_ = false;
-    //     moving_to_temp_ = false;
-    //   }
-    //   return;
-    // }
-
-    // // Else extract the next target location
-    // geometry_msgs::msg::Pose current_waypoint = path_.at(current_waypoint_indx_).pose;
-
-    // std::vector<mrp_orca::geometry::HalfPlane> orca_planes;
-    // for (const nav_msgs::msg::Odometry member_odom : members_odom)
-    // {
-    //   mrp_orca::geometry::HalfPlane orca_plane;
-    //   // For each member odom, construct the orca plane if the distance between the
-    //   // robots are within some observable range
-    //   if (mrp_common::GeometryUtils::euclideanDistance(
-    //           current_odom.pose.pose,
-    //           member_odom.pose.pose) <= observable_range_)
-    //   {
-    //     // For now with the lack of robot_info custom message, assume all robots have
-    //     // the same radius and same weight
-    //     Eigen::Vector2d vel_to_target = calculateOptimalVelocity(
-    //         current_odom.pose.pose,
-    //         current_waypoint);
-    //     nav_msgs::msg::Odometry temp_current_odom = current_odom;
-    //     // Maybe let's reconsider this at some point in the future
-    //     temp_current_odom.twist.twist.linear.x = vel_to_target.norm();
-
-    //     tf2::Quaternion quad;
-    //     quad.setRPY(0, 0, std::atan2(current_waypoint.position.y - current_odom.pose.pose.position.y, current_waypoint.position.x - current_odom.pose.pose.position.x));
-    //     tf2::convert(quad, temporary_waypoint_.orientation);
-
-    //     if (mrp_orca::ORCA::construct(
-    //             orca_plane, temp_current_odom, member_odom,
-    //             robot_radius_, robot_radius_, delta_tau_, 1))
-    //     {
-    //       // We only append the orca_plane if it is valid
-    //       orca_planes.push_back(orca_plane);
-    //     }
-    //   }
-    // }
-
-    // // If there is no immediate collision, get the optimal velocity to target
-    // if (orca_planes.size() == 0)
-    // {
-    //   // Get optimal velocity to target
-    //   Eigen::Vector2d vel_to_target = calculateVelocityToTarget(
-    //       current_odom.pose.pose,
-    //       current_waypoint);
-    //   // Maybe let's reconsider this at some point in the future
-    //   vel_cmd.angular.z = vel_to_target(0);
-    //   vel_cmd.linear.x = vel_to_target(1);
-
-    //   if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
-    //   {
-    //     if (current_waypoint_indx_ < path_.size())
-    //     {
-    //       current_waypoint_indx_++;
-    //     }
-    //     else
-    //     {
-    //       reach_goal_ = true;
-    //     }
-    //     at_position_ = false;
-    //   }
-
-    //   return;
-    // }
-    // else
-    // {
-    //   // std::cout << "Potential collision detected" << std::endl;
-    // }
-
-    // // If there is a collision in the near future
-    // // Solve the linear programming optimisation to find the optimal velocity vector
-    // // that is close to the desired velocity to target
-    // Eigen::Vector2d opt_vel_vector = calculateOptimalVelocity(current_odom.pose.pose,
-    //                                                           current_waypoint);
-    // // Create orca variable object
-    // std::shared_ptr<mrp_orca::solver::Variables>
-    //     orca_variables_ptr = std::make_shared<mrp_orca::solver::Variables>();
-    // // Optimise from robot current velocity (which is the optimised velocity toward the target position)
-    // orca_variables_ptr->SetVariables(opt_vel_vector);
-    // // Set bounds
-    // // Upper bounds
-    // Eigen::Vector2d upper_bound(0.1, 0.1);
-    // Eigen::Vector2d lower_bound(-0.1, -0.1);
-    // orca_variables_ptr->SetBounds(lower_bound, upper_bound);
-
-    // // Create orca cost function
-    // std::shared_ptr<mrp_orca::solver::Cost>
-    //     orca_cost_ptr = std::make_shared<mrp_orca::solver::Cost>();
-    // // Set optimal velocity for cost function (x - xopt)^2 + (y - yopt)^2
-    // orca_cost_ptr->SetOptimalVelocity(opt_vel_vector);
-
-    // // Create orca constraints
-    // std::shared_ptr<mrp_orca::solver::Constraint>
-    //     orca_constraint_ptr = std::make_shared<mrp_orca::solver::Constraint>(orca_planes.size());
-    // orca_constraint_ptr->AddConstraints(orca_planes);
-
-    // // Create solver and solve for optimal velocity
-    // Eigen::Vector2d non_collision_velocity = mrp_orca::solver::Solver::solve(
-    //     orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
-
-    // approximateTemporaryWaypoint(current_odom.pose.pose, non_collision_velocity);
-    // moving_to_temp_ = true;
-
-    // Eigen::Vector2d vel_to_target = calculateVelocityToTarget(
-    //     current_odom.pose.pose,
-    //     temporary_waypoint_);
-    // // Maybe let's reconsider this at some point in the future
-    // vel_cmd.angular.z = vel_to_target(0);
-    // vel_cmd.linear.x = vel_to_target(1);
   }
 
   // For feedback
@@ -396,7 +265,7 @@ namespace mrp_orca
     return true;
   }
 
-  void MotionPlanner::approximateTemporaryWaypoint(
+  geometry_msgs::msg::Pose MotionPlanner::approximateTemporaryWaypoint(
       const geometry_msgs::msg::Pose &current_pose,
       const Eigen::Vector2d &vel_vect)
   {
@@ -410,7 +279,7 @@ namespace mrp_orca
     quad.setRPY(0, 0, std::atan2(vel_vect(1), vel_vect(0)));
     tf2::convert(quad, local_temp_pose.orientation);
 
-    temporary_waypoint_ = mrp_common::TransformUtils::toGlobalFrame(
+    return mrp_common::TransformUtils::toGlobalFrame(
         current_pose, local_temp_pose);
   }
 
@@ -489,9 +358,7 @@ namespace mrp_orca
           current_odom.pose.pose,
           current_waypoint);
       // Maybe let's reconsider this at some point in the future
-      vel_cmd.angular.z = vel_
-    // std::cout << "ORCA point: " << orca_point.transpose() << std::endl;
-    // std::cout << "U: " << weighted_u.transpose() << std::endl;to_target(0);
+      vel_cmd.angular.z = vel_to_target(0);
       vel_cmd.linear.x = vel_to_target(1);
 
       if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
@@ -541,7 +408,7 @@ namespace mrp_orca
 
     // std::cout << "Non collision: " << non_collision_velocity.transpose() << std::endl;
 
-    approximateTemporaryWaypoint(current_odom.pose.pose, non_collision_velocity);
+    temporary_waypoint_ = approximateTemporaryWaypoint(current_odom.pose.pose, non_collision_velocity);
     moving_to_temp_ = true;
 
     Eigen::Vector2d vel_to_target = calculateVelocityToTarget(

@@ -78,8 +78,8 @@ def main(args=None):
     robot0_waypoints = []
     robot0_waypoint1 = {}
     robot0_waypoint1['position'] = {
-        'x' : 2.0,
-        'y' : 0.0,
+        'x' : 0.0,
+        'y' : 2.0,
         'z' : 0.0
     }
     robot0_waypoint1['orientation'] = {
