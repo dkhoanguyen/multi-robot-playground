@@ -154,7 +154,7 @@ namespace mrp_orca
     // Relative velocity
     Eigen::Vector2d relative_v = desired_vel_A - B_vel_vector;
 
-    std::cout << "relative_v: " << relative_v.transpose() << std::endl;
+    // std::cout << "relative_v: " << relative_v.transpose() << std::endl;
 
     // Ok so before we carry on let's check if there is a collision
     // If relative vector is not bounded by the truncated VO
@@ -211,8 +211,8 @@ namespace mrp_orca
     Eigen::Vector2d weighted_u = weight * u;
     Eigen::Vector2d orca_point = desired_vel_A + weighted_u;
 
-    std::cout << "ORCA point: " << orca_point.transpose() << std::endl;
-    std::cout << "U: " << weighted_u.transpose() << std::endl;
+    // std::cout << "ORCA point: " << orca_point.transpose() << std::endl;
+    // std::cout << "U: " << weighted_u.transpose() << std::endl;
 
     // Construct ORCA halfplane
     geometry::Line orca_line(weighted_u, orca_point);

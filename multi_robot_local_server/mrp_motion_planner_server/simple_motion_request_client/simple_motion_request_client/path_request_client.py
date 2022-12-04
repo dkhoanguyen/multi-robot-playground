@@ -76,18 +76,18 @@ def main(args=None):
 
     # Robot 0
     robot0_waypoints = []
-    # robot0_waypoint1 = {}
-    # robot0_waypoint1['position'] = {
-    #     'x' : 2.0,
-    #     'y' : 0.0,
-    #     'z' : 0.0
-    # }
-    # robot0_waypoint1['orientation'] = {
-    #     'r' : 0.0,
-    #     'p' : 0.0,
-    #     'y' : atan2(1.0 - 0, 0.0 - 0)
-    # }
-    # robot0_waypoints.append(robot0_waypoint1)
+    robot0_waypoint1 = {}
+    robot0_waypoint1['position'] = {
+        'x' : 2.0,
+        'y' : 0.0,
+        'z' : 0.0
+    }
+    robot0_waypoint1['orientation'] = {
+        'r' : 0.0,
+        'p' : 0.0,
+        'y' : atan2(1.0 - 0, 0.0 - 0)
+    }
+    robot0_waypoints.append(robot0_waypoint1)
 
     robot0_waypoint2 = {}
     robot0_waypoint2['position'] = {

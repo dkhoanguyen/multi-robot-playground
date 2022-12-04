@@ -424,8 +424,6 @@ namespace mrp_orca
     // Skip the calculation of the ORCA planes and commence moving until we reach the target
     // In the future this should not be like this
     // ORCA should run at a lower frequency than control signal
-
-    //
     nav_msgs::msg::Odometry local_odom_A;
     if (moving_to_temp_)
     {
@@ -491,7 +489,9 @@ namespace mrp_orca
           current_odom.pose.pose,
           current_waypoint);
       // Maybe let's reconsider this at some point in the future
-      vel_cmd.angular.z = vel_to_target(0);
+      vel_cmd.angular.z = vel_
+    // std::cout << "ORCA point: " << orca_point.transpose() << std::endl;
+    // std::cout << "U: " << weighted_u.transpose() << std::endl;to_target(0);
       vel_cmd.linear.x = vel_to_target(1);
 
       if (vel_cmd.angular.z == 0 && vel_cmd.linear.x == 0 && at_position_)
@@ -539,7 +539,7 @@ namespace mrp_orca
     Eigen::Vector2d non_collision_velocity = mrp_orca::solver::Solver::solve(
         orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
 
-    std::cout << "Non collision: " << non_collision_velocity.transpose() << std::endl;
+    // std::cout << "Non collision: " << non_collision_velocity.transpose() << std::endl;
 
     approximateTemporaryWaypoint(current_odom.pose.pose, non_collision_velocity);
     moving_to_temp_ = true;
