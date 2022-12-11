@@ -12,6 +12,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
+#include "mrp_common/parameter_interface.hpp"
 
 #include "mrp_common/utils.hpp"
 
@@ -44,7 +45,13 @@ namespace mrp_orca
     // For accessing
     bool reachGoal();
 
+    // Should we abstract away the setting of parameters ?
+    // Maybe not ?
+    // For accessing ROS parameter server
+    void setParameterInterface(std::shared_ptr<mrp_common::ParameterInterface> params_interface);
+
   protected:
+    std::shared_ptr<mrp_common::ParameterInterface> params_interface_;
     double robot_radius_;
     double observable_range_;
     double delta_tau_;
@@ -86,6 +93,9 @@ namespace mrp_orca
     geometry_msgs::msg::Pose approximateTemporaryWaypoint(
         const geometry_msgs::msg::Pose &current_pose,
         const Eigen::Vector2d &vel_vect);
+
+    template<typename ParameterType>
+    void obtainParameterFromServer(const std::string &param_name, ParameterType &parameter);
   };
 } // namespace mrp_orca
 

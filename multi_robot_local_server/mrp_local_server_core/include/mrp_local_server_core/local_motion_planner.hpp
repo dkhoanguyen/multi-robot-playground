@@ -7,6 +7,8 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 
+#include "mrp_common/parameter_interface.hpp"
+
 namespace mrp_local_server_core
 {
   class MotionPlannerInterface

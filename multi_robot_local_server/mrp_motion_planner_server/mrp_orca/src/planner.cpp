@@ -1,5 +1,4 @@
 #include "mrp_orca/planner.hpp"
-#include <iostream>
 
 namespace mrp_orca
 {
@@ -24,6 +23,18 @@ namespace mrp_orca
 
   void MotionPlanner::initialise()
   {
+    // Declare parameters
+    double robot_radius_m = 0.105;
+    double observable_range_m = 1;
+    double delta_tau_t = 1.75;
+    double max_linear_vel_ms = 0.2;
+    double max_angular_vel_rads = 1.82;
+    double linear_err_m = 0.001;
+    double angular_err_rad = 0.01;
+
+    // Obtain parameters from server
+    
+
   }
   void MotionPlanner::start()
   {
@@ -221,9 +232,6 @@ namespace mrp_orca
     geometry_msgs::msg::Pose transformed_vel;
     tf2::toMsg(t_w_vel, transformed_vel);
 
-    // std::cout << "Transformed vel x: " <<  transformed_vel.position.x << ", y: " << transformed_vel.position.y << std::endl;
-
-    // std::cout << "Optimal velocity: " << projected_vel.transpose() << std::endl;
     return projected_vel;
   }
 
@@ -341,7 +349,7 @@ namespace mrp_orca
 
         if (mrp_orca::ORCA::localConstruct(
                 orca_plane, opt_vel_vector, local_member_odom,
-                robot_radius_, robot_radius_, delta_tau_, 1))
+                robot_radius_, robot_radius_, delta_tau_, 1) == mrp_orca::ORCA::Result::COLLISION)
         {
           // We only append the orca_plane if it is valid
           orca_planes.push_back(orca_plane);
@@ -419,6 +427,18 @@ namespace mrp_orca
     vel_cmd.linear.x = vel_to_target(1);
   }
 
+  void MotionPlanner::setParameterInterface(
+      std::shared_ptr<mrp_common::ParameterInterface> params_interface)
+  {
+    params_interface_ = params_interface;
+  }
+
+  template<typename ParameterType>
+  void MotionPlanner::obtainParameterFromServer(
+      const std::string &param_name, ParameterType &parameter)
+  {
+    params_interface_->getParameter(param_name, parameter);
+  }
 } // namespace mrp_orca
 
 #include "pluginlib/class_list_macros.hpp"

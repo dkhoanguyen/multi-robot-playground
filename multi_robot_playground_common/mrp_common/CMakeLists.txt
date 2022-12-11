@@ -51,6 +51,7 @@ set(library_name mrp_common)
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
   src/utils.cpp
+  src/parameter_client.cpp
   ${HEADER_FILES}
 )
 
