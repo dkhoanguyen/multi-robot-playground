@@ -44,7 +44,7 @@ def prepare_launch(context):
 
     # This is for lifecycle manager
     components_list = [
-        # 'robot_comms_server',
+        'robot_comms_server',
         # 'task_planner_server',
         # 'task_execution_server',
         'motion_planner_server'
@@ -58,6 +58,9 @@ def prepare_launch(context):
     ]
     
     # Load components
+    # Robot comms 
+
+
     # Motion planner
     motion_planner_server_pkg = get_package_share_directory(
         'mrp_motion_planner_server')
@@ -101,14 +104,14 @@ def prepare_launch(context):
                         {'autostart': autostart},
                         lifecycle_manager_settings['general']]))
 
-    node_actions.append(
-        Node(
-            package='multi_robot_component_testing',
-            executable='minimal_service_server',
-            output='screen',
-            namespace=robot_name,
-            arguments=['--ros-args']
-        ))
+    # node_actions.append(
+    #     Node(
+    #         package='multi_robot_component_testing',
+    #         executable='minimal_service_server',
+    #         output='screen',
+    #         namespace=robot_name,
+    #         arguments=['--ros-args']
+    #     ))
 
     load_nodes = GroupAction(node_actions)
 

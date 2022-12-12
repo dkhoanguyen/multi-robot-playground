@@ -23,7 +23,7 @@ def generate_launch_description():
                          'mrp_local_bringup.launch.py')
         ),
         launch_arguments=[
-            ('robot_name', 'robot1')],
+            ('robot_name', 'robot')],
     )
 
     ld.add_action(robot1_bringup)
@@ -35,7 +35,7 @@ def generate_launch_description():
                          'mrp_local_bringup.launch.py')
         ),
         launch_arguments=[
-            ('robot_name', 'robot2')],
+            ('robot_name', 'robot0')],
     )
 
     ld.add_action(robot2_bringup)

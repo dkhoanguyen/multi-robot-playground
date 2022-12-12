@@ -92,7 +92,7 @@ namespace mrp_motion_planner
   void RVO::calculateVelocityCommand(
       const nav_msgs::msg::Odometry &current_odom,
       const std::vector<nav_msgs::msg::Odometry> &members_odom,
-      sensor_msgs::msg::LaserScan &scan,
+      const sensor_msgs::msg::LaserScan &scan,
       geometry_msgs::msg::Twist &vel_cmd)
   {
     if (current_waypoint_indx_ == path_.size())

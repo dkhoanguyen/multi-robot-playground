@@ -35,7 +35,7 @@ namespace mrp_motion_planner
     void calculateVelocityCommand(
         const nav_msgs::msg::Odometry &current_odom,
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
-        sensor_msgs::msg::LaserScan &scan,
+        const sensor_msgs::msg::LaserScan &scan,
         geometry_msgs::msg::Twist &vel_cmd);
 
     // For feedback 

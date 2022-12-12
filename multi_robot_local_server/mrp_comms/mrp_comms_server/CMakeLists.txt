@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(mrp_common)
+project(mrp_comms_server)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -16,73 +16,61 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_ros REQUIRED)
+find_package(mrp_common REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
-find_package(lifecycle_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(eigen3_cmake_module REQUIRED)
-find_package(Eigen3 REQUIRED)
-# include_directories(
-#   include
-# )
+find_package(mrp_comms_msgs REQUIRED)
+
+include_directories(
+  include
+)
 
 set(dependencies
   rclcpp
   rclcpp_components
+  rclcpp_action
+  mrp_common
   mrp_common_msgs
-  rclcpp_lifecycle
-  lifecycle_msgs
-  geometry_msgs
-  Eigen3
+  mrp_comms_msgs
 )
 
-set(HEADER_FILES 
-  include/mrp_common/action_client.hpp
-  include/mrp_common/action_server.hpp
-  include/mrp_common/lifecycle_node.hpp
-  include/mrp_common/service_client.hpp
-  include/mrp_common/service_server.hpp
-)
-
-set(library_name mrp_common)
+set(library_name robot_comms_server)
 add_library(${library_name} SHARED
-  src/lifecycle_node.cpp
-  src/utils.cpp
-  # src/parameter_client.cpp
-  ${HEADER_FILES}
+  src/comms_server.cpp
 )
-
-target_include_directories(${library_name} PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-$<INSTALL_INTERFACE:include>
-"${Eigen3_INCLUDE_DIRS}")
-
 
 ament_target_dependencies(${library_name} ${dependencies})
 
+set(executable_name comms_server_exec)
+add_executable(${executable_name}
+  src/main.cpp
+)
+
+target_link_libraries(${executable_name} 
+  ${library_name}
+)
+
 install(
   TARGETS ${library_name}
-  EXPORT ${library_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
 )
 
-# ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
+install(TARGETS ${executable_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(
-  DIRECTORY include/${library_name}
+  DIRECTORY include/
   DESTINATION include
 )
 
-# rosidl_generate_interfaces(${PROJECT_NAME}
-#   "msg/Heartbeat.msg"
-#   DEPENDENCIES std_msgs
-# )
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -96,6 +84,8 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+ament_export_libraries(
+  ${library_name})
 ament_export_dependencies(${dependencies})
-ament_export_libraries(${library_name})
 ament_package()
+
