@@ -40,4 +40,28 @@ def generate_launch_description():
 
     ld.add_action(robot2_bringup)
 
+    # Robot 2
+    robot2_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(mrp_local_bringup_pkg, 'launch',
+                         'mrp_local_bringup.launch.py')
+        ),
+        launch_arguments=[
+            ('robot_name', 'robot1')],
+    )
+
+    ld.add_action(robot2_bringup)
+
+    # Robot 3
+    robot3_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(mrp_local_bringup_pkg, 'launch',
+                         'mrp_local_bringup.launch.py')
+        ),
+        launch_arguments=[
+            ('robot_name', 'robot2')],
+    )
+
+    ld.add_action(robot3_bringup)
+
     return ld

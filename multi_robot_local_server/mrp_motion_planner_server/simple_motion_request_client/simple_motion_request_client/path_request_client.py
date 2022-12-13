@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
+import os
+import yaml
+import argparse
 from math import atan2
+
+from ament_index_python.packages import get_package_share_directory
 
 import rclpy
 from rclpy.node import Node
@@ -13,7 +18,7 @@ from tf_transformations import quaternion_from_euler
 
 class PathRequestClient(Node):
     def __init__(self, robot_name='robot'):
-        super().__init__('PathRequestClient')
+        super().__init__(f'{robot_name}_path_request_client')
         self._action_client = ActionClient(
             self, FollowPath, f'/{robot_name}/follow_path')
 
@@ -73,38 +78,17 @@ class PathRequestClient(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
-    # Robot 0
-    robot0_waypoints = []
-    robot0_waypoint1 = {}
-    robot0_waypoint1['position'] = {
-        'x' : 0.0,
-        'y' : 2.0,
-        'z' : 0.0
-    }
-    robot0_waypoint1['orientation'] = {
-        'r' : 0.0,
-        'p' : 0.0,
-        'y' : atan2(1.0 - 0, 0.0 - 0)
-    }
-    robot0_waypoints.append(robot0_waypoint1)
-
-    robot0_waypoint2 = {}
-    robot0_waypoint2['position'] = {
-        'x' : -1.0,
-        'y' : 0.0,
-        'z' : 0.0
-    }
-    robot0_waypoint2['orientation'] = {
-        'r' : 0.0,
-        'p' : 0.0,
-        'y' : 0.0
-    }
-    robot0_waypoints.append(robot0_waypoint2)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--robot_name", required=True, type=str, help='Robot name')
+    args = parser.parse_args()
     
+    pkg_path = get_package_share_directory('simple_motion_request_client')
+    with open(os.path.join(pkg_path, 'config/path.yml'), 'r') as path_stream:
+        path_list = yaml.safe_load(path_stream)
 
-    action_client = PathRequestClient()
-    action_client.send_goal(robot0_waypoints)
+    action_client = PathRequestClient(args.robot_name)
+    action_client.send_goal(path_list['paths'][str(args.robot_name)])
 
     print("Done sending goal")
     rclpy.spin(action_client)
