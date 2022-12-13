@@ -56,9 +56,6 @@ namespace mrp_lifecycle_manager
           get_node_logging_interface(),
           "Auto configuring lifecycle_manager");
       configure();
-      // std::cout << "Activating servers" << std::endl;
-      // activate();
-      // std::cout << "Done activating servers" << std::endl;
     }
   }
 

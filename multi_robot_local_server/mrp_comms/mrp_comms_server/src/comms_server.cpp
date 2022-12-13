@@ -29,6 +29,9 @@ namespace mrp_comms
     // Create get_all_team
     createGetAllTeamsServer();
 
+    // Initialise heartbeat
+    initialiseHeartbeat();
+
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Robot comms server initialises successfully");
@@ -39,7 +42,6 @@ namespace mrp_comms
   {
     // Start beating
     startHeartbeat();
-
     return true;
   }
   bool CommsServer::stop()

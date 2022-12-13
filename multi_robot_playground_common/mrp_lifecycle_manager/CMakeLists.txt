@@ -92,6 +92,7 @@ install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/simple_state_change_request.py
+  scripts/lifecycle_client.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -59,7 +59,23 @@ def prepare_launch(context):
     
     # Load components
     # Robot comms 
+    robot_comms_server_pkg = get_package_share_directory(
+        'mrp_comms_server')
+    # Load parameters
+    with open(os.path.join(robot_comms_server_pkg, settings_path), 'r') as config_stream:
+        comms_settings = yaml.safe_load(config_stream)
+        heartbeat_list.append(
+            comms_settings['general']['health']['heartbeat'])
 
+    node_actions.append(
+        Node(
+            package='mrp_comms_server',
+            executable='comms_server_exec',
+            output='screen',
+            namespace=robot_name,
+            arguments=['--ros-args', '--log-level', log_level]
+        )
+    )
 
     # Motion planner
     motion_planner_server_pkg = get_package_share_directory(
@@ -83,7 +99,6 @@ def prepare_launch(context):
                  'planner_plugin': motion_planner_settings['planners']['default_planner']}]
         )
     )
-
     # Finally lifecycle manager
     # Preparing monitored node lists for manager
     lifecycle_manager_pkg = get_package_share_directory(
@@ -103,15 +118,6 @@ def prepare_launch(context):
                         {'heartbeat_interval': heartbeat_list},
                         {'autostart': autostart},
                         lifecycle_manager_settings['general']]))
-
-    # node_actions.append(
-    #     Node(
-    #         package='multi_robot_component_testing',
-    #         executable='minimal_service_server',
-    #         output='screen',
-    #         namespace=robot_name,
-    #         arguments=['--ros-args']
-    #     ))
 
     load_nodes = GroupAction(node_actions)
 

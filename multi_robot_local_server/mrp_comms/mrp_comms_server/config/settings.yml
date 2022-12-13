@@ -1,0 +1,3 @@
+general:
+  health:
+    heartbeat: 1000.0

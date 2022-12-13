@@ -5,11 +5,13 @@ from rclpy.node import Node
 from mrp_common_msgs.msg import MonitoredNode
 from mrp_common_msgs.srv import MonitoredNodeArray
 
+from lifecycle_msgs.srv import ChangeState, GetState
 
-class StateChangeRequestClient(Node):
+
+class ChangeStateRequestClient(Node):
     def __init__(self, robot_name='robot0'):
-        super().__init__('minimal_client_async')
-        self.cli = self.create_client(MonitoredNodeArray, f'/{robot_name}/lifecycle_manager/change_monitored_nodes_state')
+        super().__init__('state_change_client')
+        self.cli = self.create_client(GetState, f'/{robot_name}/lifecycle_manager/change_monitored_nodes_state')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.req = MonitoredNodeArray.Request()
