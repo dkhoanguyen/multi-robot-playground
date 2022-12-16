@@ -3,14 +3,14 @@
 namespace mrp_orca
 {
   MotionPlanner::MotionPlanner()
-      : robot_radius_(0.150),
+      : robot_radius_(0.14),
         observable_range_(1),
-        delta_tau_(2.25),
+        delta_tau_(1.5),
         current_waypoint_indx_(0),
         max_linear_vel_(0.1),
         max_angular_vel_(2.0),
         linear_error_(0.01),
-        angular_error_(0.01),
+        angular_error_(0.05),
         at_position_(false),
         reach_goal_(false),
         moving_to_temp_(false)
@@ -395,8 +395,8 @@ namespace mrp_orca
     orca_variables_ptr->SetVariables(opt_vel_vector);
     // Set bounds
     // Upper bounds
-    Eigen::Vector2d upper_bound(0.05, 0.055);
-    Eigen::Vector2d lower_bound(-0.05, -0.05);
+    Eigen::Vector2d upper_bound(0.1, 0.1);
+    Eigen::Vector2d lower_bound(-0.1, -0.1);
     orca_variables_ptr->SetBounds(lower_bound, upper_bound);
 
     // Create orca cost function

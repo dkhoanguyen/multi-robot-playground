@@ -41,7 +41,7 @@ def generate_launch_description():
     ld.add_action(robot2_bringup)
 
     # Robot 2
-    robot2_bringup = IncludeLaunchDescription(
+    robot3_bringup = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(mrp_local_bringup_pkg, 'launch',
                          'mrp_local_bringup.launch.py')
@@ -50,10 +50,10 @@ def generate_launch_description():
             ('robot_name', 'robot1')],
     )
 
-    ld.add_action(robot2_bringup)
+    ld.add_action(robot3_bringup)
 
     # Robot 3
-    robot3_bringup = IncludeLaunchDescription(
+    robot4_bringup = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(mrp_local_bringup_pkg, 'launch',
                          'mrp_local_bringup.launch.py')
@@ -62,6 +62,6 @@ def generate_launch_description():
             ('robot_name', 'robot2')],
     )
 
-    ld.add_action(robot3_bringup)
+    ld.add_action(robot4_bringup)
 
     return ld
