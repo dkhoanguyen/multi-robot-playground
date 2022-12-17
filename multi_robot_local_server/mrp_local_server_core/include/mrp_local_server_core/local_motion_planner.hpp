@@ -1,6 +1,8 @@
 #ifndef MRP_LOCAL_SERVER_CORE_LOCAL_MOTION_PLANNER_HPP_
 #define MRP_LOCAL_SERVER_CORE_LOCAL_MOTION_PLANNER_HPP_
 
+#include <unordered_map>
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
@@ -33,6 +35,9 @@ namespace mrp_local_server_core
 
     // For accessing
     virtual bool reachGoal() = 0;
+
+    // For settingg parameters
+    virtual void setParameter(const std::unordered_map<std::string, double> &param_map) = 0;
   };
 }
 
