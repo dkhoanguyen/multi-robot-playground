@@ -36,6 +36,8 @@ namespace mrp_nmpc_orca
     // For accessing
     bool reachGoal();
 
+    void setParameter(const std::unordered_map<std::string, double> &param_map);
+
   protected:
     std::shared_ptr<mrp_common::ParameterInterface> params_interface_;
     double robot_radius_;

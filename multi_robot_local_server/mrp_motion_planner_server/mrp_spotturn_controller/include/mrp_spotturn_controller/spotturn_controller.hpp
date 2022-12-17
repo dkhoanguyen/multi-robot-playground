@@ -31,6 +31,7 @@ namespace mrp_motion_planner
     void resume();
     void pause();
     void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path);
+    void setParameter(const std::unordered_map<std::string, double> &param_map);
 
     void calculateVelocityCommand(
         const nav_msgs::msg::Odometry &current_odom,

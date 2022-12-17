@@ -59,7 +59,53 @@ namespace mrp_nmpc_orca
   {
   }
 
+  void PoseStablisingMPC::setParameter(const std::unordered_map<std::string, double> &param_map)
+  {
+  }
+
   class FG_eval
+  {
+  public:
+    // Reference values
+    double ref_x_, ref_y_, ref_theta_, ref_v_, ref_omega_;
+    double dt_;
+    int mpc_steps_, x_start_, y_start_, theta_start_, v_start_, omega_start_;
+
+    double w_x_, w_y_, w_theta_, w_v_, w_omega_;
+    // Minimise
+    FG_eval()
+    {
+      mpc_steps_ = 40;
+      x_start_ = 0;
+      y_start_ = x_start_ + mpc_steps_;
+      theta_start_ = y_start_ + mpc_steps_;
+      v_start_ = theta_start_ + mpc_steps_ - 1;
+      omega_start_ = v_start_ + mpc_steps_ - 1;
+    }
+
+    typedef CPPAD_TESTVECTOR(CppAD::AD<double>) ADvector;
+    // fg: function that evaluates the objective and constraints using the syntax
+    void operator()(ADvector &fg, const ADvector &vars)
+    {
+      // fg[0] for cost function
+      fg[0] = 0;
+      for (int i = 0; i < mpc_steps_; i++)
+      {
+        fg[0] += w_x_ * CppAD::pow(vars[x_start_ + i] - ref_x_, 2);
+        fg[0] += w_y_ * CppAD::pow(vars[y_start_ + i] - ref_y_, 2);
+        fg[0] += w_theta_ * CppAD::pow(vars[theta_start_ + i] - ref_theta_, 2);
+      }
+
+      // Optimise for control signal
+      for (int i = 0; i < mpc_steps_ - 1; i++)
+      {
+        fg[0] += w_v_ * CppAD::pow(vars[v_start_ + i], 2);
+        fg[0] += w_omega_ * CppAD::pow(vars[omega_start_ + i], 2);
+      }
+    }
+  };
+
+  class FG_eval_1
   {
   public:
     // Fitted polynomial coefficients
@@ -71,7 +117,7 @@ namespace mrp_nmpc_orca
 
     CppAD::AD<double> cost_cte, cost_etheta, cost_vel;
     // Constructor
-    FG_eval(Eigen::VectorXd coeffs)
+    FG_eval_1(Eigen::VectorXd coeffs)
     {
       this->coeffs = coeffs;
 
@@ -243,7 +289,6 @@ namespace mrp_nmpc_orca
         fg[2 + _cte_start + i] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(etheta0) * _dt));
         fg[2 + _etheta_start + i] = etheta1 - ((theta0 - trj_grad0) + w0 * _dt);
       }
-
     }
   };
 }

@@ -182,6 +182,11 @@ namespace mrp_motion_planner
 
     return angular_vel;
   }
+
+  void SpotTurn::setParameter(const std::unordered_map<std::string, double> &param_map)
+  {
+
+  }
 } // namespace spotturn_controller
 
 #include "pluginlib/class_list_macros.hpp"

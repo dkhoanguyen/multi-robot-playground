@@ -439,6 +439,11 @@ namespace mrp_orca
   {
     params_interface_->getParameter(param_name, parameter);
   }
+
+  void MotionPlanner::setParameter(const std::unordered_map<std::string, double> &param_map)
+  {
+
+  }
 } // namespace mrp_orca
 
 #include "pluginlib/class_list_macros.hpp"
