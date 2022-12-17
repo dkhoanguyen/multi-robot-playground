@@ -50,6 +50,17 @@ add_library(${library_name} SHARED
 
 ament_target_dependencies(${library_name} ${dependencies})
 
+set(executable_name test_nmpc)
+add_executable(${executable_name}
+  src/main.cpp
+)
+
+ament_target_dependencies(${library_name} ${dependencies})
+
+target_link_libraries(${executable_name} 
+  ${library_name}
+)
+
 install(
   TARGETS ${library_name}
   ARCHIVE DESTINATION lib
@@ -57,14 +68,16 @@ install(
   RUNTIME DESTINATION bin
 )
 
-install(FILES plugins.xml
-  DESTINATION share
-)
+install(TARGETS ${executable_name}
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(
   DIRECTORY include/
   DESTINATION include
 )
+
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   # Automatic inclusion of lint-related tests

@@ -183,80 +183,80 @@ TEST(ORCAGeometry, LineConstructionTest)
 //   EXPECT_NEAR(orca_p.line().point()(1), -0.0629, 0.001);
 // }
 
-// TEST(ORCACollision, PlanVelocity)
-// {
-//   nav_msgs::msg::Odometry odom_A;
-//   odom_A.pose.pose.position.x = 0;
-//   odom_A.pose.pose.position.y = 0;
-//   odom_A.pose.pose.position.z = 0;
+TEST(ORCACollision, PlanVelocity)
+{
+  nav_msgs::msg::Odometry odom_A;
+  odom_A.pose.pose.position.x = 0;
+  odom_A.pose.pose.position.y = 0;
+  odom_A.pose.pose.position.z = 0;
 
-//   Eigen::Vector2d vel_vect_A(0.1, 0.1);
-//   tf2::Quaternion quad;
-//   quad.setRPY(0, 0, std::atan2(vel_vect_A(1), vel_vect_A(0)));
-//   tf2::convert(quad, odom_A.pose.pose.orientation);
+  Eigen::Vector2d vel_vect_A(0.1, 0.1);
+  tf2::Quaternion quad;
+  quad.setRPY(0, 0, std::atan2(vel_vect_A(1), vel_vect_A(0)));
+  tf2::convert(quad, odom_A.pose.pose.orientation);
 
-//   nav_msgs::msg::Odometry odom_B;
-//   // Position B vector [4,1]
-//   odom_B.pose.pose.position.x = 0.3;
-//   odom_B.pose.pose.position.y = 0;
-//   odom_B.pose.pose.position.z = 0;
+  nav_msgs::msg::Odometry odom_B;
+  // Position B vector [4,1]
+  odom_B.pose.pose.position.x = 0.3;
+  odom_B.pose.pose.position.y = 0;
+  odom_B.pose.pose.position.z = 0;
 
-//   std::vector<nav_msgs::msg::Odometry> member_odoms = {odom_B};
+  std::vector<nav_msgs::msg::Odometry> member_odoms = {odom_B};
 
-//   // Velocity B vector [-1.22,0.23]
-//   Eigen::Vector2d vel_vect_B(-0.12, 0.1);
-//   quad.setRPY(0, 0, std::atan2(vel_vect_B(1), vel_vect_B(0)));
-//   tf2::convert(quad, odom_B.pose.pose.orientation);
-//   odom_B.twist.twist.linear.x = vel_vect_B.norm();
+  // Velocity B vector [-1.22,0.23]
+  Eigen::Vector2d vel_vect_B(-0.12, 0.1);
+  quad.setRPY(0, 0, std::atan2(vel_vect_B(1), vel_vect_B(0)));
+  tf2::convert(quad, odom_B.pose.pose.orientation);
+  odom_B.twist.twist.linear.x = vel_vect_B.norm();
 
-//   geometry_msgs::msg::Pose pose_B_vel;
-//   pose_B_vel.position.x = vel_vect_B(0);
-//   pose_B_vel.position.y = vel_vect_B(1);
+  geometry_msgs::msg::Pose pose_B_vel;
+  pose_B_vel.position.x = vel_vect_B(0);
+  pose_B_vel.position.y = vel_vect_B(1);
 
-//   // Convert B to A local frame
-//   tf2::Transform t_w_A, t_w_B, t_A_B;
-//   tf2::fromMsg(odom_A.pose.pose, t_w_A);
-//   tf2::fromMsg(odom_B.pose.pose, t_w_B);
+  // Convert B to A local frame
+  tf2::Transform t_w_A, t_w_B, t_A_B;
+  tf2::fromMsg(odom_A.pose.pose, t_w_A);
+  tf2::fromMsg(odom_B.pose.pose, t_w_B);
 
-//   t_A_B = t_w_A.inverse() * t_w_B;
-//   double r, p, y;
-//   t_A_B.getBasis().getRPY(r, p, y);
-//   geometry_msgs::msg::Pose pose_A_B, pose_A_Bvel;
-//   tf2::toMsg(t_A_B, pose_A_B);
+  t_A_B = t_w_A.inverse() * t_w_B;
+  double r, p, y;
+  t_A_B.getBasis().getRPY(r, p, y);
+  geometry_msgs::msg::Pose pose_A_B, pose_A_Bvel;
+  tf2::toMsg(t_A_B, pose_A_B);
 
-//   odom_B.pose.pose = pose_A_B;
+  odom_B.pose.pose = pose_A_B;
 
-//   EXPECT_NEAR(pose_A_B.position.x, 0.2121, 0.001);
-//   EXPECT_NEAR(pose_A_B.position.y, -0.2121, 0.001);
-//   // EXPECT_NEAR(y, 1.6615, 0.001);
+  EXPECT_NEAR(pose_A_B.position.x, 0.2121, 0.001);
+  EXPECT_NEAR(pose_A_B.position.y, -0.2121, 0.001);
+  // EXPECT_NEAR(y, 1.6615, 0.001);
 
-//   double radius_A = 0.05;
-//   double radius_B = 0.05;
-//   double delta_tau = 2.25;
-//   double weight = 1;
+  double radius_A = 0.05;
+  double radius_B = 0.05;
+  double delta_tau = 2.25;
+  double weight = 1;
 
-//   std::cout << "Vel B: " << mrp_common::GeometryUtils::projectToXY(vel_vect_B.norm(), y).transpose() << std::endl;
+  std::cout << "Vel B: " << mrp_common::GeometryUtils::projectToXY(vel_vect_B.norm(), y).transpose() << std::endl;
 
-//   mrp_orca::geometry::HalfPlane orca_p;
-//   bool result = mrp_orca::ORCA::localConstruct(orca_p, Eigen::Vector2d(vel_vect_A.norm(), 0), odom_B, radius_A, radius_B, delta_tau, weight);
-//   EXPECT_EQ(result, true);
+  mrp_orca::geometry::HalfPlane orca_p;
+  // bool result = mrp_orca::ORCA::localConstruct(orca_p, Eigen::Vector2d(vel_vect_A.norm(), 0), odom_B, radius_A, radius_B, delta_tau, weight);
+  // EXPECT_EQ(result, true);
 
-//   geometry_msgs::msg::Twist cmd_vel;
-//   sensor_msgs::msg::LaserScan scan;
+  geometry_msgs::msg::Twist cmd_vel;
+  sensor_msgs::msg::LaserScan scan;
 
-//   std::vector<geometry_msgs::msg::PoseStamped> path;
-//   geometry_msgs::msg::PoseStamped waypoint;
+  std::vector<geometry_msgs::msg::PoseStamped> path;
+  geometry_msgs::msg::PoseStamped waypoint;
 
-//   waypoint.pose.position.x = 2;
+  waypoint.pose.position.x = 2;
 
-//   path.push_back(waypoint);
+  path.push_back(waypoint);
 
-//   mrp_orca::MotionPlanner planner;
-//   planner.setPath(path);
+  mrp_orca::MotionPlanner planner;
+  planner.setPath(path);
 
-//   planner.calculateVelocityCommand(
-//       odom_A, member_odoms, scan, cmd_vel);
-// }
+  planner.calculateVelocityCommand(
+      odom_A, member_odoms, scan, cmd_vel);
+}
 
 int main(int argc, char **argv)
 {

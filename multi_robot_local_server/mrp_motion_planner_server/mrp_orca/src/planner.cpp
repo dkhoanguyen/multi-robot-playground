@@ -413,6 +413,9 @@ namespace mrp_orca
     // Create solver and solve for optimal velocity
     Eigen::Vector2d non_collision_velocity = mrp_orca::solver::Solver::solve(
         orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
+    
+    std::cout << non_collision_velocity(0) << std::endl;
+    std::cout << non_collision_velocity(1) << std::endl;
 
     // std::cout << "Non collision: " << non_collision_velocity.transpose() << std::endl;
 
