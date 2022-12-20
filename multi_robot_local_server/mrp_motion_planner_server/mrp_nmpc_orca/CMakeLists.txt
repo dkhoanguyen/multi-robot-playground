@@ -46,6 +46,7 @@ set(dependencies
 set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
   src/mpc.cpp
+  src/solver.cpp
 )
 
 ament_target_dependencies(${library_name} ${dependencies})
@@ -75,9 +76,6 @@ install(
   DIRECTORY include/
   DESTINATION include
 )
-
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
-install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   # Automatic inclusion of lint-related tests

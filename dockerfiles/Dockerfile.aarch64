@@ -45,6 +45,4 @@ RUN pip3 install transforms3d
 # Install gazebo 
 RUN apt install -y ros-foxy-gazebo-ros-pkgs ros-foxy-navigation2 ros-foxy-tf-transformations
 
-RUN apt install -y libmumps-5.2.1 libmumps-dev libmumps-seq-5.2.1 \
-  libmumps-seq-dev libscalapack-mpi-dev libscalapack-openmpi-dev libscalapack-openmpi2.1 \
-  libscotch-6.0
+RUN apt install -y coinor-libipopt-dev cppad

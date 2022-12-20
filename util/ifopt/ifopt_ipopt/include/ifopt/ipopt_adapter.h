@@ -27,9 +27,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef IFOPT_INCLUDE_OPT_IPOPT_ADAPTER_H_
 #define IFOPT_INCLUDE_OPT_IPOPT_ADAPTER_H_
 
-#include <coin-or/IpTNLP.hpp>
-#include <coin-or/IpIpoptApplication.hpp>
-#include <coin-or/IpSolveStatistics.hpp>
+#include <coin/IpTNLP.hpp>
+#include <coin/IpIpoptApplication.hpp>
+#include <coin/IpSolveStatistics.hpp>
 
 #include <ifopt/problem.h>
 
