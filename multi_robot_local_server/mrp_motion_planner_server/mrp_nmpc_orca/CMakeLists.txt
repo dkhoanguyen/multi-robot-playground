@@ -8,14 +8,14 @@ endif()
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-#find dependencies
+# find dependencies
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(ament_cmake REQUIRED)
@@ -28,6 +28,7 @@ find_package(ifopt REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 
+# find_package(fmt REQUIRED)
 include_directories(
   include
 )
@@ -43,31 +44,62 @@ set(dependencies
   ifopt
 )
 
-set(library_name ${PROJECT_NAME})
-add_library(${library_name} SHARED
-  src/mpc.cpp
-  src/solver.cpp
+set(
+  CGMRES_SOLVER_SRC
+  src/cgmres_solver/continuation_gmres.cpp
+  src/cgmres_solver/single_shooting_continuation.cpp
+  src/cgmres_solver/single_shooting_ocp.cpp
+  src/cgmres_solver/time_varying_smooth_horizon.cpp
+  src/cgmres_solver/cgmres_initializer.cpp
+  src/cgmres_solver/zero_horizon_ocp.cpp
+  src/cgmres_solver/optimal_control_problem.cpp
+  src/cgmres_solver/linear_algebra.cpp
 )
 
-ament_target_dependencies(${library_name} ${dependencies})
+set(cgmres_solver_lib_name cgmres_solver_lib)
+add_library(${cgmres_solver_lib_name} SHARED
+  ${CGMRES_SOLVER_SRC}
+)
 
+set(nmpc_related_lib_name nmpc_related_lib)
+add_library(${nmpc_related_lib_name} SHARED
+src/nmpc/course_manager.cpp
+)
+
+ament_target_dependencies(${nmpc_related_lib_name} ${dependencies})
+target_link_libraries(${nmpc_related_lib_name}
+${cgmres_solver_lib_name}
+)
+
+# include_directories(/usr/local/include)
+# link_directories(/usr/local/lib)
 set(executable_name test_nmpc)
 add_executable(${executable_name}
   src/main.cpp
 )
 
-ament_target_dependencies(${library_name} ${dependencies})
+# add_library(ACADO STATIC IMPORTED)
+# set_target_properties(ACADO PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/acado_mpc_export/libacado_exported_rti.a")
 
-target_link_libraries(${executable_name} 
-  ${library_name}
+# ament_target_dependencies(${library_name} ${dependencies})
+target_link_libraries(${executable_name}
+  ${cgmres_solver_lib_name} 
+  # ${nmpc_related_lib_name}
 )
 
 install(
-  TARGETS ${library_name}
+  TARGETS ${cgmres_solver_lib_name}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+# install(
+#   TARGETS ${nmpc_related_lib_name}
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin
+# )
 
 install(TARGETS ${executable_name}
   RUNTIME DESTINATION lib/${PROJECT_NAME})
@@ -83,7 +115,7 @@ if(BUILD_TESTING)
   # ament_lint_auto_find_test_dependencies()
 
   # Test ORCA
-  # ament_add_gtest(test_orca test/test_orca.cpp) 
+  # ament_add_gtest(test_orca test/test_orca.cpp)
   # target_link_libraries(test_orca ${library_name})
 
   # Test Linear solver
@@ -94,8 +126,11 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
+
 ament_export_libraries(
-  ${library_name})
+  ${cgmres_solver_lib_name}
+  # ${nmpc_related_lib_name}
+)
 ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(mrp_local_server_core plugins.xml)
 ament_package()
