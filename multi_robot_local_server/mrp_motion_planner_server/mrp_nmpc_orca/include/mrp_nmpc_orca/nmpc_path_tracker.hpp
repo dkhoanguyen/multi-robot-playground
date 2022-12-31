@@ -10,6 +10,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2/utils.h"
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
 #include "mrp_common/parameter_interface.hpp"
@@ -43,6 +44,7 @@ namespace mrp_nmpc_orca
         const nav_msgs::msg::Odometry &current_odom,
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
         const sensor_msgs::msg::LaserScan &scan,
+        const double &current_time,
         geometry_msgs::msg::Twist &vel_cmd);
 
     // For feedback
@@ -112,8 +114,29 @@ namespace mrp_nmpc_orca
     std::atomic<bool> reach_goal_;
     std::atomic<bool> moving_to_temp_;
 
+    // Control system
+    double control_sampling_time_;
+    double reference_speed_;
+
+    // Path smoothing
+    int curvature_smoothing_num_;
+    double max_curvature_change_rate_;
+    double speed_reduction_rate_;
+    double deceleration_rate_for_stop_;
+
+    /*function used in the predictive horizon of MPC*/
+    std::function<double(double)> path_curvature_; //!< @brief return curvature from pose x_f in frenet coordinate
+    std::function<double(double)>
+        trajectory_speed_;                         //!< @brief return reference speed from pose x_f in frenet coordinate
+    std::function<double(double)> drivable_width_; // not used now
+
+    /*Flags*/
+    bool is_robot_state_ok_ = false;          //!< @brief Check getting robot observed info
+    bool initial_solution_calculate_ = false; //!< @brief Initialize C/GMRES method using Newton-method
+    bool is_finish_goal_ = false;             //!< @brief Check reached the goal
+    bool is_permit_control_ = false;          //!< @brief Check control permission from higher level planner
+
     // Library
-    /*Library*/
     std::unique_ptr<cgmres::ContinuationGMRES> nmpc_solver_ptr_; //!< @brief nonlinear mpc solver pointer
     std::unique_ptr<pathtrack_tools::CourseManager>
         course_manager_ptr_; //!< @brief Manage reference path, reference speed and drivable area in MPC
@@ -130,7 +153,8 @@ namespace mrp_nmpc_orca
      * @return false : Failure of Optimization
      */
     bool calculate_mpc(std::array<double, MPC_INPUT::DIM> *control_input,
-                       std::array<std::vector<double>, MPC_INPUT::DIM> *control_input_series, double *F_norm);
+                       std::array<std::vector<double>, MPC_INPUT::DIM> *control_input_series,
+                       double *F_norm, const double &current_time);
 
     /**
      * @brief Reset C/GMRES method when break down

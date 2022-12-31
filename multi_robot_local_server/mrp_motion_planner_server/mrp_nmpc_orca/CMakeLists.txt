@@ -61,30 +61,19 @@ add_library(${cgmres_solver_lib_name} SHARED
   ${CGMRES_SOLVER_SRC}
 )
 
-set(nmpc_related_lib_name nmpc_related_lib)
+set(nmpc_related_lib_name ${PROJECT_NAME})
 add_library(${nmpc_related_lib_name} SHARED
-src/nmpc/course_manager.cpp
+  src/nmpc/course_manager.cpp
+  src/nmpc/frenet_serret_converter.cpp
+  src/nmpc/frenet_state_filter.cpp
+  src/nmpc/mpc_simulator.cpp
+  src/nmpc/nmpc_formulation.cpp
+  src/nmpc/nmpc_path_tracker.cpp
 )
 
 ament_target_dependencies(${nmpc_related_lib_name} ${dependencies})
 target_link_libraries(${nmpc_related_lib_name}
 ${cgmres_solver_lib_name}
-)
-
-# include_directories(/usr/local/include)
-# link_directories(/usr/local/lib)
-set(executable_name test_nmpc)
-add_executable(${executable_name}
-  src/main.cpp
-)
-
-# add_library(ACADO STATIC IMPORTED)
-# set_target_properties(ACADO PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/acado_mpc_export/libacado_exported_rti.a")
-
-# ament_target_dependencies(${library_name} ${dependencies})
-target_link_libraries(${executable_name}
-  ${cgmres_solver_lib_name} 
-  # ${nmpc_related_lib_name}
 )
 
 install(
@@ -94,15 +83,12 @@ install(
   RUNTIME DESTINATION bin
 )
 
-# install(
-#   TARGETS ${nmpc_related_lib_name}
-#   ARCHIVE DESTINATION lib
-#   LIBRARY DESTINATION lib
-#   RUNTIME DESTINATION bin
-# )
-
-install(TARGETS ${executable_name}
-  RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(
+  TARGETS ${nmpc_related_lib_name}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
 install(
   DIRECTORY include/
@@ -126,10 +112,9 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-
 ament_export_libraries(
   ${cgmres_solver_lib_name}
-  # ${nmpc_related_lib_name}
+  ${nmpc_related_lib_name}
 )
 ament_export_dependencies(${dependencies})
 pluginlib_export_plugin_description_file(mrp_local_server_core plugins.xml)

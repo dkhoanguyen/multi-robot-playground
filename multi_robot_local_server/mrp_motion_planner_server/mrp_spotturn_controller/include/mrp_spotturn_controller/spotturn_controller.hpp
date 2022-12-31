@@ -37,6 +37,7 @@ namespace mrp_motion_planner
         const nav_msgs::msg::Odometry &current_odom,
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
         const sensor_msgs::msg::LaserScan &scan,
+        const double &current_time,
         geometry_msgs::msg::Twist &vel_cmd);
 
     // For feedback 

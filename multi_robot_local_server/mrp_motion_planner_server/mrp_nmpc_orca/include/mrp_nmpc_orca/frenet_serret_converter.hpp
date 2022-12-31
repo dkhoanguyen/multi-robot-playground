@@ -8,9 +8,9 @@
 #include <limits>
 #include <algorithm>
 #include <climits>
-#include "FrenetCoordinate.hpp"
-#include "MPCCourse.hpp"
-#include "Pose.hpp"
+#include "mrp_nmpc_orca/FrenetCoordinate.hpp"
+#include "mrp_nmpc_orca/MPCCourse.hpp"
+#include "mrp_nmpc_orca/Pose.hpp"
 
 namespace pathtrack_tools
 {

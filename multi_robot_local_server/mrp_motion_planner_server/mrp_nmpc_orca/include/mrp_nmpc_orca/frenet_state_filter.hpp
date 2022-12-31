@@ -6,9 +6,9 @@
 #include <deque>
 #include <iostream>
 #include <numeric>
-#include "mpc_tracker/FrenetCoordinate.hpp"
-#include "mpc_tracker/Pose.hpp"
-#include "mpc_tracker/Twist.hpp"
+#include "mrp_nmpc_orca/FrenetCoordinate.hpp"
+#include "mrp_nmpc_orca/Pose.hpp"
+#include "mrp_nmpc_orca/Twist.hpp"
 
 namespace pathtrack_tools {
 ///

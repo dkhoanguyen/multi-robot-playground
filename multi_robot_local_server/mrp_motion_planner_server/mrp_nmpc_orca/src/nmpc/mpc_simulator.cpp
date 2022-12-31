@@ -1,4 +1,4 @@
-#include "mpc_tracker/mpc_simulator.hpp"
+#include "mrp_nmpc_orca/mpc_simulator.hpp"
 
 namespace pathtrack_tools {
 MPCSimulator::MPCSimulator(const double &sampling_time) { initialize_input_queue(sampling_time); }

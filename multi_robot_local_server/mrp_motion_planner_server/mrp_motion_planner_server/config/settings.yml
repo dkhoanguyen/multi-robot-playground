@@ -3,10 +3,12 @@ general:
     heartbeat: 1000.0
 
 planners:
-  default_planner: orca
+  default_planner: nmpc
   planner_name_list:
     - spotturn
     - orca
+    - nmpc
   planner_name_plugin_mapping:
     - mrp_motion_planner::SpotTurn
     - mrp_orca::MotionPlaner
+    - mrp_nmpc_orca::NMPCPathTracker

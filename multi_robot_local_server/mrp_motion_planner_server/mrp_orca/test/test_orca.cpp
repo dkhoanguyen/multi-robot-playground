@@ -255,7 +255,7 @@ TEST(ORCACollision, PlanVelocity)
   planner.setPath(path);
 
   planner.calculateVelocityCommand(
-      odom_A, member_odoms, scan, cmd_vel);
+      odom_A, member_odoms, scan, 0, cmd_vel);
 }
 
 int main(int argc, char **argv)

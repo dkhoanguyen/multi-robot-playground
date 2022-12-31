@@ -2,7 +2,7 @@
 
 namespace mrp_motion_planner
 {
-  const std::string MotionPlannerServer::FALLBACK_PLANNER = "orca";
+  const std::string MotionPlannerServer::FALLBACK_PLANNER = "nmpc";
   MotionPlannerServer::MotionPlannerServer(const std::string &planner_name)
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
@@ -11,8 +11,7 @@ namespace mrp_motion_planner
     loader_ptr_ = std::make_shared<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>>(
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
     planner_name_ = planner_name;
-
-    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_orca::MotionPlanner");
+    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_nmpc_orca::NMPCPathTracker");
 
     // Get all available plugins for planner
     declare_parameter<std::vector<std::string>>("planner_name_list", std::vector<std::string>());
@@ -20,7 +19,7 @@ namespace mrp_motion_planner
 
     // Motion planner params
     declare_parameter<double>("planner_rate", 100.0); // Planner rate
-    declare_parameter<std::string>("planner_plugin", "orca");
+    declare_parameter<std::string>("planner_plugin", "nmpc");
 
     robot_odom_ = std::make_shared<RobotOdom>();
     robot_odom_->ready = false;
@@ -439,12 +438,14 @@ namespace mrp_motion_planner
       std::unique_lock<std::recursive_mutex> lck(robot_scan_->mtx);
       current_scan = robot_scan_->current_scan;
     }
-
+    
+    auto current_ros_time = this->get_node_clock_interface()->get_clock()->now();
     geometry_msgs::msg::Twist control_velocity;
     planner_ptr_->calculateVelocityCommand(
         robot_current_odom,
         member_odom,
         current_scan,
+        current_ros_time.nanoseconds()/1000000000,
         control_velocity);
 
     // Publish control command
