@@ -2,6 +2,7 @@
 
 import os
 import yaml
+import csv
 import argparse
 from math import atan2
 
@@ -84,11 +85,37 @@ def main(args=None):
     args = parser.parse_args()
     
     pkg_path = get_package_share_directory('simple_motion_request_client')
-    with open(os.path.join(pkg_path, 'config/path.yml'), 'r') as path_stream:
-        path_list = yaml.safe_load(path_stream)
+    # with open(os.path.join(pkg_path, 'config/path.yml'), 'r') as path_stream:
+    #     path_list = yaml.safe_load(path_stream)
+    #     print(path_list)
+    
+    paths = []
+    with open(os.path.join(pkg_path, 'sample_paths/sinwave_075.csv'), 'r') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+                line_count += 1
+            else:
+                path = {}
+                position = {}
+                position['x'] = float(row[0])
+                position['y'] = float(row[1])
+                position['z'] = float(row[2]) 
+                path['position'] = position
+                orientation = {}
+                orientation['r'] = 0.0
+                orientation['p'] = 0.0
+                orientation['y'] = 0.0
+                path['orientation'] = orientation
 
+                print(path)
+                paths.append(path)
+                line_count += 1
+                
     action_client = PathRequestClient(args.robot_name)
-    action_client.send_goal(path_list['paths'][str(args.robot_name)])
+    action_client.send_goal(paths)
 
     print("Done sending goal")
     rclpy.spin(action_client)

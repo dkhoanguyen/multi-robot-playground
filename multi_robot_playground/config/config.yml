@@ -18,44 +18,44 @@ robots:
       namespace: robot
       radius: 0.2
       x: 0
-      y: 0.05
+      y: 0
       yaw: 0
       model_package: modified_turtlebot3_gazebo
       path_to_model: models/turtlebot3_burger/model.sdf
       urdf_package: turtlebot3_description
       urdf_path: urdf/turtlebot3_burger.urdf
 
-    - name: robot0
-      namespace: robot0
-      radius: 0.2
-      x: 2
-      y: -0.05
-      yaw: 3.14
-      model_package: modified_turtlebot3_gazebo
-      path_to_model: models/turtlebot3_burger/model.sdf
-      urdf_package: turtlebot3_description
-      urdf_path: urdf/turtlebot3_burger.urdf
+    # - name: robot0
+    #   namespace: robot0
+    #   radius: 0.2
+    #   x: 2
+    #   y: -0.05
+    #   yaw: 3.14
+    #   model_package: modified_turtlebot3_gazebo
+    #   path_to_model: models/turtlebot3_burger/model.sdf
+    #   urdf_package: turtlebot3_description
+    #   urdf_path: urdf/turtlebot3_burger.urdf
 
-    - name: robot1
-      namespace: robot1
-      radius: 0.2
-      x: 1.05
-      y: 1
-      yaw: -1.57
-      model_package: modified_turtlebot3_gazebo
-      path_to_model: models/turtlebot3_burger/model.sdf
-      urdf_package: turtlebot3_description
-      urdf_path: urdf/turtlebot3_burger.urdf
+    # - name: robot1
+    #   namespace: robot1
+    #   radius: 0.2
+    #   x: 1.05
+    #   y: 1
+    #   yaw: -1.57
+    #   model_package: modified_turtlebot3_gazebo
+    #   path_to_model: models/turtlebot3_burger/model.sdf
+    #   urdf_package: turtlebot3_description
+    #   urdf_path: urdf/turtlebot3_burger.urdf
     
-    - name: robot2
-      namespace: robot2
-      radius: 0.2
-      x: 0.95
-      y: -1
-      yaw: 1.57
-      model_package: modified_turtlebot3_gazebo
-      path_to_model: models/turtlebot3_burger/model.sdf
-      urdf_package: turtlebot3_description
-      urdf_path: urdf/turtlebot3_burger.urdf
+    # - name: robot2
+    #   namespace: robot2
+    #   radius: 0.2
+    #   x: 0.95
+    #   y: -1
+    #   yaw: 1.57
+    #   model_package: modified_turtlebot3_gazebo
+    #   path_to_model: models/turtlebot3_burger/model.sdf
+    #   urdf_package: turtlebot3_description
+    #   urdf_path: urdf/turtlebot3_burger.urdf
 
       

@@ -7,38 +7,15 @@ namespace mrp_nmpc_orca
   {
     // Control parameters
     control_sampling_time_ = 0.1;
-    reference_speed_ = 0.1;
-
-    // Path smoothing parameters
-    curvature_smoothing_num_ = 10;
-    max_curvature_change_rate_ = 1.0;
-    speed_reduction_rate_ = 0.1;
-    deceleration_rate_for_stop_ = 0.3;
+    reference_speed_ = 0.15;
 
     // Cgmres parameters
     cgmres_param_.Tf_ = 1.0;
     cgmres_param_.alpha_ = 0.5;
     cgmres_param_.N_ = 10;
     cgmres_param_.finite_distance_increment_ = 0.0002;
-    cgmres_param_.zeta_ = 62.5;
-    cgmres_param_.kmax_ = 5;
-
-    // nmpc parameters
-    mpc_param_.q_.at(MPC_STATE_SPACE::X_F) = 0.0;
-    mpc_param_.q_.at(MPC_STATE_SPACE::Y_F) = 0.1;
-    mpc_param_.q_.at(MPC_STATE_SPACE::YAW_F) = 0.1;
-    mpc_param_.q_.at(MPC_STATE_SPACE::TWIST_X) = 0.1;
-
-    mpc_param_.q_terminal_.at(MPC_STATE_SPACE::X_F) = 0.0;
-    mpc_param_.q_terminal_.at(MPC_STATE_SPACE::Y_F) = 0.1;
-    mpc_param_.q_terminal_.at(MPC_STATE_SPACE::YAW_F) = 0.1;
-    mpc_param_.q_terminal_.at(MPC_STATE_SPACE::TWIST_X) = 0.1;
-
-    mpc_param_.r_.at(MPC_INPUT::ANGULAR_VEL_YAW) = 0.01;
-    mpc_param_.r_.at(MPC_INPUT::ACCEL) = 0.01;
-
-    mpc_param_.a_max_ = 0.2;
-    mpc_param_.a_min_ = -0.2;
+    cgmres_param_.zeta_ = 10;
+    cgmres_param_.kmax_ = 10;
 
     // Initialise CGMRES Solver
     nmpc_solver_ptr_ = std::make_unique<cgmres::ContinuationGMRES>(
@@ -46,13 +23,9 @@ namespace mrp_nmpc_orca
         cgmres_param_.zeta_, cgmres_param_.kmax_);
     const double solution_initial_guess[MPC_INPUT::DIM] = {0.01, 0.01};
     nmpc_solver_ptr_->setParametersForInitialization(solution_initial_guess, 1e-06, 50);
-    nmpc_solver_ptr_->continuation_problem_.ocp_.model_.set_parameters(mpc_param_.q_, mpc_param_.q_terminal_,
-                                                                       mpc_param_.r_, mpc_param_.barrier_coefficient_,
-                                                                       mpc_param_.a_max_, mpc_param_.a_min_);
 
     // Intialise course manager
-    course_manager_ptr_ = std::make_unique<pathtrack_tools::CourseManager>(
-        curvature_smoothing_num_, max_curvature_change_rate_, speed_reduction_rate_, deceleration_rate_for_stop_);
+    course_manager_ptr_ = std::make_unique<pathtrack_tools::CourseManager>();
 
     // Set functions used in prediction horizon
     path_curvature_ = [this](const double &x_f)
@@ -67,6 +40,22 @@ namespace mrp_nmpc_orca
     {
       return this->course_manager_ptr_->get_drivable_width(x_f);
     }; // not used now
+
+    current_time_ = 0;
+
+    ego_pose_global_.x = 0.0;
+    ego_pose_global_.y = 0.0;
+    ego_pose_global_.z = 0.0;
+    ego_pose_global_.roll = 0.0;
+    ego_pose_global_.pitch = 0.0;
+    ego_pose_global_.yaw = 0.0;
+    robot_twist_.x = 0.0;
+    robot_twist_.y = 0.0;
+    robot_twist_.yaw = 0.0;
+
+    mpc_simulator_ptr_ = std::make_unique<pathtrack_tools::MPCSimulator>(control_sampling_time_);
+
+    initial_solution_calculate_ = false;
 
     std::cout << "NMPC Initialised " << std::endl;
   }
@@ -96,8 +85,8 @@ namespace mrp_nmpc_orca
     current_waypoint_indx_ = 0;
     at_position_ = false;
     reach_goal_ = false;
-
     course_manager_ptr_->set_course_from_nav_msgs(path_, reference_speed_);
+    current_time_ = 0;
   }
 
   void NMPCPathTracker::calculateVelocityCommand(
@@ -107,111 +96,61 @@ namespace mrp_nmpc_orca
       const double &current_time,
       geometry_msgs::msg::Twist &vel_cmd)
   {
-    /*update robot pose global*/
-    robot_status_.robot_pose_global_.x = current_odom.pose.pose.position.x;
-    robot_status_.robot_pose_global_.y = current_odom.pose.pose.position.y;
-    robot_status_.robot_pose_global_.z = current_odom.pose.pose.position.z; // not used now
-    robot_status_.robot_pose_global_.roll = 0.0;                            // not used now
-    robot_status_.robot_pose_global_.pitch = 0.0;                           // not used now
-    robot_status_.robot_pose_global_.yaw = tf2::getYaw(current_odom.pose.pose.orientation);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    // stop_watch_.lap();
+    // State and Control input
+    std::vector<double> current_state_vec_frenet(MPC_STATE_SPACE::DIM); // current state at Frenet coordinate
+    double control_input_vec[MPC_INPUT::DIM];                           // calculated control input (tire_angle, accel)
 
-    /*update robot twist*/
-    robot_status_.robot_twist_.x = current_odom.twist.twist.linear.x;
-    robot_status_.robot_twist_.y = current_odom.twist.twist.linear.y;
-    robot_status_.robot_twist_.z = current_odom.twist.twist.linear.z;      // not used now
-    robot_status_.robot_twist_.roll = current_odom.twist.twist.angular.x;  // not used now
-    robot_status_.robot_twist_.pitch = current_odom.twist.twist.angular.y; // note used now
-    robot_status_.robot_twist_.yaw = current_odom.twist.twist.angular.z;
+    // coordinate convert
+    const FrenetCoordinate ego_pose_frenet =
+        frenet_serret_converter_.global2frenet(course_manager_ptr_->get_mpc_course(), ego_pose_global_);
 
-    const int path_size = course_manager_ptr_->get_path_size();
+    // Set state vector
+    current_state_vec_frenet.at(MPC_STATE_SPACE::X_F) = ego_pose_frenet.x_f;
+    current_state_vec_frenet.at(MPC_STATE_SPACE::Y_F) = ego_pose_frenet.y_f;
+    current_state_vec_frenet.at(MPC_STATE_SPACE::YAW_F) = ego_pose_frenet.yaw_f;
+    current_state_vec_frenet.at(MPC_STATE_SPACE::TWIST_X) = robot_twist_.x;
 
-    std::array<double, MPC_INPUT::DIM> control_input{0.0, 0.0};             // updated variables by mpc
-    std::array<std::vector<double>, MPC_INPUT::DIM> control_input_series{}; // for visualization
-    double F_norm = 0.0;                                                    // F_norm
-    bool is_mpc_solved = calculate_mpc(&control_input, &control_input_series, &F_norm, current_time);
+    std::array<std::vector<double>, MPC_INPUT::DIM> control_input_series;
 
-    // const double calculation_time = stop_watch_.lap();
-    if (!is_mpc_solved)
-    {
-      Twist stop_twist(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      // publish_twist(prev_twist_cmd_);
-      // publish_twist(stop_twist);
-      reset_cgmres({0.0, 0.0});
-    }
-
-    /*Publish twist cmd*/
-    vel_cmd.linear.x = robot_status_.robot_twist_.x + control_input[MPC_INPUT::ACCEL] * control_sampling_time_;
-    vel_cmd.angular.z = control_input[MPC_INPUT::ANGULAR_VEL_YAW];
-  }
-
-  bool NMPCPathTracker::calculate_mpc(std::array<double, MPC_INPUT::DIM> *control_input,
-                                      std::array<std::vector<double>, MPC_INPUT::DIM> *control_input_series,
-                                      double *F_norm, const double &current_time)
-  {
-    /*coordinate convert from euclid to frenet-serret*/
-    robot_status_.robot_pose_frenet_ =
-        frenet_serret_converter_.global2frenet(course_manager_ptr_->get_mpc_course(), robot_status_.robot_pose_global_);
-
-    /*Set state vector*/
-    std::vector<double> state_vec(MPC_STATE_SPACE::DIM);
-    state_vec[MPC_STATE_SPACE::X_F] = robot_status_.robot_pose_frenet_.x_f;
-    state_vec[MPC_STATE_SPACE::Y_F] = robot_status_.robot_pose_frenet_.y_f;
-    state_vec[MPC_STATE_SPACE::YAW_F] = robot_status_.robot_pose_frenet_.yaw_f;
-    state_vec[MPC_STATE_SPACE::TWIST_X] = robot_status_.robot_twist_.x;
-
-    /*Control input*/
-    double control_input_vec[MPC_INPUT::DIM] = {0.0, 0.0};
-
-    bool is_mpc_solved = true;
-
-    /*Solve NMPC by C/GMRES method*/
     if (!initial_solution_calculate_)
     {
       // The initial solution is calculated using Newton-GMRES method
-      nmpc_solver_ptr_->initializeSolution(current_time, state_vec, path_curvature_, trajectory_speed_, drivable_width_);
+      nmpc_solver_ptr_->initializeSolution(current_time_, current_state_vec_frenet, path_curvature_, trajectory_speed_,
+                                           drivable_width_);
       nmpc_solver_ptr_->getControlInput(control_input_vec);
       initial_solution_calculate_ = true;
     }
     else
     {
-      // Update control_input_vec by C / GMRES method
-      is_mpc_solved =
-          nmpc_solver_ptr_->controlUpdate(current_time, state_vec, control_sampling_time_, path_curvature_,
-                                          trajectory_speed_, drivable_width_, control_input_vec, control_input_series);
-
-      // Update control input
-      control_input->at(MPC_INPUT::ANGULAR_VEL_YAW) = control_input_vec[MPC_INPUT::ANGULAR_VEL_YAW];
-      control_input->at(MPC_INPUT::ACCEL) = control_input_vec[MPC_INPUT::ACCEL];
-
-      // Update F_norm
-      *F_norm =
-          nmpc_solver_ptr_->getErrorNorm(current_time, state_vec, path_curvature_, trajectory_speed_, drivable_width_);
+      std::cout << "Current time: " << current_time_ << std::endl;
+      // Update control_input_vec by C/GMRES method
+      const bool is_mpc_solved =
+          nmpc_solver_ptr_->controlUpdate(current_time_, current_state_vec_frenet, control_sampling_time_, path_curvature_,
+                                          trajectory_speed_, drivable_width_, control_input_vec, &control_input_series);
+      if (!is_mpc_solved)
+      {
+        std::cerr << "Break Down C/GMRES Method" << std::endl;
+        exit(-1);
+      }
     }
 
-    /*NAN Guard*/
-    if (std::isnan(control_input->at(MPC_INPUT::ANGULAR_VEL_YAW)) || std::isnan(control_input->at(MPC_INPUT::ACCEL)))
-    {
-      is_mpc_solved = false;
-    }
+    const auto [updated_ego_pose_global, updated_robot_twist] =
+        mpc_simulator_ptr_->update_ego_state(current_time_, ego_pose_global_, robot_twist_, control_input_vec, control_sampling_time_);
+    
+    ego_pose_global_ = updated_ego_pose_global;
+    robot_twist_ = updated_robot_twist;
 
-    return is_mpc_solved;
-  }
+    std::cout << "linear: " << robot_twist_.x << std::endl;
+    std::cout << "angular: " << robot_twist_.yaw << std::endl;
 
-  void NMPCPathTracker::reset_cgmres(const std::array<double, MPC_INPUT::DIM> &solution_initial_guess)
-  {
-    nmpc_solver_ptr_.reset();
-    nmpc_solver_ptr_ = std::make_unique<cgmres::ContinuationGMRES>(
-        cgmres_param_.Tf_, cgmres_param_.alpha_, cgmres_param_.N_, cgmres_param_.finite_distance_increment_,
-        cgmres_param_.zeta_, cgmres_param_.kmax_);
-
-    const double initial_guess[MPC_INPUT::DIM] = {solution_initial_guess[MPC_INPUT::ANGULAR_VEL_YAW],
-                                                  solution_initial_guess[MPC_INPUT::ACCEL]};
-    nmpc_solver_ptr_->setParametersForInitialization(initial_guess, 1e-06, 50);
-    nmpc_solver_ptr_->continuation_problem_.ocp_.model_.set_parameters(mpc_param_.q_, mpc_param_.q_terminal_,
-                                                                       mpc_param_.r_, mpc_param_.barrier_coefficient_,
-                                                                       mpc_param_.a_max_, mpc_param_.a_min_);
-
-    initial_solution_calculate_ = false;
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
+    std::cout << "=============================" << std::endl;
+    vel_cmd.linear.x = robot_twist_.x;
+    vel_cmd.angular.z = robot_twist_.yaw;
+    current_time_ += control_sampling_time_;
   }
 
   void NMPCPathTracker::setParameter(const std::unordered_map<std::string, double> &param_map)
@@ -226,6 +165,7 @@ namespace mrp_nmpc_orca
   // For accessing
   bool NMPCPathTracker::reachGoal()
   {
+    return false;
   }
 
   // Should we abstract away the setting of parameters ?

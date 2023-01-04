@@ -2,7 +2,7 @@
 
 namespace mrp_motion_planner
 {
-  const std::string MotionPlannerServer::FALLBACK_PLANNER = "nmpc";
+  const std::string MotionPlannerServer::FALLBACK_PLANNER = "pure_pursuit";
   MotionPlannerServer::MotionPlannerServer(const std::string &planner_name)
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
@@ -11,7 +11,7 @@ namespace mrp_motion_planner
     loader_ptr_ = std::make_shared<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>>(
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
     planner_name_ = planner_name;
-    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_nmpc_orca::NMPCPathTracker");
+    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_pure_pursuit::PurePursuitController");
 
     // Get all available plugins for planner
     declare_parameter<std::vector<std::string>>("planner_name_list", std::vector<std::string>());
@@ -19,7 +19,7 @@ namespace mrp_motion_planner
 
     // Motion planner params
     declare_parameter<double>("planner_rate", 100.0); // Planner rate
-    declare_parameter<std::string>("planner_plugin", "nmpc");
+    declare_parameter<std::string>("planner_plugin", "pure_pursuit");
 
     robot_odom_ = std::make_shared<RobotOdom>();
     robot_odom_->ready = false;
@@ -376,6 +376,9 @@ namespace mrp_motion_planner
         // Check to see if there is any new path request coming
 
         //=== Start computing and publishing control command ===//
+        mrp_common::Log::basicInfo(
+              get_node_logging_interface(),
+              "Computing and publishing control command");
         computeAndPublishVelocity();
 
         // Publish feedback

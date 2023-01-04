@@ -11,15 +11,23 @@ std::pair<Pose, Twist> MPCSimulator::update_ego_state(const double current_time,
   const std::array<double, MPC_STATE_SPACE::DIM> current_ego_vehicle_state =
       ego_pose_to_state(current_ego_pose_global, ego_twist);
 
+  std::cout << "ego_pose_to_state passed" << std::endl;
+
   auto state_func = [this](auto current_time, auto x, auto u) { return this->two_dw_with_delay(current_time, x, u); };
 
   std::array<double, MPC_INPUT::DIM> control_input = {control_input_vec[MPC_INPUT::ANGULAR_VEL_YAW],
                                                       control_input_vec[MPC_INPUT::ACCEL]};
 
+  std::cout << "control_input passed" << std::endl;
+
   const std::array<double, MPC_STATE_SPACE::DIM> updated_robot_state =
       runge_kutta_gill(current_time, current_ego_vehicle_state, control_input, sampling_time, state_func);
 
+  std::cout << "runge_kutta_gill passed" << std::endl;
+
   const auto [updated_robot_pose, updated_robot_twist] = ego_state_to_pose(updated_robot_state);
+
+  std::cout << "ego_state_to_pose passed" << std::endl;
 
   return {updated_robot_pose, updated_robot_twist};
 }

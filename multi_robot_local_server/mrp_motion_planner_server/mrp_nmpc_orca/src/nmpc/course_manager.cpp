@@ -98,6 +98,10 @@ void CourseManager::set_course_from_nav_msgs(const std::vector<geometry_msgs::ms
     mpc_course_.y.at(i) = path.at(i).pose.position.y;
     mpc_course_.yaw.at(i) = tf2::getYaw(path.at(i).pose.orientation);
     mpc_course_.speed.at(i) = reference_speed;
+
+    std::cout << "X: " << mpc_course_.x.at(i) << std::endl;
+    std::cout << "Y: " << mpc_course_.y.at(i) << std::endl;    
+    std::cout << "Speed: " << mpc_course_.speed.at(i) << std::endl;
   }
 
   // set accumulated path length, which is nearly equal to x_f

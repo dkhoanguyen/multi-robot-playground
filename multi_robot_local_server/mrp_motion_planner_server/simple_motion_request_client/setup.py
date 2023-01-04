@@ -12,7 +12,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name,'config'), glob('config/*.yml'))
+        (os.path.join('share', package_name,'config'), glob('config/*.yml')),
+        (os.path.join('share', package_name,'sample_paths'), glob('sample_paths/*.csv'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,

@@ -24,6 +24,7 @@
 #include "mrp_nmpc_orca/FrenetCoordinate.hpp"
 #include "mrp_nmpc_orca/frenet_serret_converter.hpp"
 #include "mrp_nmpc_orca/mpc_simulator.hpp"
+#include "mrp_nmpc_orca/StopWatch.hpp"
 
 #include "cgmres_solver/continuation_gmres.hpp"
 
@@ -73,27 +74,6 @@ namespace mrp_nmpc_orca
     };
     CGMRESParam cgmres_param_;
 
-    /*MPC parameters*/
-    struct MPCParam
-    {
-      std::array<double, MPC_STATE_SPACE::DIM> q_;          //!< @brief Weight of state for stage cost in MPC
-      std::array<double, MPC_STATE_SPACE::DIM> q_terminal_; //!< @brief Weight of state for terminal cost in MPC
-      std::array<double, MPC_INPUT::DIM> r_;                //!< @brief Weight of input for stage cost in MPC
-      double barrier_coefficient_;                          //!< @brief barrier function coefficient for inequality constraint
-      double a_max_;                                        //!< @brief Maximum acceleration
-      double a_min_;                                        //!< @brief Minimum deceleration
-    };
-    MPCParam mpc_param_;
-
-    /*Variables*/
-    struct RobotStatus
-    {
-      Pose robot_pose_global_;             //!< @brief Global robot pose used in MPC
-      Twist robot_twist_;                  //!< @brief Robot twist used in MPC
-      FrenetCoordinate robot_pose_frenet_; //!< @brief Frenet-Serret robot pose used in MPC
-    };
-    RobotStatus robot_status_;
-
     // Planner
     std::shared_ptr<mrp_common::ParameterInterface> params_interface_;
     double robot_radius_;
@@ -117,12 +97,11 @@ namespace mrp_nmpc_orca
     // Control system
     double control_sampling_time_;
     double reference_speed_;
+    double current_time_;
 
-    // Path smoothing
-    int curvature_smoothing_num_;
-    double max_curvature_change_rate_;
-    double speed_reduction_rate_;
-    double deceleration_rate_for_stop_;
+    Pose ego_pose_global_;
+    Twist robot_twist_;
+    StopWatch stop_watch_;
 
     /*function used in the predictive horizon of MPC*/
     std::function<double(double)> path_curvature_; //!< @brief return curvature from pose x_f in frenet coordinate
@@ -143,25 +122,6 @@ namespace mrp_nmpc_orca
     pathtrack_tools::FrenetSerretConverter
         frenet_serret_converter_;                                      //!< @brief Converter between global coordinate and frenet-serret coordinate
     std::unique_ptr<pathtrack_tools::MPCSimulator> mpc_simulator_ptr_; //!< @brief Reproduct MPC predictive state
-
-    /**
-     * @brief
-     *
-     * @param control_input_vec
-     * @param control_input_series
-     * @return true : Success of Optimization
-     * @return false : Failure of Optimization
-     */
-    bool calculate_mpc(std::array<double, MPC_INPUT::DIM> *control_input,
-                       std::array<std::vector<double>, MPC_INPUT::DIM> *control_input_series,
-                       double *F_norm, const double &current_time);
-
-    /**
-     * @brief Reset C/GMRES method when break down
-     *
-     * @param solution_initial_guess
-     */
-    void reset_cgmres(const std::array<double, MPC_INPUT::DIM> &solution_initial_guess);
   };
 }
 
