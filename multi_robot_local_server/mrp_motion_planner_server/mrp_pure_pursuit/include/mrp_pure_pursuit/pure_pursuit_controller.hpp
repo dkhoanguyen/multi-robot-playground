@@ -14,7 +14,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2/utils.h"
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
 #include "mrp_common/parameter_interface.hpp"
@@ -59,6 +59,7 @@ namespace mrp_pure_pursuit
     double robot_radius_;
     double observable_range_;
     double delta_tau_;
+    bool reevaluate_linear_vel_;
 
     int current_waypoint_indx_;
     std::vector<geometry_msgs::msg::PoseStamped> path_;
@@ -91,6 +92,12 @@ namespace mrp_pure_pursuit
     //! Compute transform that transforms a pose into the robot frame (base_link)
     KDL::Frame transformToBaseLink(const geometry_msgs::msg::Pose &pose,
                                    const geometry_msgs::msg::Pose &robot_tf);
+
+    double forwardSim(
+        const geometry_msgs::msg::Pose &current_pose,
+        const double &linear_vel,
+        const std::vector<geometry_msgs::msg::PoseStamped> &remaining_path);
+
   };
 }
 
