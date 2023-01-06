@@ -85,9 +85,9 @@ def main(args=None):
     args = parser.parse_args()
     
     pkg_path = get_package_share_directory('simple_motion_request_client')
-    # with open(os.path.join(pkg_path, 'config/path.yml'), 'r') as path_stream:
-    #     path_list = yaml.safe_load(path_stream)
-    #     print(path_list)
+    with open(os.path.join(pkg_path, 'config/path.yml'), 'r') as path_stream:
+        path_list = yaml.safe_load(path_stream)
+        print(path_list)
     
     paths = []
     with open(os.path.join(pkg_path, 'sample_paths/sinwave_075.csv'), 'r') as csv_file:
@@ -115,7 +115,8 @@ def main(args=None):
                 line_count += 1
                 
     action_client = PathRequestClient(args.robot_name)
-    action_client.send_goal(paths)
+    # action_client.send_goal(paths)
+    action_client.send_goal(path_list['paths'][str(args.robot_name)])
 
     print("Done sending goal")
     rclpy.spin(action_client)

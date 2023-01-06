@@ -5,9 +5,9 @@ namespace mrp_pure_pursuit
   PurePursuitController::PurePursuitController()
       : ld_(0.1), v_max_(0.05), v_(v_max_), w_max_(0.5), pos_tol_(0.005), current_waypoint_indx_(0),
         goal_reached_(true), L_(0.1), allow_reverse_(false),
-        robot_radius_(0.14),
-        observable_range_(1),
-        delta_tau_(3),
+        robot_radius_(0.2),
+        observable_range_(2.0),
+        delta_tau_(100.0),
         max_linear_vel_(0.1),
         max_angular_vel_(2.0),
         linear_error_(0.01),

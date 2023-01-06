@@ -1,6 +1,16 @@
 paths:
   robot:
     - position:
+        x: 1.0
+        y: 0.0
+        z: 0.0
+      orientation:
+        r: 0.0
+        p: 0.0
+        y: 0.0
+  
+  robot0:
+    - position:
         x: 0.0
         y: 0.0
         z: 0.0
@@ -8,10 +18,21 @@ paths:
         r: 0.0
         p: 0.0
         y: 0.0
-
+  
+  robot1:
     - position:
-        x: 2.0
+        x: 0.5
+        y: -0.5
+        z: 0.0
+      orientation:
+        r: 0.0
+        p: 0.0
         y: 0.0
+
+  robot2:
+    - position:
+        x: 0.5
+        y: 0.5
         z: 0.0
       orientation:
         r: 0.0
