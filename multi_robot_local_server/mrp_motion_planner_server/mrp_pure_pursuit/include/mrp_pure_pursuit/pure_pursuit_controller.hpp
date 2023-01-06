@@ -5,6 +5,7 @@
 #include <memory>
 #include <cmath>
 #include <algorithm>
+#include <Eigen/Dense>
 
 #include <kdl/frames.hpp>
 
@@ -20,6 +21,11 @@
 #include "mrp_common/parameter_interface.hpp"
 
 #include "mrp_common/utils.hpp"
+
+#include "mrp_pure_pursuit/orca.hpp"
+#include "mrp_pure_pursuit/solver.hpp"
+#include "mrp_pure_pursuit/geometry.hpp"
+
 
 namespace mrp_pure_pursuit
 {
@@ -74,6 +80,7 @@ namespace mrp_pure_pursuit
     std::atomic<bool> at_position_;
     std::atomic<bool> reach_goal_;
     std::atomic<bool> moving_to_temp_;
+    std::atomic<bool> allow_reverse_;
 
     // Vehicle parameters
     double L_;
@@ -85,19 +92,51 @@ namespace mrp_pure_pursuit
     // Control variables for Ackermann steering
     // Steering angle is denoted by delta
     double delta_, delta_vel_, acc_, jerk_, delta_max_;
-    unsigned idx_;
+    int idx_;
     bool goal_reached_;
-    geometry_msgs::msg::TransformStamped lookahead_;
+
+    void trackLookahead(
+        const geometry_msgs::msg::Pose &current_pose,
+        const geometry_msgs::msg::TransformStamped &lookahead,
+        const bool &evaluate_linear_if_allow_reverse,
+        geometry_msgs::msg::Twist &vel_cmd);
 
     //! Compute transform that transforms a pose into the robot frame (base_link)
     KDL::Frame transformToBaseLink(const geometry_msgs::msg::Pose &pose,
                                    const geometry_msgs::msg::Pose &robot_tf);
+
+    int extractNextWaypoint(
+        const geometry_msgs::msg::Pose &current_pose,
+        const int &start_indx,
+        const std::vector<geometry_msgs::msg::PoseStamped> &path,
+        geometry_msgs::msg::TransformStamped &lookahead_tf);
 
     double forwardSim(
         const geometry_msgs::msg::Pose &current_pose,
         const double &linear_vel,
         const std::vector<geometry_msgs::msg::PoseStamped> &remaining_path);
 
+    Eigen::Vector2d calculateOptimalVelocity(const geometry_msgs::msg::Pose &current_pose,
+                                             const geometry_msgs::msg::Pose &current_waypoint);
+
+    bool isApproachingFinal(
+        const std::vector<geometry_msgs::msg::PoseStamped> &path,
+        const int &indx)
+    {
+      return !path.empty() && indx >= path.size();
+    };
+
+    Eigen::Vector3d bodyToWorld(const geometry_msgs::msg::Pose &current_pose,
+                                const Eigen::Vector3d &local_vel)
+    {
+      double theta = tf2::getYaw(current_pose.orientation);
+      Eigen::Matrix3d R;
+      R << cos(theta), -sin(theta), 0,
+          sin(theta), cos(theta), 0,
+          0, 0, 1;
+      Eigen::Vector3d world_vel = R * local_vel;
+      return world_vel;
+    };
   };
 }
 

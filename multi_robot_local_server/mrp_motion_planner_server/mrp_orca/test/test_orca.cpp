@@ -1,3 +1,4 @@
+#include <chrono>
 #include <gtest/gtest.h>
 #include "mrp_orca/geometry.hpp"
 #include "mrp_orca/orca.hpp"
@@ -254,8 +255,16 @@ TEST(ORCACollision, PlanVelocity)
   mrp_orca::MotionPlanner planner;
   planner.setPath(path);
 
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
   planner.calculateVelocityCommand(
       odom_A, member_odoms, scan, 0, cmd_vel);
+  planner.calculateVelocityCommand(
+      odom_A, member_odoms, scan, 0, cmd_vel);
+  planner.calculateVelocityCommand(
+      odom_A, member_odoms, scan, 0, cmd_vel);
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+  std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 }
 
 int main(int argc, char **argv)

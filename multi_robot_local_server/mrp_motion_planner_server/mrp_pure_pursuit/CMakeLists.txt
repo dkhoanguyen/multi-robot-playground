@@ -27,6 +27,7 @@ find_package(mrp_common REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(orocos_kdl REQUIRED)
+find_package(ifopt REQUIRED)
 
 include_directories(
   include
@@ -41,11 +42,14 @@ set(dependencies
   Eigen3
   mrp_common
   orocos_kdl
+  ifopt
 )
 
 set(library_name ${PROJECT_NAME})
 add_library(${library_name} SHARED
   src/pure_pursuit_controller.cpp
+  src/orca.cpp
+  src/solver.cpp
 )
 
 ament_target_dependencies(${library_name} ${dependencies})

@@ -138,7 +138,7 @@ namespace mrp_comms
   {
     std::vector<std::string> members_list;
     members_list.push_back("robot");
-    // members_list.push_back("robot0");
+    members_list.push_back("robot0");
     // members_list.push_back("robot1");
     // members_list.push_back("robot2");
     return members_list;
