@@ -13,6 +13,7 @@ namespace mrp_pure_pursuit
     enum class Result
     {
       COLLISION,
+      ON_COLLISION_COURSE,
       NO_IMMEDIATE_COLLISION,
       NO_COLLISION
     };

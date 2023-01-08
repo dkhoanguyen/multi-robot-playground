@@ -3,13 +3,13 @@
 namespace mrp_pure_pursuit
 {
   PurePursuitController::PurePursuitController()
-      : ld_(0.1), v_max_(0.05), v_(v_max_), w_max_(0.5), pos_tol_(0.005), current_waypoint_indx_(0),
+      : ld_(0.1), v_max_(0.05), v_(v_max_), w_max_(0.3), pos_tol_(0.005), current_waypoint_indx_(0),
         goal_reached_(true), L_(0.1), allow_reverse_(false),
         robot_radius_(0.2),
-        observable_range_(2.0),
+        observable_range_(1.0),
         delta_tau_(100.0),
-        max_linear_vel_(0.1),
-        max_angular_vel_(2.0),
+        max_linear_vel_(0.5),
+        max_angular_vel_(3.14),
         linear_error_(0.01),
         angular_error_(0.05),
         at_position_(false),
@@ -42,6 +42,14 @@ namespace mrp_pure_pursuit
     path_ = path;
     reevaluate_linear_vel_ = true;
   }
+
+  void PurePursuitController::step(
+      const nav_msgs::msg::Odometry &current_odom,
+      const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
+      geometry_msgs::msg::Twist &vel_cmd)
+  {
+  }
+
   void PurePursuitController::calculateVelocityCommand(
       const nav_msgs::msg::Odometry &current_odom,
       const std::vector<nav_msgs::msg::Odometry> &members_odom,
@@ -66,12 +74,15 @@ namespace mrp_pure_pursuit
         (current_waypoint_indx_ != pre_indx && current_waypoint_indx_ < path_.size());
 
     // If the current waypoint idx exceeds the path size
+    // This could be a potential bug
     if (current_waypoint_indx_ >= path_.size())
     {
       trackLookahead(current_odom.pose.pose, lookahead,
                      evaluate_linear_vel_if_allow_reverse, vel_cmd);
       std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
       std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+      // vel_cmd.linear.x = 0;
+      // vel_cmd.angular.z = 0;
       return;
     }
 
@@ -87,6 +98,10 @@ namespace mrp_pure_pursuit
     Eigen::Vector2d opt_vel_vector = calculateOptimalVelocity(
         local_odom_A.pose.pose,
         current_waypoint_local);
+
+    std::cout << "Optimal Vel to target:" << std::endl;
+    std::cout << opt_vel_vector(0) << std::endl;
+    std::cout << opt_vel_vector(1) << std::endl;
 
     for (const nav_msgs::msg::Odometry member_odom : members_odom)
     {
@@ -104,12 +119,22 @@ namespace mrp_pure_pursuit
             current_odom.pose.pose,
             member_odom.pose.pose);
 
-        if (mrp_pure_pursuit::ORCA::localConstruct(
-                orca_plane, opt_vel_vector, local_member_odom,
-                robot_radius_, robot_radius_, delta_tau_, 1) == mrp_pure_pursuit::ORCA::Result::COLLISION)
+        mrp_pure_pursuit::ORCA::Result result = mrp_pure_pursuit::ORCA::localConstruct(
+            orca_plane, opt_vel_vector, local_member_odom,
+            robot_radius_, robot_radius_, delta_tau_, 1);
+
+        if (result == mrp_pure_pursuit::ORCA::Result::ON_COLLISION_COURSE)
         {
           // We only append the orca_plane if it is valid
           orca_planes.push_back(orca_plane);
+          continue;
+        }
+
+        if (result == mrp_pure_pursuit::ORCA::Result::COLLISION)
+        {
+          vel_cmd.linear.x = 0;
+          vel_cmd.angular.z = 0;
+          return;
         }
       }
     }
@@ -123,7 +148,8 @@ namespace mrp_pure_pursuit
 
       std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
       std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-
+      // vel_cmd.linear.x = 0;
+      // vel_cmd.angular.z = 0;
       return;
     }
 
@@ -139,7 +165,7 @@ namespace mrp_pure_pursuit
     // Set bounds
     // Upper bounds
     Eigen::Vector2d upper_bound(1.0, 1.0);
-    Eigen::Vector2d lower_bound(-1.0, -1.0);
+    Eigen::Vector2d lower_bound(-0.0, -1.0);
     orca_variables_ptr->SetBounds(lower_bound, upper_bound);
 
     // Create orca cost function
@@ -160,6 +186,15 @@ namespace mrp_pure_pursuit
     std::cout << non_collision_velocity(0) << std::endl;
     std::cout << non_collision_velocity(1) << std::endl;
 
+    if (non_collision_velocity.norm() == 0)
+    {
+      vel_cmd.linear.x = 0;
+      vel_cmd.angular.z = 0;
+      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+      std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+      return;
+    }
+
     // Track this
     lookahead.transform.translation.x = non_collision_velocity(0);
     lookahead.transform.translation.y = non_collision_velocity(1);
@@ -172,6 +207,19 @@ namespace mrp_pure_pursuit
   // For feedback
   double PurePursuitController::getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose)
   {
+    if(goal_reached_)
+    {
+      return 0;
+    }
+
+    if(path_.size() == 0)
+    {
+      return -1;
+    }
+
+    Eigen::Vector2d current_pos(current_pose.position.x, current_pose.position.y);
+    Eigen::Vector2d goal(path_.back().pose.position.x, path_.back().pose.position.y);
+    return (goal - current_pos).norm();
   }
 
   // For accessing

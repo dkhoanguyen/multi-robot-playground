@@ -40,6 +40,11 @@ namespace mrp_motion_planner
         const double &current_time,
         geometry_msgs::msg::Twist &vel_cmd);
 
+    void step(
+        const nav_msgs::msg::Odometry &current_odom,
+        const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
+        geometry_msgs::msg::Twist &vel_cmd);
+
     // For feedback 
     double getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose);
     bool reachGoal();

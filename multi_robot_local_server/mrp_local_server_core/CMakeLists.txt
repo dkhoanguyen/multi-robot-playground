@@ -23,6 +23,7 @@ find_package(pluginlib REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(mrp_comms_msgs REQUIRED)
 
 set(dependencies
   rclcpp
@@ -31,6 +32,7 @@ set(dependencies
   nav_msgs
   sensor_msgs
   geometry_msgs
+  mrp_comms_msgs
 )
 
 install(

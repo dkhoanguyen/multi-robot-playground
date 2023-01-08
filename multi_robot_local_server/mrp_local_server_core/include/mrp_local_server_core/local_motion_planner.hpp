@@ -11,6 +11,8 @@
 
 #include "mrp_common/parameter_interface.hpp"
 
+#include "mrp_comms_msgs/msg/member_state.hpp"
+
 namespace mrp_local_server_core
 {
   class MotionPlannerInterface
@@ -29,6 +31,11 @@ namespace mrp_local_server_core
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
         const sensor_msgs::msg::LaserScan &scan,
         const double &current_time,
+        geometry_msgs::msg::Twist &vel_cmd) = 0;
+
+    virtual void step(
+        const nav_msgs::msg::Odometry &current_odom,
+        const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
         geometry_msgs::msg::Twist &vel_cmd) = 0;
 
     // For feedback

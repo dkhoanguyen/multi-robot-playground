@@ -48,6 +48,13 @@ namespace mrp_motion_planner
     reach_goal_ = false;
   }
 
+  void SpotTurn::step(
+      const nav_msgs::msg::Odometry &current_odom,
+      const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
+      geometry_msgs::msg::Twist &vel_cmd)
+  {
+  }
+
   void SpotTurn::calculateVelocityCommand(
       const nav_msgs::msg::Odometry &current_odom,
       const std::vector<nav_msgs::msg::Odometry> &members_odom,
@@ -186,7 +193,6 @@ namespace mrp_motion_planner
 
   void SpotTurn::setParameter(const std::unordered_map<std::string, double> &param_map)
   {
-
   }
 } // namespace spotturn_controller
 

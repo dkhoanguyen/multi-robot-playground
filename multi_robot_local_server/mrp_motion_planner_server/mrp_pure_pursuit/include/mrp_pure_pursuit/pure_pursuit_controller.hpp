@@ -21,11 +21,11 @@
 #include "mrp_common/parameter_interface.hpp"
 
 #include "mrp_common/utils.hpp"
+#include "mrp_comms_msgs/msg/member_state.hpp"
 
 #include "mrp_pure_pursuit/orca.hpp"
 #include "mrp_pure_pursuit/solver.hpp"
 #include "mrp_pure_pursuit/geometry.hpp"
-
 
 namespace mrp_pure_pursuit
 {
@@ -45,6 +45,11 @@ namespace mrp_pure_pursuit
         const std::vector<nav_msgs::msg::Odometry> &members_odom,
         const sensor_msgs::msg::LaserScan &scan,
         const double &current_time,
+        geometry_msgs::msg::Twist &vel_cmd);
+
+    void step(
+        const nav_msgs::msg::Odometry &current_odom,
+        const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
         geometry_msgs::msg::Twist &vel_cmd);
 
     // For feedback

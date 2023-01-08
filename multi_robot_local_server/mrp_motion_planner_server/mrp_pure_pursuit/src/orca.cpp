@@ -60,22 +60,21 @@ namespace mrp_pure_pursuit
     {
       // Relative v lies in front of the circle
       // Check if relative v is inside the circle
-      if ((relative_v - bottom_circle).norm() > bottom_radius)
+      if ((relative_v - bottom_circle).norm() > bottom_radius &&
+          relative_v.norm() < bottom_circle.norm())
       {
         return ORCA::Result::NO_IMMEDIATE_COLLISION;
       }
     }
 
     double angle_to_relative_v = atan2(relative_v(1), relative_v(0));
-    // std::cout << "Upper angle: " << upper_angle << std::endl;
-    // std::cout << "Lower angle: " << lower_angle << std::endl;
-    // std::cout << "Angle to relative v: " << angle_to_relative_v << std::endl;
 
     // If we are too close, immediately get a velocity to avoid collision
     std::cout << "Distance: " << relative_pos.norm() << std::endl;
     if (relative_pos.norm() <= sum_r)
     {
       std::cout << "SOS we are too close" << std::endl;
+      return ORCA::Result::COLLISION;
     }
 
     if (std::abs(upper_angle - angle_to_relative_v) < std::abs(angle_to_relative_v - lower_angle))
@@ -85,7 +84,6 @@ namespace mrp_pure_pursuit
           side_length * cos(upper_angle),
           side_length * sin(upper_angle)};
       u = projected_v - relative_v;
-      // std::cout << "Upper" << std::endl;
     }
     else
     {
@@ -94,20 +92,27 @@ namespace mrp_pure_pursuit
           side_length * cos(lower_angle),
           side_length * sin(lower_angle)};
       u = projected_v - relative_v;
-      // std::cout << "Lower" << std::endl;
     }
 
-    Eigen::Vector2d weighted_u = weight * u;
+    Eigen::Vector2d weighted_u = 1.5 * u;
     Eigen::Vector2d orca_point = desired_vel_A + weighted_u;
-
-    // std::cout << "ORCA point: " << orca_point.transpose() << std::endl;
-    // std::cout << "U: " << weighted_u.transpose() << std::endl;
 
     // Construct ORCA halfplane
     geometry::Line orca_line(weighted_u, orca_point);
     geometry::HalfPlane orca(orca_line, weighted_u);
     output_orca = orca;
-    return ORCA::Result::COLLISION;
+    return ORCA::Result::ON_COLLISION_COURSE;
+  }
+
+  RVO::Result RVO::localConstruct(
+      mrp_pure_pursuit::geometry::HalfPlane &output_orca,
+      const Eigen::Vector2d &desired_vel_A,
+      const nav_msgs::msg::Odometry &odom_B,
+      const double &radius_A,
+      const double &radius_B,
+      const double &delta_tau,
+      const double &weight)
+  {
   }
 
 }

@@ -28,6 +28,7 @@
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
 
+#include "mrp_comms_msgs/msg/member_state.hpp"
 #include "mrp_comms_msgs/srv/get_all_teams.hpp"
 #include "mrp_comms_msgs/srv/get_members_in_team.hpp"
 
@@ -67,6 +68,8 @@ namespace mrp_motion_planner
 
   protected:
     static const std::string FALLBACK_PLANNER;
+
+    std::atomic<bool> executing_tasks_;
     struct RobotOdom
     {
       nav_msgs::msg::Odometry current_odom;
@@ -96,7 +99,14 @@ namespace mrp_motion_planner
 
     // Laser scan
     std::shared_ptr<RobotLaserScan> robot_scan_;
-    
+
+    // Publish task execution status
+    // TODO: This needs a proper task monitoring server
+    // We use motion planner server for now
+    std::string member_state_topic_name_;
+    rclcpp_lifecycle::LifecyclePublisher<mrp_comms_msgs::msg::MemberState>::SharedPtr member_state_pub_;
+    void createMemberStatePublisher();
+
     // Publisher for cmd_vel
     std::string robot_cmd_vel_topic_name_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr robot_cmd_vel_pub_;
@@ -134,7 +144,7 @@ namespace mrp_motion_planner
     void getAllMembersInTeam(const int &team_id, std::vector<std::string> &member_names);
 
     void followPath();
-    
+
     void updatePath();
     void computeAndPublishVelocity();
     bool reachEndOfPath();

@@ -148,6 +148,7 @@ namespace mrp_pure_pursuit
       ipopt.SetOption("jacobian_approximation", "exact");
 
       int status = ipopt.Solve(nlp);
+      std::cout << "Status: " << status << std::endl;
       if (status == 0)
       {
         return nlp.GetOptVariables()->GetValues();

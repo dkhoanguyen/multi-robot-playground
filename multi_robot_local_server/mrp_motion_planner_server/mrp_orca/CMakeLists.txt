@@ -28,66 +28,66 @@ find_package(ifopt REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-include_directories(
-  include
-)
+# include_directories(
+#   include
+# )
 
-set(dependencies
-  rclcpp
-  rclcpp_components
-  mrp_local_server_core
-  pluginlib
-  geometry_msgs
-  Eigen3
-  mrp_common
-  ifopt
-)
+# set(dependencies
+#   rclcpp
+#   rclcpp_components
+#   mrp_local_server_core
+#   pluginlib
+#   geometry_msgs
+#   Eigen3
+#   mrp_common
+#   ifopt
+# )
 
-set(library_name ${PROJECT_NAME})
-add_library(${library_name} SHARED
-  src/orca.cpp
-  src/solver.cpp
-  src/planner.cpp
-)
+# set(library_name ${PROJECT_NAME})
+# add_library(${library_name} SHARED
+#   src/orca.cpp
+#   src/solver.cpp
+#   src/planner.cpp
+# )
 
-ament_target_dependencies(${library_name} ${dependencies})
+# ament_target_dependencies(${library_name} ${dependencies})
 
-install(
-  TARGETS ${library_name}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
+# install(
+#   TARGETS ${library_name}
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin
+# )
 
-install(FILES plugins.xml
-  DESTINATION share
-)
+# install(FILES plugins.xml
+#   DESTINATION share
+# )
 
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
+# install(
+#   DIRECTORY include/
+#   DESTINATION include
+# )
 
-if(BUILD_TESTING)
-  # Automatic inclusion of lint-related tests
-  # find_package(ament_lint_auto REQUIRED)
-  # ament_lint_auto_find_test_dependencies()
+# if(BUILD_TESTING)
+#   # Automatic inclusion of lint-related tests
+#   # find_package(ament_lint_auto REQUIRED)
+#   # ament_lint_auto_find_test_dependencies()
 
-  # Test ORCA
-  ament_add_gtest(test_orca test/test_orca.cpp) 
-  target_link_libraries(test_orca ${library_name})
+#   # Test ORCA
+#   ament_add_gtest(test_orca test/test_orca.cpp) 
+#   target_link_libraries(test_orca ${library_name})
 
-  # Test Linear solver
-  # ament_add_gtest(test_solver test/test_solver.cpp)
-  # target_link_libraries(test_solver ${library_name})
+#   # Test Linear solver
+#   # ament_add_gtest(test_solver test/test_solver.cpp)
+#   # target_link_libraries(test_solver ${library_name})
 
-  # Test planner
-endif()
+#   # Test planner
+# endif()
 
-ament_export_include_directories(include)
-ament_export_libraries(
-  ${library_name})
-ament_export_dependencies(${dependencies})
-pluginlib_export_plugin_description_file(mrp_local_server_core plugins.xml)
+# ament_export_include_directories(include)
+# ament_export_libraries(
+#   ${library_name})
+# ament_export_dependencies(${dependencies})
+# pluginlib_export_plugin_description_file(mrp_local_server_core plugins.xml)
 ament_package()
 

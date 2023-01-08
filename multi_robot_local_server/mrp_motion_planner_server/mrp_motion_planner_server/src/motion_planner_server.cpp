@@ -6,7 +6,8 @@ namespace mrp_motion_planner
   MotionPlannerServer::MotionPlannerServer(const std::string &planner_name)
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
-            "robot", true, true, std::chrono::milliseconds(1000))
+            "robot", true, true, std::chrono::milliseconds(1000)),
+       executing_tasks_(false)
   {
     loader_ptr_ = std::make_shared<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>>(
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
@@ -50,6 +51,7 @@ namespace mrp_motion_planner
     robot_cmd_vel_topic_name_ = robot_name_ + "/cmd_vel";
     robot_odom_topic_name_ = robot_name_ + "/odom";
     robot_scan_topic_name_ = robot_name_ + "/scan";
+    member_state_topic_name_ = robot_name_ + "/member_state";
 
     // Extract planner names and definition from param server
     for (unsigned int idx = 0; idx < planner_names.size(); idx++)
@@ -63,6 +65,9 @@ namespace mrp_motion_planner
         planner_name_map_[planner_names.at(idx)] = planner_mapping.at(idx);
       }
     }
+
+    // Create member state publisher
+    createMemberStatePublisher();
 
     // Create cmd_vel subscriber
     createCmdVelPublisher();
@@ -315,6 +320,7 @@ namespace mrp_motion_planner
               get_node_logging_interface(),
               "Robot odom is not ready");
           loop_rate.sleep();
+          executing_tasks_ = false;
           continue;
         }
 
@@ -332,12 +338,14 @@ namespace mrp_motion_planner
               loop_rate.sleep();
               all_members_odom_ready_ = false;
               reset_loop = true;
+              executing_tasks_ = false;
               continue;
             }
           }
           if (reset_loop)
           {
             loop_rate.sleep();
+            executing_tasks_ = false;
             continue;
           }
           all_members_odom_ready_ = true;
@@ -349,6 +357,7 @@ namespace mrp_motion_planner
               get_node_logging_interface(),
               "Robot scan is not ready");
           loop_rate.sleep();
+          executing_tasks_ = false;
           continue;
         }
 
@@ -359,6 +368,7 @@ namespace mrp_motion_planner
               get_node_logging_interface(),
               "Follow path action server is inactive. Stopping now");
           publishZeroVelocity();
+          executing_tasks_ = false;
           return;
         }
 
@@ -370,6 +380,7 @@ namespace mrp_motion_planner
               "Goal was canceled. Stopping now");
           follow_path_action_server_->terminateAll();
           publishZeroVelocity();
+          executing_tasks_ = false;
           return;
         }
 
@@ -377,8 +388,10 @@ namespace mrp_motion_planner
 
         //=== Start computing and publishing control command ===//
         mrp_common::Log::basicInfo(
-              get_node_logging_interface(),
-              "Computing and publishing control command");
+            get_node_logging_interface(),
+            "Computing and publishing control command for robot " + robot_name_);
+
+        executing_tasks_ = true;
         computeAndPublishVelocity();
 
         // Publish feedback
@@ -404,6 +417,7 @@ namespace mrp_motion_planner
     catch (const std::exception &e)
     {
       // std::cout << e.what() << std;
+      executing_tasks_ = false;
     }
 
     mrp_common::Log::basicInfo(
@@ -414,6 +428,7 @@ namespace mrp_motion_planner
         std::make_shared<nav2_msgs::action::FollowPath::Result>();
     result->result = std_msgs::msg::Empty();
     follow_path_action_server_->succeededCurrent(result);
+    executing_tasks_ = false;
   }
 
   void MotionPlannerServer::updatePath()
@@ -441,14 +456,14 @@ namespace mrp_motion_planner
       std::unique_lock<std::recursive_mutex> lck(robot_scan_->mtx);
       current_scan = robot_scan_->current_scan;
     }
-    
+
     auto current_ros_time = this->get_node_clock_interface()->get_clock()->now();
     geometry_msgs::msg::Twist control_velocity;
     planner_ptr_->calculateVelocityCommand(
         robot_current_odom,
         member_odom,
         current_scan,
-        current_ros_time.nanoseconds()/1000000000,
+        current_ros_time.nanoseconds() / 1000000000,
         control_velocity);
 
     // Publish control command
@@ -483,6 +498,14 @@ namespace mrp_motion_planner
     robot_cmd_vel_pub_->publish(control_velocity);
   }
 
+  void MotionPlannerServer::createMemberStatePublisher()
+  {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Registering publisher for topic " + member_state_topic_name_);
+    member_state_pub_ = create_publisher<mrp_comms_msgs::msg::MemberState>(member_state_topic_name_, 10);
+  }
+
   void MotionPlannerServer::createCmdVelPublisher()
   {
     mrp_common::Log::basicInfo(
@@ -503,6 +526,12 @@ namespace mrp_motion_planner
           std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
           robot_odom_->current_odom = *msg;
           robot_odom_->ready = true;
+
+          mrp_comms_msgs::msg::MemberState member_state;
+          member_state.odom = *msg;
+          member_state.executing_task = executing_tasks_;
+          member_state.d_to_goal = planner_ptr_->getDistanceToGoal(msg->pose.pose);
+          member_state_pub_->publish(member_state);
         });
   }
 
