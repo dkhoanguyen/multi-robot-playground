@@ -121,8 +121,13 @@ namespace mrp_pure_pursuit
         const double &linear_vel,
         const std::vector<geometry_msgs::msg::PoseStamped> &remaining_path);
 
-    Eigen::Vector2d calculateOptimalVelocity(const geometry_msgs::msg::Pose &current_pose,
-                                             const geometry_msgs::msg::Pose &current_waypoint);
+    Eigen::Vector2d calculateOptimalVelocity(
+        const geometry_msgs::msg::Pose &current_pose,
+        const geometry_msgs::msg::Pose &current_waypoint);
+
+    Eigen::Vector2d calculateOptimalVelocityGlobal(
+        const geometry_msgs::msg::Pose &current_pose,
+        const geometry_msgs::msg::Pose &current_waypoint);
 
     bool isApproachingFinal(
         const std::vector<geometry_msgs::msg::PoseStamped> &path,

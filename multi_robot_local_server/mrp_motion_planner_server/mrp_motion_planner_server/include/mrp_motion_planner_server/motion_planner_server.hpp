@@ -77,6 +77,13 @@ namespace mrp_motion_planner
       std::atomic<bool> ready{false};
     };
 
+    struct RobotState
+    {
+      mrp_comms_msgs::msg::MemberState member_state;
+      std::recursive_mutex mtx;
+      std::atomic<bool> ready{false};
+    };
+
     struct RobotLaserScan
     {
       sensor_msgs::msg::LaserScan current_scan;
@@ -128,8 +135,9 @@ namespace mrp_motion_planner
 
     // Other robots related
     std::vector<std::string> member_robots_names_;
-    std::map<std::string, rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr> member_robots_odom_sub_map_;
-    std::map<std::string, std::shared_ptr<RobotOdom>> member_robots_odom_data_map_;
+    std::map<std::string, rclcpp::Subscription<mrp_comms_msgs::msg::MemberState>::SharedPtr> member_states_sub_map_;
+    std::map<std::string, std::shared_ptr<RobotState>> member_states_data_map_;
+
     std::atomic<bool> all_members_odom_ready_{false};
     void registerMemberRobots();
 

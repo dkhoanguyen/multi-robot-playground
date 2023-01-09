@@ -48,6 +48,137 @@ namespace mrp_pure_pursuit
       const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
       geometry_msgs::msg::Twist &vel_cmd)
   {
+    // Get lookahead for the next waypoint
+    int pre_indx = current_waypoint_indx_;
+    geometry_msgs::msg::TransformStamped lookahead;
+
+    // Extract waypoint lookahead and update next waypoint index
+    current_waypoint_indx_ = extractNextWaypoint(
+        current_odom.pose.pose, current_waypoint_indx_, path_,
+        lookahead);
+
+    // Condition to support backwards driving
+    bool evaluate_linear_vel_if_allow_reverse =
+        (current_waypoint_indx_ != pre_indx && current_waypoint_indx_ < path_.size());
+
+      // If the current waypoint idx exceeds the path size
+      // This could be a potential bug
+      if (current_waypoint_indx_ >= path_.size())
+      {
+        trackLookahead(current_odom.pose.pose, lookahead,
+                       evaluate_linear_vel_if_allow_reverse, vel_cmd);
+        return;
+      }
+
+      // Convert waypoint to baselink of robot
+      nav_msgs::msg::Odometry local_odom_A;
+      geometry_msgs::msg::Pose current_waypoint_local =
+          mrp_common::TransformUtils::toLocalFrame(
+              current_odom.pose.pose,
+              path_.at(current_waypoint_indx_).pose);
+
+      // Get the optimal velocity vector towards the waypoint
+      std::vector<mrp_pure_pursuit::geometry::HalfPlane> orca_planes;
+      Eigen::Vector2d opt_vel_vector = calculateOptimalVelocity(
+          local_odom_A.pose.pose,
+          current_waypoint_local);
+
+      std::cout << "Optimal Vel to target:" << std::endl;
+      std::cout << opt_vel_vector(0) << std::endl;
+      std::cout << opt_vel_vector(1) << std::endl;
+
+      for (const mrp_comms_msgs::msg::MemberState member_state : members_state)
+      {
+        nav_msgs::msg::Odometry member_odom = member_state.odom;
+        mrp_pure_pursuit::geometry::HalfPlane orca_plane;
+        // For each member odom, construct the orca plane if the distance between the
+        // robots are within some observable range
+        if (mrp_common::GeometryUtils::euclideanDistance(
+                current_odom.pose.pose,
+                member_odom.pose.pose) <= observable_range_)
+        {
+          // For now with the lack of robot_info custom message, assume all robots have
+          // the same radius and same weight
+          nav_msgs::msg::Odometry local_member_odom;
+          local_member_odom.pose.pose = mrp_common::TransformUtils::toLocalFrame(
+              current_odom.pose.pose,
+              member_odom.pose.pose);
+
+          mrp_pure_pursuit::ORCA::Result result = mrp_pure_pursuit::ORCA::localConstruct(
+              orca_plane, opt_vel_vector, local_member_odom,
+              robot_radius_, robot_radius_, delta_tau_, 1);
+
+          if (result == mrp_pure_pursuit::ORCA::Result::ON_COLLISION_COURSE)
+          {
+            // We only append the orca_plane if it is valid
+            orca_planes.push_back(orca_plane);
+            continue;
+          }
+
+          if (result == mrp_pure_pursuit::ORCA::Result::COLLISION)
+          {
+            vel_cmd.linear.x = 0;
+            vel_cmd.angular.z = 0;
+            return;
+          }
+        }
+      }
+
+      if (orca_planes.size() == 0)
+      {
+        std::cout << "No immediate collision detected" << std::endl;
+        // If there is no immediate collision, move toward the goal simply by tracking the path
+        trackLookahead(current_odom.pose.pose, lookahead,
+                       evaluate_linear_vel_if_allow_reverse, vel_cmd);
+        // vel_cmd.linear.x = 0;
+        // vel_cmd.angular.z = 0;
+        return;
+      }
+
+      std::cout << "Collision detected" << std::endl;
+      // If there is a collision in the near future
+      // Solve the linear programming optimisation to find the optimal velocity vector
+      // that is close to the desired velocity to target
+      // Create orca variable object
+      std::shared_ptr<mrp_pure_pursuit::solver::Variables>
+          orca_variables_ptr = std::make_shared<mrp_pure_pursuit::solver::Variables>();
+      // Optimise from robot current velocity (which is the optimised velocity toward the target position)
+      orca_variables_ptr->SetVariables(opt_vel_vector);
+      // Set bounds
+      // Upper bounds
+      Eigen::Vector2d upper_bound(1.0, 1.0);
+      Eigen::Vector2d lower_bound(-0.0, -1.0);
+      orca_variables_ptr->SetBounds(lower_bound, upper_bound);
+
+      // Create orca cost function
+      std::shared_ptr<mrp_pure_pursuit::solver::Cost>
+          orca_cost_ptr = std::make_shared<mrp_pure_pursuit::solver::Cost>();
+      // Set optimal velocity for cost function (x - xopt)^2 + (y - yopt)^2
+      orca_cost_ptr->SetOptimalVelocity(opt_vel_vector);
+
+      // Create orca constraints
+      std::shared_ptr<mrp_pure_pursuit::solver::Constraint>
+          orca_constraint_ptr = std::make_shared<mrp_pure_pursuit::solver::Constraint>(orca_planes.size());
+      orca_constraint_ptr->AddConstraints(orca_planes);
+
+      // Create solver and solve for optimal velocity
+      Eigen::Vector2d non_collision_velocity = mrp_pure_pursuit::solver::Solver::solve(
+          orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
+
+      std::cout << non_collision_velocity(0) << std::endl;
+      std::cout << non_collision_velocity(1) << std::endl;
+
+      if (non_collision_velocity.norm() == 0)
+      {
+        vel_cmd.linear.x = 0;
+        vel_cmd.angular.z = 0;
+        return;
+      }
+
+      // Track this
+      lookahead.transform.translation.x = non_collision_velocity(0);
+      lookahead.transform.translation.y = non_collision_velocity(1);
+      trackLookahead(current_odom.pose.pose, lookahead, false, vel_cmd);
   }
 
   void PurePursuitController::calculateVelocityCommand(
@@ -57,162 +188,148 @@ namespace mrp_pure_pursuit
       const double &current_time,
       geometry_msgs::msg::Twist &vel_cmd)
   {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    //   // Get lookahead for the next waypoint
+    //   int pre_indx = current_waypoint_indx_;
+    //   geometry_msgs::msg::TransformStamped lookahead;
 
-    // Get lookahead for the next waypoint
-    int pre_indx = current_waypoint_indx_;
-    geometry_msgs::msg::TransformStamped lookahead;
+    //   // Extract waypoint lookahead and update next waypoint index
+    //   std::cout << "Extracting lookahead" << std::endl;
+    //   current_waypoint_indx_ = extractNextWaypoint(
+    //       current_odom.pose.pose, current_waypoint_indx_, path_,
+    //       lookahead);
 
-    // Extract waypoint lookahead and update next waypoint index
-    std::cout << "Extracting lookahead" << std::endl;
-    current_waypoint_indx_ = extractNextWaypoint(
-        current_odom.pose.pose, current_waypoint_indx_, path_,
-        lookahead);
+    //   // Condition to support backwards driving
+    //   bool evaluate_linear_vel_if_allow_reverse =
+    //       (current_waypoint_indx_ != pre_indx && current_waypoint_indx_ < path_.size());
 
-    // Condition to support backwards driving
-    bool evaluate_linear_vel_if_allow_reverse =
-        (current_waypoint_indx_ != pre_indx && current_waypoint_indx_ < path_.size());
+    //   // If the current waypoint idx exceeds the path size
+    //   // This could be a potential bug
+    //   if (current_waypoint_indx_ >= path_.size())
+    //   {
+    //     trackLookahead(current_odom.pose.pose, lookahead,
+    //                    evaluate_linear_vel_if_allow_reverse, vel_cmd);
+    //     return;
+    //   }
 
-    // If the current waypoint idx exceeds the path size
-    // This could be a potential bug
-    if (current_waypoint_indx_ >= path_.size())
-    {
-      trackLookahead(current_odom.pose.pose, lookahead,
-                     evaluate_linear_vel_if_allow_reverse, vel_cmd);
-      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-      std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-      // vel_cmd.linear.x = 0;
-      // vel_cmd.angular.z = 0;
-      return;
-    }
+    //   // Convert waypoint to baselink of robot
+    //   nav_msgs::msg::Odometry local_odom_A;
+    //   geometry_msgs::msg::Pose current_waypoint_local =
+    //       mrp_common::TransformUtils::toLocalFrame(
+    //           current_odom.pose.pose,
+    //           path_.at(current_waypoint_indx_).pose);
 
-    // Convert waypoint to baselink of robot
-    nav_msgs::msg::Odometry local_odom_A;
-    geometry_msgs::msg::Pose current_waypoint_local =
-        mrp_common::TransformUtils::toLocalFrame(
-            current_odom.pose.pose,
-            path_.at(current_waypoint_indx_).pose);
+    //   // Get the optimal velocity vector towards the waypoint
+    //   std::vector<mrp_pure_pursuit::geometry::HalfPlane> orca_planes;
+    //   Eigen::Vector2d opt_vel_vector = calculateOptimalVelocity(
+    //       local_odom_A.pose.pose,
+    //       current_waypoint_local);
 
-    // Get the optimal velocity vector towards the waypoint
-    std::vector<mrp_pure_pursuit::geometry::HalfPlane> orca_planes;
-    Eigen::Vector2d opt_vel_vector = calculateOptimalVelocity(
-        local_odom_A.pose.pose,
-        current_waypoint_local);
+    //   std::cout << "Optimal Vel to target:" << std::endl;
+    //   std::cout << opt_vel_vector(0) << std::endl;
+    //   std::cout << opt_vel_vector(1) << std::endl;
 
-    std::cout << "Optimal Vel to target:" << std::endl;
-    std::cout << opt_vel_vector(0) << std::endl;
-    std::cout << opt_vel_vector(1) << std::endl;
+    //   for (const nav_msgs::msg::Odometry member_odom : members_odom)
+    //   {
+    //     mrp_pure_pursuit::geometry::HalfPlane orca_plane;
+    //     // For each member odom, construct the orca plane if the distance between the
+    //     // robots are within some observable range
+    //     if (mrp_common::GeometryUtils::euclideanDistance(
+    //             current_odom.pose.pose,
+    //             member_odom.pose.pose) <= observable_range_)
+    //     {
+    //       // For now with the lack of robot_info custom message, assume all robots have
+    //       // the same radius and same weight
+    //       nav_msgs::msg::Odometry local_member_odom;
+    //       local_member_odom.pose.pose = mrp_common::TransformUtils::toLocalFrame(
+    //           current_odom.pose.pose,
+    //           member_odom.pose.pose);
 
-    for (const nav_msgs::msg::Odometry member_odom : members_odom)
-    {
-      mrp_pure_pursuit::geometry::HalfPlane orca_plane;
-      // For each member odom, construct the orca plane if the distance between the
-      // robots are within some observable range
-      if (mrp_common::GeometryUtils::euclideanDistance(
-              current_odom.pose.pose,
-              member_odom.pose.pose) <= observable_range_)
-      {
-        // For now with the lack of robot_info custom message, assume all robots have
-        // the same radius and same weight
-        nav_msgs::msg::Odometry local_member_odom;
-        local_member_odom.pose.pose = mrp_common::TransformUtils::toLocalFrame(
-            current_odom.pose.pose,
-            member_odom.pose.pose);
+    //       mrp_pure_pursuit::ORCA::Result result = mrp_pure_pursuit::ORCA::localConstruct(
+    //           orca_plane, opt_vel_vector, local_member_odom,
+    //           robot_radius_, robot_radius_, delta_tau_, 1);
 
-        mrp_pure_pursuit::ORCA::Result result = mrp_pure_pursuit::ORCA::localConstruct(
-            orca_plane, opt_vel_vector, local_member_odom,
-            robot_radius_, robot_radius_, delta_tau_, 1);
+    //       if (result == mrp_pure_pursuit::ORCA::Result::ON_COLLISION_COURSE)
+    //       {
+    //         // We only append the orca_plane if it is valid
+    //         orca_planes.push_back(orca_plane);
+    //         continue;
+    //       }
 
-        if (result == mrp_pure_pursuit::ORCA::Result::ON_COLLISION_COURSE)
-        {
-          // We only append the orca_plane if it is valid
-          orca_planes.push_back(orca_plane);
-          continue;
-        }
+    //       if (result == mrp_pure_pursuit::ORCA::Result::COLLISION)
+    //       {
+    //         vel_cmd.linear.x = 0;
+    //         vel_cmd.angular.z = 0;
+    //         return;
+    //       }
+    //     }
+    //   }
 
-        if (result == mrp_pure_pursuit::ORCA::Result::COLLISION)
-        {
-          vel_cmd.linear.x = 0;
-          vel_cmd.angular.z = 0;
-          return;
-        }
-      }
-    }
+    //   if (orca_planes.size() == 0)
+    //   {
+    //     std::cout << "No immediate collision detected" << std::endl;
+    //     // If there is no immediate collision, move toward the goal simply by tracking the path
+    //     trackLookahead(current_odom.pose.pose, lookahead,
+    //                    evaluate_linear_vel_if_allow_reverse, vel_cmd);
+    //     // vel_cmd.linear.x = 0;
+    //     // vel_cmd.angular.z = 0;
+    //     return;
+    //   }
 
-    if (orca_planes.size() == 0)
-    {
-      std::cout << "No immediate collision detected" << std::endl;
-      // If there is no immediate collision, move toward the goal simply by tracking the path
-      trackLookahead(current_odom.pose.pose, lookahead,
-                     evaluate_linear_vel_if_allow_reverse, vel_cmd);
+    //   std::cout << "Collision detected" << std::endl;
+    //   // If there is a collision in the near future
+    //   // Solve the linear programming optimisation to find the optimal velocity vector
+    //   // that is close to the desired velocity to target
+    //   // Create orca variable object
+    //   std::shared_ptr<mrp_pure_pursuit::solver::Variables>
+    //       orca_variables_ptr = std::make_shared<mrp_pure_pursuit::solver::Variables>();
+    //   // Optimise from robot current velocity (which is the optimised velocity toward the target position)
+    //   orca_variables_ptr->SetVariables(opt_vel_vector);
+    //   // Set bounds
+    //   // Upper bounds
+    //   Eigen::Vector2d upper_bound(1.0, 1.0);
+    //   Eigen::Vector2d lower_bound(-0.0, -1.0);
+    //   orca_variables_ptr->SetBounds(lower_bound, upper_bound);
 
-      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-      std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-      // vel_cmd.linear.x = 0;
-      // vel_cmd.angular.z = 0;
-      return;
-    }
+    //   // Create orca cost function
+    //   std::shared_ptr<mrp_pure_pursuit::solver::Cost>
+    //       orca_cost_ptr = std::make_shared<mrp_pure_pursuit::solver::Cost>();
+    //   // Set optimal velocity for cost function (x - xopt)^2 + (y - yopt)^2
+    //   orca_cost_ptr->SetOptimalVelocity(opt_vel_vector);
 
-    std::cout << "Collision detected" << std::endl;
-    // If there is a collision in the near future
-    // Solve the linear programming optimisation to find the optimal velocity vector
-    // that is close to the desired velocity to target
-    // Create orca variable object
-    std::shared_ptr<mrp_pure_pursuit::solver::Variables>
-        orca_variables_ptr = std::make_shared<mrp_pure_pursuit::solver::Variables>();
-    // Optimise from robot current velocity (which is the optimised velocity toward the target position)
-    orca_variables_ptr->SetVariables(opt_vel_vector);
-    // Set bounds
-    // Upper bounds
-    Eigen::Vector2d upper_bound(1.0, 1.0);
-    Eigen::Vector2d lower_bound(-0.0, -1.0);
-    orca_variables_ptr->SetBounds(lower_bound, upper_bound);
+    //   // Create orca constraints
+    //   std::shared_ptr<mrp_pure_pursuit::solver::Constraint>
+    //       orca_constraint_ptr = std::make_shared<mrp_pure_pursuit::solver::Constraint>(orca_planes.size());
+    //   orca_constraint_ptr->AddConstraints(orca_planes);
 
-    // Create orca cost function
-    std::shared_ptr<mrp_pure_pursuit::solver::Cost>
-        orca_cost_ptr = std::make_shared<mrp_pure_pursuit::solver::Cost>();
-    // Set optimal velocity for cost function (x - xopt)^2 + (y - yopt)^2
-    orca_cost_ptr->SetOptimalVelocity(opt_vel_vector);
+    //   // Create solver and solve for optimal velocity
+    //   Eigen::Vector2d non_collision_velocity = mrp_pure_pursuit::solver::Solver::solve(
+    //       orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
 
-    // Create orca constraints
-    std::shared_ptr<mrp_pure_pursuit::solver::Constraint>
-        orca_constraint_ptr = std::make_shared<mrp_pure_pursuit::solver::Constraint>(orca_planes.size());
-    orca_constraint_ptr->AddConstraints(orca_planes);
+    //   std::cout << non_collision_velocity(0) << std::endl;
+    //   std::cout << non_collision_velocity(1) << std::endl;
 
-    // Create solver and solve for optimal velocity
-    Eigen::Vector2d non_collision_velocity = mrp_pure_pursuit::solver::Solver::solve(
-        orca_variables_ptr, orca_constraint_ptr, orca_cost_ptr);
+    //   if (non_collision_velocity.norm() == 0)
+    //   {
+    //     vel_cmd.linear.x = 0;
+    //     vel_cmd.angular.z = 0;
+    //     return;
+    //   }
 
-    std::cout << non_collision_velocity(0) << std::endl;
-    std::cout << non_collision_velocity(1) << std::endl;
-
-    if (non_collision_velocity.norm() == 0)
-    {
-      vel_cmd.linear.x = 0;
-      vel_cmd.angular.z = 0;
-      std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-      std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-      return;
-    }
-
-    // Track this
-    lookahead.transform.translation.x = non_collision_velocity(0);
-    lookahead.transform.translation.y = non_collision_velocity(1);
-    trackLookahead(current_odom.pose.pose, lookahead, false, vel_cmd);
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    //   // Track this
+    //   lookahead.transform.translation.x = non_collision_velocity(0);
+    //   lookahead.transform.translation.y = non_collision_velocity(1);
+    //   trackLookahead(current_odom.pose.pose, lookahead, false, vel_cmd);
   }
 
   // For feedback
   double PurePursuitController::getDistanceToGoal(const geometry_msgs::msg::Pose &current_pose)
   {
-    if(goal_reached_)
+    if (goal_reached_)
     {
       return 0;
     }
 
-    if(path_.size() == 0)
+    if (path_.size() == 0)
     {
       return -1;
     }
@@ -274,12 +391,10 @@ namespace mrp_pure_pursuit
         reevaluate_linear_vel_ = true;
       }
     }
-    std::cout << "Idx: " << current_waypoint_indx_ << std::endl;
     if (isApproachingFinal(path_, current_waypoint_indx_))
     {
       // We are approaching the goal,
       // This is the pose of the goal w.r.t. the base_link frame
-      std::cout << "We are approaching the goal" << std::endl;
       KDL::Frame F_bl_end = transformToBaseLink(path_.back().pose, current_pose);
 
       if (fabs(F_bl_end.p.x()) <= pos_tol_)
@@ -302,7 +417,6 @@ namespace mrp_pure_pursuit
       // Compute the angular velocity.
       // Lateral error is the y-value of the lookahead point (in base_link frame)
       double yt = lookahead.transform.translation.y;
-      std::cout << "yt: " << yt << std::endl;
       double ld_2 = ld_ * ld_;
       vel_cmd.angular.z = std::min(2 * v_ / ld_2 * yt, w_max_);
 
@@ -314,7 +428,6 @@ namespace mrp_pure_pursuit
       // We are at the goal!
       // Stop the vehicle
       // Stop moving.
-      std::cout << "Goal reached" << std::endl;
       vel_cmd.linear.x = 0.0;
       vel_cmd.angular.z = 0.0;
     }
@@ -524,6 +637,35 @@ namespace mrp_pure_pursuit
     tf2::toMsg(t_w_vel, transformed_vel);
 
     return projected_vel;
+  }
+
+  Eigen::Vector2d PurePursuitController::calculateOptimalVelocityGlobal(
+      const geometry_msgs::msg::Pose &current_pose,
+      const geometry_msgs::msg::Pose &current_waypoint)
+  {
+    double x1 = current_pose.position.x;
+    double x2 = current_waypoint.position.x;
+    double current_yaw = tf2::getYaw(current_pose.orientation);
+
+    double y1 = current_pose.position.y;
+    double y2 = current_waypoint.position.y;
+    double target_yaw = tf2::getYaw(current_waypoint.orientation);
+
+    double theta = atan2((y2 - y1), (x2 - x1));
+
+    if (theta > M_PI)
+    {
+      theta = theta - 2 * M_PI;
+    }
+
+    if (theta < -M_PI)
+    {
+      theta = theta + 2 * M_PI;
+    }
+
+    double linear_vel = max_linear_vel_;
+    double angular_vel = theta;
+    return mrp_common::GeometryUtils::projectToXY(linear_vel, theta);
   }
 }
 

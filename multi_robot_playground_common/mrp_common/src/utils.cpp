@@ -83,8 +83,11 @@ namespace mrp_common
         0);
 
     Eigen::Vector3d c_lm = lower.cross(middle);
-    Eigen::Vector3d c_mu = middle.cross(upper);
+    Eigen::Vector3d c_lu = lower.cross(upper);
 
-    return c_lm.dot(c_mu) > 0;
+    Eigen::Vector3d c_um = upper.cross(middle);
+    Eigen::Vector3d c_ul = upper.cross(lower);
+
+    return (c_lm.dot(c_lu) > 0 && c_um.dot(c_ul) > 0);
   }
 }

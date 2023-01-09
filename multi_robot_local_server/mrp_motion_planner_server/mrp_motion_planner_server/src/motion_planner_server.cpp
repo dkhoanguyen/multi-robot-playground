@@ -7,7 +7,7 @@ namespace mrp_motion_planner
       : mrp_common::LifecycleNode::LifecycleNode(
             "motion_planner_server",
             "robot", true, true, std::chrono::milliseconds(1000)),
-       executing_tasks_(false)
+        executing_tasks_(false)
   {
     loader_ptr_ = std::make_shared<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>>(
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
@@ -99,9 +99,17 @@ namespace mrp_motion_planner
         "Activating cmd_vel publisher");
     robot_cmd_vel_pub_->on_activate();
 
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Activating member_state publisher");
+    member_state_pub_->on_activate();
+
     createOdomSubscriber();
 
     createLaserScanSubscriber();
+
+    // Let's wait here a bit for the data to be properly published
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     // Request list of all member robots in the current team
     registerMemberRobots();
@@ -193,11 +201,11 @@ namespace mrp_motion_planner
     robot_cmd_vel_pub_.reset();
     robot_odom_sub_.reset();
 
-    for (auto element : member_robots_odom_sub_map_)
+    for (auto element : member_states_sub_map_)
     {
       element.second.reset();
     }
-    for (auto element : member_robots_odom_data_map_)
+    for (auto element : member_states_data_map_)
     {
       element.second.reset();
     }
@@ -330,7 +338,7 @@ namespace mrp_motion_planner
           bool reset_loop = false;
           for (const std::string &robot_name : member_robots_names_)
           {
-            if (!member_robots_odom_data_map_[robot_name]->ready)
+            if (!member_states_data_map_[robot_name]->ready)
             {
               mrp_common::Log::basicWarn(
                   get_node_logging_interface(),
@@ -442,12 +450,13 @@ namespace mrp_motion_planner
       std::unique_lock<std::recursive_mutex> lck(robot_odom_->mtx);
       robot_current_odom = robot_odom_->current_odom;
     }
-    // Get all odom from other members
-    std::vector<nav_msgs::msg::Odometry> member_odom;
+
+    // Get all member states from other members
+    std::vector<mrp_comms_msgs::msg::MemberState> members_state;
     for (const std::string &robot_name : member_robots_names_)
     {
-      std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
-      member_odom.push_back((member_robots_odom_data_map_[robot_name]->current_odom));
+      std::unique_lock<std::recursive_mutex> lck(member_states_data_map_[robot_name]->mtx);
+      members_state.push_back((member_states_data_map_[robot_name]->member_state));
     }
 
     // Get current scan
@@ -457,14 +466,18 @@ namespace mrp_motion_planner
       current_scan = robot_scan_->current_scan;
     }
 
-    auto current_ros_time = this->get_node_clock_interface()->get_clock()->now();
     geometry_msgs::msg::Twist control_velocity;
-    planner_ptr_->calculateVelocityCommand(
-        robot_current_odom,
-        member_odom,
-        current_scan,
-        current_ros_time.nanoseconds() / 1000000000,
-        control_velocity);
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    planner_ptr_->step(robot_current_odom,
+                       members_state,
+                       control_velocity);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Step time: " +
+            std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()) +
+            "[ms]");
 
     // Publish control command
     robot_cmd_vel_pub_->publish(control_velocity);
@@ -641,18 +654,18 @@ namespace mrp_motion_planner
       mrp_common::Log::basicInfo(
           get_node_logging_interface(),
           "Registering " + robot_name);
-      member_robots_odom_data_map_[robot_name] = std::make_shared<RobotOdom>();
+      member_states_data_map_[robot_name] = std::make_shared<RobotState>();
 
       mrp_common::Log::basicDebug(
           get_node_logging_interface(),
-          "Subscribing to " + robot_name + " odom");
-      member_robots_odom_sub_map_[robot_name] = create_subscription<nav_msgs::msg::Odometry>(
-          "/" + robot_name + "/odom", 10,
-          [this, robot_name](const nav_msgs::msg::Odometry::SharedPtr msg)
+          "Subscribing to " + robot_name + " member_state");
+      member_states_sub_map_[robot_name] = create_subscription<mrp_comms_msgs::msg::MemberState>(
+          "/" + robot_name + "/member_state", 10,
+          [this, robot_name](const mrp_comms_msgs::msg::MemberState::SharedPtr msg)
           {
-            std::unique_lock<std::recursive_mutex> lck(member_robots_odom_data_map_[robot_name]->mtx);
-            member_robots_odom_data_map_[robot_name]->current_odom = *msg;
-            member_robots_odom_data_map_[robot_name]->ready = true;
+            std::unique_lock<std::recursive_mutex> lck(member_states_data_map_[robot_name]->mtx);
+            member_states_data_map_[robot_name]->member_state = *msg;
+            member_states_data_map_[robot_name]->ready = true;
           });
     }
   }
