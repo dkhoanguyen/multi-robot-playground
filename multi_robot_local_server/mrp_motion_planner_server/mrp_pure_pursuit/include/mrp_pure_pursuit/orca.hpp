@@ -20,13 +20,13 @@ namespace mrp_pure_pursuit
     };
 
     static Result localConstruct(
-        mrp_pure_pursuit::geometry::HalfPlane &output_orca,
-        const Eigen::Vector2d &desired_vel_A,
-        const nav_msgs::msg::Odometry &odom_B,
-        const double &radius_A,
-        const double &radius_B,
-        const double &delta_tau,
-        const double &weight);
+      const nav_msgs::msg::Odometry &odom_A,
+      const nav_msgs::msg::Odometry &odom_B,
+      const double &radius_A,
+      const double &radius_B,
+      const double &delta_tau,
+      const double &weight,
+      mrp_pure_pursuit::geometry::HalfPlane &output_orca);
 
   protected:
   };

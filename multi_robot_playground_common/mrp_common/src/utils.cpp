@@ -41,6 +41,8 @@ namespace mrp_common
     double z1 = first.position.z;
     double z2 = second.position.z;
 
+    std::cout << "x1: " << x1 << " y1: " << y1 << std::endl;
+    std::cout << "x2: " << x2 << " y2: " << y2 << std::endl;
     return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
   }
 

@@ -3,14 +3,18 @@
 namespace mrp_pure_pursuit
 {
   ORCA::Result ORCA::localConstruct(
-      mrp_pure_pursuit::geometry::HalfPlane &output_orca,
-      const Eigen::Vector2d &desired_vel_A,
+      const nav_msgs::msg::Odometry &odom_A,
       const nav_msgs::msg::Odometry &odom_B,
       const double &radius_A,
       const double &radius_B,
       const double &delta_tau,
-      const double &weight)
+      const double &weight,
+      mrp_pure_pursuit::geometry::HalfPlane &output_orca)
   {
+    // Get vel vector of A
+    Eigen::Vector2d A_vel_vector = mrp_common::GeometryUtils::projectToXY(
+        odom_A.twist.twist.linear.x, 0);
+
     // Position vector for robot B in robot A frame
     Eigen::Vector2d B_2d_pose{
         odom_B.pose.pose.position.x,
@@ -40,9 +44,7 @@ namespace mrp_pure_pursuit
     double lower_angle = angle_A_to_B - inner_angle;
 
     // Relative velocity
-    Eigen::Vector2d relative_v = desired_vel_A - B_vel_vector;
-
-    // std::cout << "relative_v: " << relative_v.transpose() << std::endl;
+    Eigen::Vector2d relative_v = A_vel_vector - B_vel_vector;
 
     // Ok so before we carry on let's check if there is a collision
     // If relative vector is not bounded by the truncated VO
@@ -94,7 +96,7 @@ namespace mrp_pure_pursuit
     }
 
     Eigen::Vector2d weighted_u = weight * u;
-    Eigen::Vector2d orca_point = desired_vel_A + weighted_u;
+    Eigen::Vector2d orca_point = A_vel_vector + weighted_u;
 
     // Construct ORCA halfplane
     geometry::Line orca_line(weighted_u, orca_point);
