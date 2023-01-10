@@ -3,22 +3,17 @@
 namespace mrp_orca
 {
   MotionPlanner::MotionPlanner()
-      : ld_(0.1), v_max_(0.05), v_(v_max_), w_max_(0.5), pos_tol_(0.005), current_waypoint_indx_(0),
+      : ld_(0.1), v_max_(0.05), v_(v_max_), w_max_(0.5),
+        pos_tol_(0.005), current_waypoint_indx_(0),
         goal_reached_(true), L_(0.1), allow_reverse_(false),
-        robot_radius_(0.25),
-        observable_range_(2),
-        delta_tau_(1000.0),
-        max_linear_vel_(0.5),
-        max_angular_vel_(3.14),
-        linear_error_(0.01),
-        angular_error_(0.05),
-        at_position_(false),
-        reach_goal_(false),
-        moving_to_temp_(false)
+        robot_radius_(0.25), observable_range_(2),
+        delta_tau_(1000.0), max_linear_vel_(0.5),
+        max_angular_vel_(3.14), linear_error_(0.01),
+        angular_error_(0.05), at_position_(false),
+        reach_goal_(false), moving_to_temp_(false),
+        reevaluate_linear_vel_(true)
   {
-    reevaluate_linear_vel_ = true;
-    current_waypoint_indx_ = 0;
-    std::cout << "Intialisation MotionPlanner" << std::endl;
+    std::cout << "Intialisation mrp_orca::MotionPlanner" << std::endl;
   }
 
   MotionPlanner::~MotionPlanner()
@@ -129,7 +124,6 @@ namespace mrp_orca
           // If we are too close
           if (robot_d_to_goal > min_d_to_goal)
           {
-
           }
         }
 

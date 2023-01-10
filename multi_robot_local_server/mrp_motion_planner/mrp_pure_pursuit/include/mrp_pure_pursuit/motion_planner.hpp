@@ -1,5 +1,5 @@
-#ifndef MRP_ORCA__MOTION_PLANNER_HPP_
-#define MRP_ORCA__MOTION_PLANNER_HPP_
+#ifndef MRP_PURE_PURSUIT__MOTION_PLANNER_HPP_
+#define MRP_PURE_PURSUIT__MOTION_PLANNER_HPP_
 
 #include <atomic>
 #include <memory>
@@ -23,11 +23,7 @@
 #include "mrp_common/utils.hpp"
 #include "mrp_comms_msgs/msg/member_state.hpp"
 
-#include "mrp_orca/orca.hpp"
-#include "mrp_orca/solver.hpp"
-#include "mrp_orca/geometry.hpp"
-
-namespace mrp_orca
+namespace mrp_pure_pursuit
 {
   class MotionPlanner : public mrp_local_server_core::MotionPlannerInterface
   {
@@ -54,7 +50,6 @@ namespace mrp_orca
     bool reachGoal();
 
   protected:
-
     double robot_radius_;
     double observable_range_;
     double delta_tau_;
@@ -62,7 +57,7 @@ namespace mrp_orca
 
     int current_waypoint_indx_;
     std::vector<geometry_msgs::msg::PoseStamped> path_;
-    
+
     double max_linear_vel_;
     double max_angular_vel_;
 
@@ -108,14 +103,6 @@ namespace mrp_orca
         const double &linear_vel,
         const std::vector<geometry_msgs::msg::PoseStamped> &remaining_path);
 
-    Eigen::Vector2d calculateOptimalVelocity(
-        const geometry_msgs::msg::Pose &current_pose,
-        const geometry_msgs::msg::Pose &current_waypoint);
-
-    Eigen::Vector2d calculateOptimalVelocityGlobal(
-        const geometry_msgs::msg::Pose &current_pose,
-        const geometry_msgs::msg::Pose &current_waypoint);
-
     bool isApproachingFinal(
         const std::vector<geometry_msgs::msg::PoseStamped> &path,
         const int &indx)
@@ -136,5 +123,4 @@ namespace mrp_orca
     };
   };
 }
-
 #endif

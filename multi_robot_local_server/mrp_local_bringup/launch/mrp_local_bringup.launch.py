@@ -96,7 +96,8 @@ def prepare_launch(context):
             parameters=[
                 {'planner_name_list': motion_planner_settings['planners']['planner_name_list'],
                  'planner_name_plugin_mapping': motion_planner_settings['planners']['planner_name_plugin_mapping'],
-                 'planner_plugin': motion_planner_settings['planners']['default_planner']}]
+                 'planner_plugin': motion_planner_settings['planners']['default_planner'],
+                 'planner_rate': motion_planner_settings['planners']['rate']}]
         )
     )
     # Finally lifecycle manager

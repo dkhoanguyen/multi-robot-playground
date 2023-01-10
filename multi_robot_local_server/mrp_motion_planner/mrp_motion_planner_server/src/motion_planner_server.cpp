@@ -12,7 +12,7 @@ namespace mrp_motion_planner
     loader_ptr_ = std::make_shared<pluginlib::ClassLoader<mrp_local_server_core::MotionPlannerInterface>>(
         "mrp_local_server_core", "mrp_local_server_core::MotionPlannerInterface");
     planner_name_ = planner_name;
-    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_orca::MotionPlanner");
+    planner_ptr_ = loader_ptr_->createSharedInstance("mrp_pure_pursuit::MotionPlanner");
 
     // Get all available plugins for planner
     declare_parameter<std::vector<std::string>>("planner_name_list", std::vector<std::string>());
@@ -42,10 +42,13 @@ namespace mrp_motion_planner
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
         "Extracting parameters from parameter server");
-
+    planner_name_ = get_parameter("planner_plugin").as_string();
+    std::cout << "Planner plugin: " << planner_name_ << std::endl;
     std::vector<std::string> planner_names = get_parameter("planner_name_list").as_string_array();
     std::vector<std::string> planner_mapping = get_parameter("planner_name_plugin_mapping").as_string_array();
-    planner_rate_ = std::chrono::milliseconds((int)get_parameter("planner_rate").as_double());
+    int planner_rate = (int)get_parameter("planner_rate").as_double();
+    std::cout << "Planner rate: " << planner_rate << std::endl;
+    planner_rate_ = std::chrono::milliseconds(planner_rate);
 
     robot_name_ = get_namespace();
     robot_cmd_vel_topic_name_ = robot_name_ + "/cmd_vel";
@@ -65,6 +68,8 @@ namespace mrp_motion_planner
         planner_name_map_[planner_names.at(idx)] = planner_mapping.at(idx);
       }
     }
+
+    std::cout << "Planner Class Name: " << planner_name_map_[planner_name_] << std::endl;
 
     // Create member state publisher
     createMemberStatePublisher();
@@ -230,15 +235,15 @@ namespace mrp_motion_planner
     {
       mrp_common::Log::basicInfo(
           get_node_logging_interface(),
-          "Creating " + planner_name_);
+          "Creating " + planner_name_map_[planner_name_]);
       planner_ptr_ = loader_ptr_->createSharedInstance(planner_name_map_[planner_name_]);
       mrp_common::Log::basicInfo(
           get_node_logging_interface(),
-          "Initialing " + planner_name_);
+          "Initialing " + planner_name_map_[planner_name_]);
       planner_ptr_->initialise();
       mrp_common::Log::basicInfo(
           get_node_logging_interface(),
-          "Successfully initialised " + planner_name_);
+          "Successfully initialised " + planner_name_map_[planner_name_]);
     }
     catch (pluginlib::PluginlibException &ex)
     {

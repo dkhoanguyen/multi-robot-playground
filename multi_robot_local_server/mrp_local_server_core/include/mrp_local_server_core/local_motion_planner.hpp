@@ -1,5 +1,5 @@
-#ifndef MRP_LOCAL_SERVER_CORE_LOCAL_MOTION_PLANNER_HPP_
-#define MRP_LOCAL_SERVER_CORE_LOCAL_MOTION_PLANNER_HPP_
+#ifndef MRP_LOCAL_SERVER_CORE__LOCAL_MOTION_PLANNER_HPP_
+#define MRP_LOCAL_SERVER_CORE__LOCAL_MOTION_PLANNER_HPP_
 
 #include <unordered_map>
 
@@ -8,8 +8,6 @@
 
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
-
-#include "mrp_common/parameter_interface.hpp"
 
 #include "mrp_comms_msgs/msg/member_state.hpp"
 

@@ -3,10 +3,13 @@ general:
     heartbeat: 1000.0
 
 planners:
-  default_planner: pure_pursuit
+  rate: 100.0
+  default_planner: orca
   planner_name_list:
     - spotturn
     - orca
+    - pure_pursuit
   planner_name_plugin_mapping:
     - mrp_motion_planner::SpotTurn
-    - mrp_orca::MotionPlaner
+    - mrp_orca::MotionPlanner
+    - mrp_pure_pursuit::MotionPlanner
