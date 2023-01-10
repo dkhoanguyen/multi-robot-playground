@@ -26,16 +26,11 @@ namespace mrp_local_server_core
     // Target
     // We should change laser scan to cost map in the future
     virtual void setPath(const std::vector<geometry_msgs::msg::PoseStamped> &path) = 0;
-    virtual void calculateVelocityCommand(
-        const nav_msgs::msg::Odometry &current_odom,
-        const std::vector<nav_msgs::msg::Odometry> &members_odom,
-        const sensor_msgs::msg::LaserScan &scan,
-        const double &current_time,
-        geometry_msgs::msg::Twist &vel_cmd) = 0;
 
     virtual void step(
         const nav_msgs::msg::Odometry &current_odom,
         const std::vector<mrp_comms_msgs::msg::MemberState> &members_state,
+        const sensor_msgs::msg::LaserScan &scan,
         geometry_msgs::msg::Twist &vel_cmd) = 0;
 
     // For feedback
@@ -43,9 +38,6 @@ namespace mrp_local_server_core
 
     // For accessing
     virtual bool reachGoal() = 0;
-
-    // For settingg parameters
-    virtual void setParameter(const std::unordered_map<std::string, double> &param_map) = 0;
   };
 }
 

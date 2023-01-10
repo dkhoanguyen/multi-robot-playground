@@ -1,0 +1,12 @@
+general:
+  health:
+    heartbeat: 1000.0
+
+planners:
+  default_planner: pure_pursuit
+  planner_name_list:
+    - spotturn
+    - orca
+  planner_name_plugin_mapping:
+    - mrp_motion_planner::SpotTurn
+    - mrp_orca::MotionPlaner

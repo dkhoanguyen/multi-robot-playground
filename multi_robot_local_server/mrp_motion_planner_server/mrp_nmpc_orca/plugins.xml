@@ -1,7 +1,0 @@
-<class_libraries>
-    <library path="mrp_nmpc_orca">
-        <class type="mrp_nmpc_orca::NMPCPathTracker" base_class_type="mrp_local_server_core::MotionPlannerInterface">
-            <description></description>
-        </class>
-    </library>
-</class_libraries>

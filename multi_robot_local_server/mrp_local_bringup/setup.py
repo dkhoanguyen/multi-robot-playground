@@ -24,7 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'activate_motion_planners = mrp_local_bringup.activate_motion_planners:main'
+            'activate_motion_planners = mrp_local_bringup.activate_motion_planners:main',
+            'lifecycle_manager_client = mrp_local_bringup.lifecycle_manager_client:main'
         ],
     },
 )
