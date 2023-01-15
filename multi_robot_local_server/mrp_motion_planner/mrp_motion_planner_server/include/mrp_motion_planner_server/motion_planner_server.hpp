@@ -23,8 +23,6 @@
 #include "mrp_common/service_client.hpp"
 #include "mrp_common/action_server.hpp"
 #include "mrp_common/logging.hpp"
-#include "mrp_common/parameter_client.hpp"
-#include "mrp_common/parameter_interface.hpp"
 
 #include "mrp_local_server_core/local_motion_planner.hpp"
 

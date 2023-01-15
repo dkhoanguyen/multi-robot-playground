@@ -1,9 +1,0 @@
-# goal definition
-uint8[] ids_to_ping
----
-# result definition
-uint8[] found_ids
-builtin_interfaces/Duration found_duration
----
-# feedback definition
-uint8[] partially_found_ids

@@ -1,0 +1,9 @@
+# goal definition
+uint8 task_group_id     # task group to look at
+uint8 task_id           # task within that task group
+---
+# result definition
+builtin_interfaces/Duration duration
+---
+# feedback definition
+mrp_comms_msgs/MemberState member_state

@@ -1,6 +1,0 @@
-Header header
-RobotMetaData robot_info
-
-float64 current_utility
-geometry_msgs/PoseStamped current_pose
-geometry_msgs/TwistStamped current_velocity

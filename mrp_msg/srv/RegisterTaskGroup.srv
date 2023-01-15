@@ -1,5 +1,0 @@
-# goal definition
-TaskGroup task_group
----
-# result definition
-builtin_interfaces/Duration register_duration
