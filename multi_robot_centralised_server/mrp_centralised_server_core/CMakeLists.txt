@@ -20,13 +20,13 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 find_package(pluginlib REQUIRED)
-find_package(mrp_msg REQUIRED)
+find_package(mrp_task_msgs REQUIRED)
 
 set(dependencies
   rclcpp
   rclcpp_lifecycle
   pluginlib
-  mrp_msg
+  mrp_task_msgs
 )
 
 install(

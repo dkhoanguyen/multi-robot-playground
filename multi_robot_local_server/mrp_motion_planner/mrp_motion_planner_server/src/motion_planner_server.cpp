@@ -616,7 +616,7 @@ namespace mrp_motion_planner
   {
     mrp_common::Log::basicInfo(
         get_node_logging_interface(),
-        "Creating motion planner action server for " + robot_name_);
+        "Creating follow_path action server for " + robot_name_);
     try
     {
       follow_path_action_server_ = std::make_shared<mrp_common::ActionServer<nav2_msgs::action::FollowPath>>(
@@ -627,9 +627,10 @@ namespace mrp_motion_planner
           std::chrono::milliseconds(100), // Execution frequency
           false,
           rcl_action_server_get_default_options());
+          
       mrp_common::Log::basicInfo(
           get_node_logging_interface(),
-          "Motion planner action server for " + robot_name_ + " created successfully!");
+          "follow_path action server for " + robot_name_ + " created successfully!");
     }
     catch (const std::exception &e) // Maybe it's better not to catch all exception here
     {

@@ -74,23 +74,18 @@ namespace mrp_task_executor
     rclcpp_lifecycle::LifecyclePublisher<mrp_comms_msgs::msg::MemberState>::SharedPtr member_state_pub_;
     void createMemberStatePublisher();
 
-    // Publisher for cmd_vel
-    std::string robot_cmd_vel_topic_name_;
-    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr robot_cmd_vel_pub_;
-    void createCmdVelPublisher();
-
-    // Subscriber for getting current pose of the robot
-    std::string robot_odom_topic_name_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr robot_odom_sub_;
-    void createOdomSubscriber();
-
-    // Subscriber for getting laser scan of the robot
-    std::string robot_scan_topic_name_;
-    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr robot_scan_sub_;
-    void createLaserScanSubscriber();
-
+    std::string follow_path_action_name_;
     std::shared_ptr<mrp_common::ActionClient<nav2_msgs::action::FollowPath>> follow_path_client_;
     void createFollowPathActionClient();
+
+    std::string execute_task_action_name_;
+    std::shared_ptr<mrp_common::ActionServer<mrp_task_msgs::action::ExecuteTask>> execute_task_server_;
+    void createExecuteTaskServer();
+
+    void followPathFeedbackCallback(const std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback> feedback);
+    void followPathResultCallback(const std::shared_ptr<const nav2_msgs::action::FollowPath::Result> result);
+
+    void executeTask();
   };
 }
 

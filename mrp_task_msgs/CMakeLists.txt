@@ -25,6 +25,8 @@ find_package(mrp_comms_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Task.msg"
+  "srv/GetAllTasks.srv"
+  "srv/SetAllTasks.srv"
   "action/ExecuteTask.action"
   DEPENDENCIES std_msgs nav_msgs geometry_msgs mrp_comms_msgs
   # LIBRARY_NAME ${PROJECT_NAME}

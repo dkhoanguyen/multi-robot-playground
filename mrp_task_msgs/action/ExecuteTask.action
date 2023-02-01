@@ -1,6 +1,6 @@
-# goal definition
-uint8 task_group_id     # task group to look at
-uint8 task_id           # task within that task group
+# Task
+mrp_task_msgs/Task task
+
 ---
 # result definition
 builtin_interfaces/Duration duration

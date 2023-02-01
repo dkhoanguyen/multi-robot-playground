@@ -22,10 +22,8 @@ namespace mrp_task_executor
         get_node_logging_interface(), "Extracting parameters from parameter server");
 
     robot_name_ = get_namespace();
-    robot_cmd_vel_topic_name_ = robot_name_ + "/cmd_vel";
-    robot_odom_topic_name_ = robot_name_ + "/odom";
-    robot_scan_topic_name_ = robot_name_ + "/scan";
     member_state_topic_name_ = robot_name_ + "/member_state";
+    follow_path_action_name_ = robot_name_ + "/follow_path";
 
     // Initialise heartbeat
     initialiseHeartbeat();
@@ -118,5 +116,90 @@ namespace mrp_task_executor
 
   void TaskExecutorServer::createFollowPathActionClient()
   {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Creating follow path action client for robot " + robot_name_);
+    try
+    {
+      follow_path_client_ = std::make_shared<mrp_common::ActionClient<nav2_msgs::action::FollowPath>>(
+          shared_from_this(),
+          follow_path_action_name_,
+          std::bind(&TaskExecutorServer::followPathFeedbackCallback, this, std::placeholders::_1), // Feedback callback
+          nullptr,                                                                                 // Result callback
+          false);
+
+      mrp_common::Log::basicInfo(
+          get_node_logging_interface(),
+          "follow_path action client for " + robot_name_ + " created successfully!");
+    }
+    catch (const std::exception &e) // Maybe it's better not to catch all exception here
+    {
+      mrp_common::Log::basicError(
+          get_node_logging_interface(),
+          "Unable to create follow_path action server for " + robot_name_ + " due to err " + std::string(e.what()));
+    }
+  }
+
+  void TaskExecutorServer::createExecuteTaskServer()
+  {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Creating execute task action server for robot " + robot_name_);
+    try
+    {
+      execute_task_server_ = std::make_shared<mrp_common::ActionServer<mrp_task_msgs::action::ExecuteTask>>(
+          shared_from_this(),
+          "follow_path",
+          std::bind(&TaskExecutorServer::executeTask, this),
+          nullptr,
+          std::chrono::milliseconds(100), // Execution frequency
+          false,
+          rcl_action_server_get_default_options());
+    }
+    catch (const std::exception &e) // Maybe it's better not to catch all exception here
+    {
+      mrp_common::Log::basicError(
+          get_node_logging_interface(),
+          "Unable to create execute task action server for " + robot_name_ + " due to err " + std::string(e.what()));
+    }
+  }
+
+  void TaskExecutorServer::followPathFeedbackCallback(const std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback> feedback)
+  {
+  }
+
+  void TaskExecutorServer::followPathResultCallback(const std::shared_ptr<const nav2_msgs::action::FollowPath::Result> result)
+  {
+  }
+
+  void TaskExecutorServer::executeTask()
+  {
+    mrp_common::Log::basicInfo(
+        get_node_logging_interface(),
+        "Begin executing assigned task");
+    try
+    {
+      // Start behaviour tree
+      // Get task
+      mrp_task_msgs::msg::Task current_task = execute_task_server_->getCurrentGoal()->task;
+
+      // Get destination from task
+      geometry_msgs::msg::PoseStamped destination = current_task.location;
+
+      // Request the motion planner server to move to the destination
+      nav2_msgs::action::FollowPath::Goal destination_req = nav2_msgs::action::FollowPath::Goal();
+      destination_req.path.poses = std::vector<geometry_msgs::msg::PoseStamped>({destination});
+
+      follow_path_client_->sendGoal(destination_req);
+      while(rclcpp::ok())
+      {
+        // Wait until destination is reached 
+      }
+      
+    }
+    catch (const std::exception &e)
+    {
+      // Catch error here
+    }
   }
 }
