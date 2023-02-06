@@ -1,6 +1,8 @@
 #ifndef MULTI_ROBOT_PLAYGROUND_COMMON__ACTION_CLIENT_HPP_
 #define MULTI_ROBOT_PLAYGROUND_COMMON__ACTION_CLIENT_HPP_
 
+#include <chrono>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -8,6 +10,8 @@
 
 namespace mrp_common
 {
+  using namespace std::chrono_literals; // NOLINT
+
   template <typename ActionType>
   class ActionClient
   {
@@ -54,13 +58,16 @@ namespace mrp_common
       }
     }
 
-    void sendGoal(const typename ActionType::Goal &goal)
+    void waitForServer()
     {
-      if (!action_client_->wait_for_action_server())
+      if (!action_client_->wait_for_action_server(1s))
       {
         Log::basicError(node_logging_interface_, "Action server not available after waiting");
       }
+    }
 
+    void sendGoal(const typename ActionType::Goal &goal)
+    {
       Log::basicInfo(node_logging_interface_, "Sending goal");
       auto send_goal_options = typename rclcpp_action::Client<ActionType>::SendGoalOptions();
 
