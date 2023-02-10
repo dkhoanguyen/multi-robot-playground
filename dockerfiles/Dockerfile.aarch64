@@ -46,3 +46,5 @@ RUN pip3 install transforms3d
 RUN apt install -y ros-foxy-gazebo-ros-pkgs ros-foxy-navigation2 ros-foxy-tf-transformations
 
 RUN apt install -y coinor-libipopt-dev cppad
+
+RUN apt install -y ros-foxy-test-msgs ros-foxy-std-srvs

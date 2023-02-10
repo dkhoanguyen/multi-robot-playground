@@ -25,9 +25,6 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
-# include_directories(
-#   include
-# )
 
 set(dependencies
   rclcpp
@@ -51,7 +48,6 @@ set(library_name mrp_common)
 add_library(${library_name} SHARED
   src/lifecycle_node.cpp
   src/utils.cpp
-  # src/parameter_client.cpp
   ${HEADER_FILES}
 )
 
@@ -72,27 +68,19 @@ install(
   INCLUDES DESTINATION include
 )
 
-# ament_export_targets(${library_name} HAS_LIBRARY_TARGET)
-
 install(
   DIRECTORY include/${library_name}
   DESTINATION include
 )
 
-# rosidl_generate_interfaces(${PROJECT_NAME}
-#   "msg/Heartbeat.msg"
-#   DEPENDENCIES std_msgs
-# )
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
+  find_package(ament_cmake_pytest REQUIRED)
+  find_package(launch_testing_ament_cmake REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

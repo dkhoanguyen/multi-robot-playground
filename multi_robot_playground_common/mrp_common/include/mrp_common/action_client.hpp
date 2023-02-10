@@ -66,10 +66,13 @@ namespace mrp_common
       }
     }
 
-    void sendGoal(const typename ActionType::Goal &goal)
+    typename std::shared_future<std::shared_ptr<rclcpp_action::ClientGoalHandle<ActionType>>>
+    sendGoal(const typename ActionType::Goal &goal)
     {
       Log::basicInfo(node_logging_interface_, "Sending goal");
       auto send_goal_options = typename rclcpp_action::Client<ActionType>::SendGoalOptions();
+
+      // TODO: Provide send_goal-options as an input
 
       send_goal_options.goal_response_callback =
           std::bind(&ActionClient::goalResponseCallback, this, std::placeholders::_1);
@@ -77,7 +80,7 @@ namespace mrp_common
           std::bind(&ActionClient::feedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
       send_goal_options.result_callback =
           std::bind(&ActionClient::resultCallback, this, std::placeholders::_1);
-      action_client_->async_send_goal(goal, send_goal_options);
+      auto future_goal_handle = action_client_->async_send_goal(goal, send_goal_options);
 
       if (spin_thread_)
       {
@@ -85,6 +88,20 @@ namespace mrp_common
         spin_future_ = std::async(std::launch::async, [this]()
                                   { callback_group_executor_->spin(); });
       }
+
+      return future_goal_handle;
+    }
+
+    void cancelGoal()
+    {
+      auto future_goal_handle = action_client_->async_cancel_goal(handle_);
+      if (spin_thread_)
+      {
+        // Spin executor
+        spin_future_ = std::async(std::launch::async, [this]()
+                                  { callback_group_executor_->spin(); });
+      }
+      return future_goal_handle;
     }
 
     const rclcpp_action::GoalUUID getGoalID() const
@@ -97,6 +114,12 @@ namespace mrp_common
     {
       std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
       return feedback_;
+    }
+
+    const typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr getGoalHandle() const
+    {
+      std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
+      return handle_;
     }
 
   protected:

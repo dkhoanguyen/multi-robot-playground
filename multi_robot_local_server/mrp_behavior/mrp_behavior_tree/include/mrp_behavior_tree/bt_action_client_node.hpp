@@ -34,8 +34,8 @@ namespace mrp_behavior_tree
       getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
       // Initialize the input and output messages
-      goal_ = typename ActionT::Goal();
-      result_ = typename rclcpp_action::ClientGoalHandle<ActionT>::WrappedResult();
+      goal_ = typename ActionType::Goal();
+      result_ = rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult();
 
       std::string remapped_action_name;
       if (getInput("server_name", remapped_action_name))
@@ -52,12 +52,23 @@ namespace mrp_behavior_tree
 
     void createActionClient(const std::string &action_name)
     {
-      action_client_ = std::make_shared<mrp_common::ActionClient<typename ActionType>>(
+      bool spin_thread = false;
+      action_client_ = std::make_shared<mrp_common::ActionClient<ActionType>>(
           node_,
           action_name,
-          false,
+          spin_thread,
           nullptr,
-          nullptr);
+          [this](const typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult &result)
+          {
+            // TODO(#1652): a work around until rcl_action interface is updated
+            // if goal ids are not matched, the older goal call this callback so ignore the result
+            // if matched, it must be processed (including aborted)
+            if (this->goal_handle_->get_goal_id() == result.goal_id)
+            {
+              goal_result_available_ = true;
+              result_ = result;
+            }
+          });
 
       action_client_->waitForServer();
     };
@@ -105,7 +116,7 @@ namespace mrp_behavior_tree
      * in subsequent calls to this function if no new feedback is received while waiting for a result.
      * @param feedback shared_ptr to latest feedback message, nullptr if no new feedback was received
      */
-    virtual void onWaitForResult(std::shared_ptr<const typename ActionType::Feedback> /*feedback*/)
+    virtual void onWaitForResult(std::shared_ptr<const typename ActionType::Feedback> feedback)
     {
     }
 
@@ -159,7 +170,10 @@ namespace mrp_behavior_tree
       if (rclcpp::ok() && !goal_result_available_)
       {
         // user defined callback. May modify the value of "goal_updated_"
-        onWaitForResult();
+        auto feedback = action_client_->getFeedback();
+        goal_handle_ = action_client_->getGoalHandle();
+
+        onWaitForResult(feedback);
 
         auto goal_status = goal_handle_->get_status();
         if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
@@ -179,6 +193,7 @@ namespace mrp_behavior_tree
         }
       }
 
+      std::lock_guard<std::recursive_mutex> lck_guard(result_mutex_);
       switch (result_.code)
       {
       case rclcpp_action::ResultCode::SUCCEEDED:
@@ -199,24 +214,24 @@ namespace mrp_behavior_tree
     // make sure to cancel the ROS2 action if it is still running.
     void halt() override
     {
-      if (shouldCancelGoal())
-      {
-        auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-        if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
-            rclcpp::FutureReturnCode::SUCCESS)
-        {
-          RCLCPP_ERROR(
-              node_->get_logger(),
-              "Failed to cancel action server for %s", action_name_.c_str());
-        }
-      }
+      // if (shouldCancelGoal())
+      // {
+      //   auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
+      //   if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
+      //       rclcpp::FutureReturnCode::SUCCESS)
+      //   {
+      //     RCLCPP_ERROR(
+      //         node_->get_logger(),
+      //         "Failed to cancel action server for %s", action_name_.c_str());
+      //   }
+      // }
 
       setStatus(BT::NodeStatus::IDLE);
     }
 
   protected:
     std::string action_name_;
-    typename mrp_common::ActionClient<ActionType> action_client_;
+    typename std::shared_ptr<mrp_common::ActionClient<ActionType>> action_client_;
 
     // All ROS2 actions have a goal and a result
     typename ActionType::Goal goal_;
@@ -231,6 +246,8 @@ namespace mrp_behavior_tree
     // The timeout value while waiting for response from a server when a
     // new action goal is sent or canceled
     std::chrono::milliseconds server_timeout_;
+
+    mutable std::recursive_mutex result_mutex_;
 
     bool shouldCancelGoal()
     {
@@ -251,21 +268,7 @@ namespace mrp_behavior_tree
     void onNewGoalReceived()
     {
       goal_result_available_ = false;
-      auto send_goal_options = typename rclcpp_action::Client<ActionType>::SendGoalOptions();
-      send_goal_options.result_callback =
-          [this](const typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult &result)
-      {
-        // TODO(#1652): a work around until rcl_action interface is updated
-        // if goal ids are not matched, the older goal call this callback so ignore the result
-        // if matched, it must be processed (including aborted)
-        if (this->goal_handle_->get_goal_id() == result.goal_id)
-        {
-          goal_result_available_ = true;
-          result_ = result;
-        }
-      };
-
-      auto future_goal_handle = action_client_->async_send_goal(goal_, send_goal_options);
+      auto future_goal_handle = action_client_->sendGoal(goal_);
 
       if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
           rclcpp::FutureReturnCode::SUCCESS)

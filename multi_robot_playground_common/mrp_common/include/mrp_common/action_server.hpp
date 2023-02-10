@@ -81,7 +81,6 @@ namespace mrp_common
     rclcpp_action::GoalResponse handleGoal(const rclcpp_action::GoalUUID &uuid,
                                            std::shared_ptr<const typename ActionType::Goal> goal)
     {
-      std::cout << "Heyyyadsaudy" << std::endl;
       std::lock_guard<std::recursive_mutex> lck_guard(update_mutex_);
       if (!server_active_)
       {
@@ -223,6 +222,9 @@ namespace mrp_common
         spin_future_ = std::async(std::launch::async, [this]()
                                   { callback_group_executor_->spin(); });
       }
+
+      Log::basicInfo(node_logging_interface_,
+                            "Server activated and running");
     }
 
     void deactivate()
