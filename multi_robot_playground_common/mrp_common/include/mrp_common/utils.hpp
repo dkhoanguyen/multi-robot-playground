@@ -9,7 +9,7 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 namespace mrp_common
 {

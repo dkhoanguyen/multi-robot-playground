@@ -195,6 +195,12 @@ namespace mrp_common
       return current_handle_;
     }
 
+    const bool resultReady() const
+    {
+      std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
+      return goal_result_available_;
+    }
+
   protected:
     rclcpp::Node::SharedPtr node_; // Internal node associated with this action client
 

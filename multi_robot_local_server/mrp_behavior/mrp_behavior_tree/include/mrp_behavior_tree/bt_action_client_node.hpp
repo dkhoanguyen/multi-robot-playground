@@ -56,20 +56,9 @@ namespace mrp_behavior_tree
       action_client_ = std::make_shared<mrp_common::ActionClient<ActionType>>(
           node_,
           action_name,
-          spin_thread,
-          nullptr,
-          [this](const typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult &result)
-          {
-            // TODO(#1652): a work around until rcl_action interface is updated
-            // if goal ids are not matched, the older goal call this callback so ignore the result
-            // if matched, it must be processed (including aborted)
-            if (this->goal_handle_->get_goal_id() == result.goal_id)
-            {
-              goal_result_available_ = true;
-              result_ = result;
-            }
-          });
-
+          std::bind(&BtActionNode::onWaitForResult, this, std::placeholders::_1),
+          std::bind(&BtActionNode::onReceiveResult, this, std::placeholders::_1),
+          false);
       action_client_->waitForServer();
     };
 
@@ -118,6 +107,12 @@ namespace mrp_behavior_tree
      */
     virtual void onWaitForResult(std::shared_ptr<const typename ActionType::Feedback> feedback)
     {
+      std::cout << "Base BTActionNode" << std::endl;
+    }
+
+    virtual void onReceiveResult(typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult result)
+    {
+      std::cout << "Base BTActionNode" << std::endl;
     }
 
     /**
@@ -163,30 +158,25 @@ namespace mrp_behavior_tree
         // user defined callback
         onTick();
 
-        onNewGoalReceived();
+        // Send goal
+        action_client_->sendGoal(goal_);
       }
 
       // The following code corresponds to the "RUNNING" loop
-      if (rclcpp::ok() && !goal_result_available_)
+      if (rclcpp::ok() && !action_client_->waitAndCheckForResult())
       {
-        // user defined callback. May modify the value of "goal_updated_"
-        auto feedback = action_client_->getFeedback();
         goal_handle_ = action_client_->getGoalHandle();
-
-        onWaitForResult(feedback);
-
         auto goal_status = goal_handle_->get_status();
+
         if (goal_updated_ && (goal_status == action_msgs::msg::GoalStatus::STATUS_EXECUTING ||
                               goal_status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED))
         {
           goal_updated_ = false;
-          onNewGoalReceived();
+          action_client_->sendGoal(goal_);
         }
 
-        rclcpp::spin_some(node_);
-
-        // check if, after invoking spin_some(), we finally received the result
-        if (!goal_result_available_)
+        // check if, after invoking waitAndCheckForResult(), we finally received the result
+        if (!action_client_->waitAndCheckForResult())
         {
           // Yield this Action, returning RUNNING
           return BT::NodeStatus::RUNNING;
@@ -194,7 +184,9 @@ namespace mrp_behavior_tree
       }
 
       std::lock_guard<std::recursive_mutex> lck_guard(result_mutex_);
-      switch (result_.code)
+      // Get result
+      auto result = action_client_->getResult();
+      switch (result.code)
       {
       case rclcpp_action::ResultCode::SUCCEEDED:
         return onSuccess();
@@ -214,18 +206,8 @@ namespace mrp_behavior_tree
     // make sure to cancel the ROS2 action if it is still running.
     void halt() override
     {
-      // if (shouldCancelGoal())
-      // {
-      //   auto future_cancel = action_client_->async_cancel_goal(goal_handle_);
-      //   if (rclcpp::spin_until_future_complete(node_, future_cancel, server_timeout_) !=
-      //       rclcpp::FutureReturnCode::SUCCESS)
-      //   {
-      //     RCLCPP_ERROR(
-      //         node_->get_logger(),
-      //         "Failed to cancel action server for %s", action_name_.c_str());
-      //   }
-      // }
-
+      // Cancel current goal
+      action_client_->cancelCurrentGoal();
       setStatus(BT::NodeStatus::IDLE);
     }
 
@@ -248,40 +230,6 @@ namespace mrp_behavior_tree
     std::chrono::milliseconds server_timeout_;
 
     mutable std::recursive_mutex result_mutex_;
-
-    bool shouldCancelGoal()
-    {
-      // Shut the node down if it is currently running
-      if (status() != BT::NodeStatus::RUNNING)
-      {
-        return false;
-      }
-
-      rclcpp::spin_some(node_);
-      auto status = goal_handle_->get_status();
-
-      // Check if the goal is still executing
-      return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
-             status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
-    }
-
-    void onNewGoalReceived()
-    {
-      goal_result_available_ = false;
-      auto future_goal_handle = action_client_->sendGoal(goal_);
-
-      if (rclcpp::spin_until_future_complete(node_, future_goal_handle, server_timeout_) !=
-          rclcpp::FutureReturnCode::SUCCESS)
-      {
-        throw std::runtime_error("send_goal failed");
-      }
-
-      goal_handle_ = future_goal_handle.get();
-      if (!goal_handle_)
-      {
-        throw std::runtime_error("Goal was rejected by the action server");
-      }
-    }
 
     void incrementRecoveryCount()
     {
