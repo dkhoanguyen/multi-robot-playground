@@ -7,6 +7,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 
 #include "logging.hpp"
+#include "utils.hpp"
 
 namespace mrp_common
 {
@@ -26,27 +27,43 @@ namespace mrp_common
                  ResultCallback result_callback,
                  bool spin_thread)
         : node_base_interface_(node->get_node_base_interface()),
-          node_graph_interface_(node->get_node_graph_interface()),
           node_logging_interface_(node->get_node_logging_interface()),
-          node_waitables_interface_(node->get_node_waitables_interface()),
           action_name_(action_name),
           spin_thread_(spin_thread),
           feedback_callback_(feedback_callback),
           result_callback_(result_callback)
     {
-      if (spin_thread_)
+      if (node)
       {
-        callback_group_ = node_base_interface_->create_callback_group(
-            rclcpp::CallbackGroupType::MutuallyExclusive);
-        callback_group_executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-        callback_group_executor_->add_node(node_base_interface_);
+        action_client_ = rclcpp_action::create_client<ActionType>(
+            node->get_node_base_interface(),
+            node->get_node_graph_interface(),
+            node->get_node_logging_interface(),
+            node->get_node_waitables_interface(),
+            action_name_,
+            nullptr);
       }
+      else
+      {
+        node_ = ROSUtils::generateInternalNode(action_name + "_action_client_Node");
+        action_client_ = rclcpp_action::create_client<ActionType>(
+            node_,
+            action_name);
+
+        node_base_interface_ = node->get_node_base_interface();
+        node_logging_interface_ = node->get_node_logging_interface();
+      }
+    }
+
+    ActionClient(const std::string parent_name,
+                 const std::string action_name)
+        : action_name_(action_name)
+    {
+      node_ = ROSUtils::generateInternalNode(
+          parent_name + std::string("_") + action_name + "_action_client");
       action_client_ = rclcpp_action::create_client<ActionType>(
-          node_base_interface_,
-          node_graph_interface_,
-          node_logging_interface_,
-          node_waitables_interface_,
-          action_name_, nullptr);
+          node_,
+          action_name);
     }
 
     virtual ~ActionClient()
@@ -62,52 +79,83 @@ namespace mrp_common
     {
       if (!action_client_->wait_for_action_server(1s))
       {
-        Log::basicError(node_logging_interface_, "Action server not available after waiting");
+        Log::basicError(
+            node_logging_interface_,
+            "Action server for action " + action_name_ + " not available after waiting");
       }
     }
 
-    typename std::shared_future<std::shared_ptr<rclcpp_action::ClientGoalHandle<ActionType>>>
-    sendGoal(const typename ActionType::Goal &goal)
+    bool sendGoal(
+        const typename ActionType::Goal &goal,
+        const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
     {
       Log::basicInfo(node_logging_interface_, "Sending goal");
       auto send_goal_options = typename rclcpp_action::Client<ActionType>::SendGoalOptions();
 
-      // TODO: Provide send_goal-options as an input
-
       send_goal_options.goal_response_callback =
-          std::bind(&ActionClient::goalResponseCallback, this, std::placeholders::_1);
+          std::bind(&ActionClient::defaultGoalResponseCallback, this, std::placeholders::_1);
       send_goal_options.feedback_callback =
-          std::bind(&ActionClient::feedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
+          std::bind(&ActionClient::defaultFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
       send_goal_options.result_callback =
-          std::bind(&ActionClient::resultCallback, this, std::placeholders::_1);
+          std::bind(&ActionClient::defaultResultCallback, this, std::placeholders::_1);
       auto future_goal_handle = action_client_->async_send_goal(goal, send_goal_options);
 
-      if (spin_thread_)
+      if (rclcpp::spin_until_future_complete(node_base_interface_, future_goal_handle) !=
+          rclcpp::FutureReturnCode::SUCCESS)
       {
-        // Spin executor
-        spin_future_ = std::async(std::launch::async, [this]()
-                                  { callback_group_executor_->spin(); });
+        Log::basicError(
+            node_logging_interface_,
+            action_name_ + " action client: async_send_goal failed");
+        return false;
       }
+      current_handle_ = future_goal_handle.get();
 
-      return future_goal_handle;
+      return true;
     }
 
-    void cancelGoal()
+    bool waitForResult()
     {
-      auto future_goal_handle = action_client_->async_cancel_goal(handle_);
-      if (spin_thread_)
+      auto future_result = action_client_->async_get_result(current_handle_);
+      if (rclcpp::spin_until_future_complete(node_base_interface_, future_result) !=
+          rclcpp::FutureReturnCode::SUCCESS)
       {
-        // Spin executor
-        spin_future_ = std::async(std::launch::async, [this]()
-                                  { callback_group_executor_->spin(); });
+        Log::basicError(
+            node_logging_interface_,
+            action_name_ + " action client: async_get_result failed");
+        return false;
       }
-      return future_goal_handle;
+
+      result_ = future_result.get();
+      return true;
+    }
+
+    bool cancelGoal()
+    {
+      auto future_goal_cancel = action_client_->async_cancel_goal(current_handle_);
+      if (rclcpp::spin_until_future_complete(node_, future_goal_cancel) !=
+          rclcpp::FutureReturnCode::SUCCESS)
+      {
+        Log::basicError(
+            node_logging_interface_,
+            action_name_ + " action client: async_cancel_goal failed");
+        return false;
+      }
+
+      auto cancel_status = current_handle_.get()->get_status();
+      if (cancel_status != rclcpp_action::GoalStatus::STATUS_CANCELING)
+      {
+        Log::basicError(
+            node_logging_interface_,
+            action_name_ + " action client: Goal is not cancelled by server");
+        return false;
+      }
+      return true;
     }
 
     const rclcpp_action::GoalUUID getGoalID() const
     {
       std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
-      return handle_->get_goal();
+      return current_handle_->get_goal();
     }
 
     const std::shared_ptr<const typename ActionType::Feedback> getFeedback() const
@@ -116,22 +164,32 @@ namespace mrp_common
       return feedback_;
     }
 
+    const typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult
+    getResult() const
+    {
+      std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
+      return result_;
+    }
+
     const typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr getGoalHandle() const
     {
       std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
-      return handle_;
+      return current_handle_;
     }
 
   protected:
+    rclcpp::Node::SharedPtr node_; // Internal node associated with this action client
+
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface_;
-    rclcpp::node_interfaces::NodeGraphInterface::SharedPtr node_graph_interface_;
     rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr node_logging_interface_;
-    rclcpp::node_interfaces::NodeWaitablesInterface::SharedPtr node_waitables_interface_;
     std::string action_name_;
 
     typename rclcpp_action::Client<ActionType>::SharedPtr action_client_;
-    typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr handle_;
+    typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr current_handle_;
+
     std::shared_ptr<typename ActionType::Feedback> feedback_;
+    typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult result_;
+
     std::future<void> spin_future_;
     FeedbackCallback feedback_callback_;
     ResultCallback result_callback_;
@@ -142,7 +200,7 @@ namespace mrp_common
     mutable std::recursive_mutex client_mutex_;
     bool spin_thread_;
 
-    void goalResponseCallback(
+    void defaultGoalResponseCallback(
         std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr> goal_future)
     {
       auto goal_handle = goal_future.get();
@@ -156,8 +214,8 @@ namespace mrp_common
       }
     }
 
-    void feedbackCallback(typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr handle,
-                          const std::shared_ptr<const typename ActionType::Feedback> feedback)
+    void defaultFeedbackCallback(typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr handle,
+                                 const std::shared_ptr<const typename ActionType::Feedback> feedback)
     {
       Log::basicInfo(node_logging_interface_, "Receiving feedback from server");
       try
@@ -177,7 +235,7 @@ namespace mrp_common
       }
     }
 
-    void resultCallback(
+    void defaultResultCallback(
         const typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult &result)
     {
       Log::basicInfo(node_logging_interface_, "Received result from server");

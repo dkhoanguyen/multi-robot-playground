@@ -1,5 +1,4 @@
 #include "mrp_common/utils.hpp"
-#include <iostream>
 
 namespace mrp_common
 {
@@ -41,8 +40,6 @@ namespace mrp_common
     double z1 = first.position.z;
     double z2 = second.position.z;
 
-    std::cout << "x1: " << x1 << " y1: " << y1 << std::endl;
-    std::cout << "x2: " << x2 << " y2: " << y2 << std::endl;
     return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2));
   }
 
@@ -91,5 +88,58 @@ namespace mrp_common
     Eigen::Vector3d c_ul = upper.cross(lower);
 
     return (c_lm.dot(c_lu) > 0 && c_um.dot(c_ul) > 0);
+  }
+
+  std::string ROSUtils::sanitiseNodeName(const std::string &input_node_name)
+  {
+    std::string node_name(input_node_name);
+    // read this as `replace` characters in `node_name` `if` not alphanumeric.
+    // replace with '_'
+    replace_if(
+        begin(node_name), end(node_name),
+        [](auto c)
+        { return !isalnum(c); },
+        '_');
+    return node_name;
+  }
+
+  std::string ROSUtils::generateInternalNodeName(const std::string &prefix)
+  {
+    return ROSUtils::sanitiseNodeName(prefix) + "_" + ROSUtils::timeToString(8);
+  }
+
+  rclcpp::Node::SharedPtr ROSUtils::generateInternalNode(const std::string &prefix)
+  {
+    auto options =
+        rclcpp::NodeOptions()
+            .start_parameter_services(false)
+            .start_parameter_event_publisher(false)
+            .arguments({"--ros-args", "-r", "__node:=" + ROSUtils::generateInternalNodeName(prefix), "--"});
+    return rclcpp::Node::make_shared("_", options);
+  }
+
+  std::string ROSUtils::timeToString(size_t len)
+  {
+    std::string output(len, '0'); // prefill the string with zeros
+    auto timepoint = std::chrono::high_resolution_clock::now();
+    auto timecount = timepoint.time_since_epoch().count();
+    auto timestring = std::to_string(timecount);
+    if (timestring.length() >= len)
+    {
+      // if `timestring` is shorter, put it at the end of `output`
+      output.replace(
+          0, len,
+          timestring,
+          timestring.length() - len, len);
+    }
+    else
+    {
+      // if `output` is shorter, just copy in the end of `timestring`
+      output.replace(
+          len - timestring.length(), timestring.length(),
+          timestring,
+          0, timestring.length());
+    }
+    return output;
   }
 }

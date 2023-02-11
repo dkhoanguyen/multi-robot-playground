@@ -10,9 +10,6 @@
 
 #include "mrp_common/action_server.hpp"
 
-using Fibonacci = test_msgs::action::Fibonacci;
-using GoalHandle = rclcpp_action::ServerGoalHandle<Fibonacci>;
-
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
@@ -65,7 +62,7 @@ public:
         });
   }
 
-  void onTerm()
+  void term()
   {
     // // when nothing's running make sure everything's dead.
     // const std::shared_ptr<const Fibonacci::Goal> a = action_server_->acceptPendingGoal();
@@ -79,13 +76,13 @@ public:
 
   void execute()
   {
-    rclcpp::Rate loop_rate(10);
+    rclcpp::Rate loop_rate(100);
 
   preempted:
     // Initialize the goal, feedback, and result
     auto goal = action_server_->getCurrentGoal();
-    auto feedback = std::make_shared<Fibonacci::Feedback>();
-    auto result = std::make_shared<Fibonacci::Result>();
+    auto feedback = std::make_shared<test_msgs::action::Fibonacci::Feedback>();
+    auto result = std::make_shared<test_msgs::action::Fibonacci::Result>();
 
     // Fibonacci-specific initialization
     auto &sequence = feedback->sequence;
@@ -158,7 +155,7 @@ public:
     auto node = std::make_shared<SimpleActionServerNode>();
     node->init();
     rclcpp::spin(node->get_node_base_interface());
-    node->onTerm();
+    node->term();
     node.reset();
   }
 
@@ -179,7 +176,7 @@ public:
 
   void init()
   {
-    action_client_ = rclcpp_action::create_client<Fibonacci>(shared_from_this(), "fibonacci");
+    action_client_ = rclcpp_action::create_client<test_msgs::action::Fibonacci>(shared_from_this(), "fibonacci");
     action_client_->wait_for_action_server();
 
     deactivate_pub_ = this->create_publisher<std_msgs::msg::Empty>("deactivate_server", 1);
@@ -207,7 +204,7 @@ public:
     omit_prempt_pub_->publish(std_msgs::msg::Empty());
   }
 
-  rclcpp_action::Client<Fibonacci>::SharedPtr action_client_;
+  rclcpp_action::Client<test_msgs::action::Fibonacci>::SharedPtr action_client_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr deactivate_pub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr activate_pub_;
   rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr omit_prempt_pub_;
@@ -234,10 +231,10 @@ protected:
   std::shared_ptr<SimpleActionTestNode> node_;
 };
 
-TEST_F(ActionServerTest, test_simple_action)
+TEST_F(ActionServerTest, test_handle_action_request)
 {
   // The goal for this invocation
-  auto goal = Fibonacci::Goal();
+  auto goal = test_msgs::action::Fibonacci::Goal();
   goal.order = 12;
 
   // Send the goal
@@ -257,7 +254,7 @@ TEST_F(ActionServerTest, test_simple_action)
       rclcpp::FutureReturnCode::SUCCESS);
 
   // The final result
-  rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();
+  rclcpp_action::ClientGoalHandle<test_msgs::action::Fibonacci>::WrappedResult result = future_result.get();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
 
   // Sum all of the values in the requested fibonacci series
@@ -277,17 +274,17 @@ TEST_F(ActionServerTest, test_simple_action_with_feedback)
 
   // A callback to accumulate the intermediate values
   auto feedback_callback = [&feedback_sum](
-                               rclcpp_action::ClientGoalHandle<Fibonacci>::SharedPtr /*goal_handle*/,
-                               const std::shared_ptr<const Fibonacci::Feedback> feedback)
+                               rclcpp_action::ClientGoalHandle<test_msgs::action::Fibonacci>::SharedPtr /*goal_handle*/,
+                               const std::shared_ptr<const test_msgs::action::Fibonacci::Feedback> feedback)
   {
     feedback_sum += feedback->sequence.back();
   };
 
   // The goal for this invocation
-  auto goal = Fibonacci::Goal();
+  auto goal = test_msgs::action::Fibonacci::Goal();
   goal.order = 10;
 
-  auto send_goal_options = rclcpp_action::Client<Fibonacci>::SendGoalOptions();
+  auto send_goal_options = rclcpp_action::Client<test_msgs::action::Fibonacci>::SendGoalOptions();
   send_goal_options.feedback_callback = feedback_callback;
 
   // Send the goal
@@ -309,7 +306,7 @@ TEST_F(ActionServerTest, test_simple_action_with_feedback)
       rclcpp::FutureReturnCode::SUCCESS);
 
   // The final result
-  rclcpp_action::ClientGoalHandle<Fibonacci>::WrappedResult result = future_result.get();
+  rclcpp_action::ClientGoalHandle<test_msgs::action::Fibonacci>::WrappedResult result = future_result.get();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
 
   // Sum all of the values in the requested fibonacci series

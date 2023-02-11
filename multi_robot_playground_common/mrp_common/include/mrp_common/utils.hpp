@@ -1,6 +1,8 @@
 #ifndef MULTI_ROBOT_PLAYGROUND_COMMON__UTILS_HPP_
 #define MULTI_ROBOT_PLAYGROUND_COMMON__UTILS_HPP_
 
+#include "rclcpp/rclcpp.hpp"
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
@@ -35,6 +37,15 @@ namespace mrp_common
     static bool vectorIsInside(const Eigen::Vector2d &target_vector,
                                const Eigen::Vector2d &lower_bound,
                                const Eigen::Vector2d &upper_bound);
+  };
+
+  class ROSUtils
+  {
+  public:
+    static std::string sanitiseNodeName(const std::string &input_node_name);
+    static std::string generateInternalNodeName(const std::string &prefix = "");
+    static rclcpp::Node::SharedPtr generateInternalNode(const std::string &prefix = "");
+    static std::string timeToString(size_t len);
   };
 }
 
