@@ -1,4 +1,5 @@
 #include <chrono>
+#include <ctime>
 #include <memory>
 #include <thread>
 
@@ -30,9 +31,7 @@ public:
         std::bind(&SimpleActionClientNode::feedbackCallback, this, _1),
         std::bind(&SimpleActionClientNode::resultCallback, this, _1),
         false);
-
-    // action_client_->waitForServer();
-    std::cout << "Client init done" << std::endl;
+    action_client_->waitForServer();
   }
 
   bool resultReady()
@@ -222,6 +221,34 @@ TEST_F(ActionClientTest, test_action_request)
 
   EXPECT_EQ(sum, 376);
   SUCCEED();
+}
+
+TEST_F(ActionClientTest, test_cancel_action)
+{
+  auto goal = test_msgs::action::Fibonacci::Goal();
+  goal.order = 1000;
+
+  EXPECT_TRUE(node_->action_client_->sendGoal(goal));
+  auto start = std::chrono::system_clock::now();
+  bool check_cancel_goal = false;
+  while (true)
+  {
+    if (node_->action_client_->waitAndCheckForResult())
+    {
+      break;
+    }
+    auto end = std::chrono::system_clock::now();
+    
+    // Cancel goal after 100ms
+    if (std::chrono::duration<double, std::milli>(end - start).count() >= 100)
+    {
+      if(!check_cancel_goal)
+      { 
+        EXPECT_TRUE(node_->action_client_->cancelCurrentGoal());
+        check_cancel_goal = true;
+      }
+    }
+  }
 }
 
 int main(int argc, char **argv)

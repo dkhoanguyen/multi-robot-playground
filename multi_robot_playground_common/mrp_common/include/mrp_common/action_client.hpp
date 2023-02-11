@@ -1,7 +1,7 @@
 #ifndef MULTI_ROBOT_PLAYGROUND_COMMON__ACTION_CLIENT_HPP_
 #define MULTI_ROBOT_PLAYGROUND_COMMON__ACTION_CLIENT_HPP_
 
-#include <chrono>
+#include <chrono> 
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -90,6 +90,8 @@ namespace mrp_common
         const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
     {
       Log::basicInfo(node_logging_interface_, "Sending goal");
+      goal_result_available_ = false;
+
       auto send_goal_options = typename rclcpp_action::Client<ActionType>::SendGoalOptions();
 
       send_goal_options.goal_response_callback =
@@ -129,10 +131,25 @@ namespace mrp_common
       return true;
     }
 
-    bool cancelGoal()
+    bool waitAndCheckForResult()
     {
+      rclcpp::spin_some(node_base_interface_);
+      if(!goal_result_available_)
+      {
+        return false;
+      }
+      return true;
+    }
+
+    bool cancelCurrentGoal()
+    {
+      if (!shouldCancelGoal())
+      {
+        return false;
+      }
       auto future_goal_cancel = action_client_->async_cancel_goal(current_handle_);
-      if (rclcpp::spin_until_future_complete(node_, future_goal_cancel) !=
+
+      if (rclcpp::spin_until_future_complete(node_base_interface_, future_goal_cancel) !=
           rclcpp::FutureReturnCode::SUCCESS)
       {
         Log::basicError(
@@ -152,7 +169,8 @@ namespace mrp_common
       return true;
     }
 
-    const rclcpp_action::GoalUUID getGoalID() const
+    const rclcpp_action::GoalUUID
+    getGoalID() const
     {
       std::lock_guard<std::recursive_mutex> lck_guard(client_mutex_);
       return current_handle_->get_goal();
@@ -199,6 +217,18 @@ namespace mrp_common
 
     mutable std::recursive_mutex client_mutex_;
     bool spin_thread_;
+
+    std::atomic<bool> goal_result_available_{false};
+
+    bool shouldCancelGoal()
+    {
+      rclcpp::spin_some(node_base_interface_);
+      auto status = current_handle_->get_status();
+
+      // Check if the goal is still executing
+      return status == action_msgs::msg::GoalStatus::STATUS_ACCEPTED ||
+             status == action_msgs::msg::GoalStatus::STATUS_EXECUTING;
+    }
 
     void defaultGoalResponseCallback(
         std::shared_future<typename rclcpp_action::ClientGoalHandle<ActionType>::SharedPtr> goal_future)
@@ -269,6 +299,8 @@ namespace mrp_common
           Log::basicDebug(node_logging_interface_, "Result callback is null");
         }
       }
+      result_ = result;
+      goal_result_available_ = true;
     }
   };
 }
