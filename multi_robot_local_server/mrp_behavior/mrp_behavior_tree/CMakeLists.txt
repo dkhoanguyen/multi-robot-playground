@@ -29,6 +29,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(mrp_common REQUIRED)
 find_package(mrp_common_msgs REQUIRED)
 find_package(mrp_comms_msgs REQUIRED)
+find_package(mrp_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
@@ -52,6 +53,7 @@ set(dependencies
   mrp_common
   mrp_common_msgs
   mrp_comms_msgs
+  mrp_msgs
   behaviortree_cpp_v3
 )
 
@@ -74,8 +76,8 @@ add_library(mrp_recovery_node_bt_node SHARED plugins/control/recovery_node.cpp)
 list(APPEND plugin_libs mrp_recovery_node_bt_node)
 
 
-add_library(mrp_move_to_target_action_node SHARED plugins/action/move_to_target_action.cpp)
-list(APPEND plugin_libs mrp_move_to_target_action_node)
+add_library(follow_path_action_node SHARED plugins/action/follow_path_action.cpp)
+list(APPEND plugin_libs follow_path_action_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
@@ -97,7 +99,6 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-
   # the following line skips the linter which checks for copyrights
   # uncomment the line when a copyright and license is not present in all source files
   # set(ament_cmake_copyright_FOUND TRUE)
@@ -105,6 +106,8 @@ if(BUILD_TESTING)
   # uncomment the line when this package is not in a git repo
   # set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  add_subdirectory(test)
 endif()
 
 ament_export_include_directories(include)

@@ -34,8 +34,10 @@ namespace mrp_behavior_tree
       getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
       // Initialize the input and output messages
+      // This might not be  a good practice to do
+      // Derived classes should handle the initialisation of Goal and Result
       goal_ = typename ActionType::Goal();
-      result_ = rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult();
+      result_ = typename rclcpp_action::ClientGoalHandle<ActionType>::WrappedResult();
 
       std::string remapped_action_name;
       if (getInput("server_name", remapped_action_name))

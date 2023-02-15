@@ -1,24 +1,24 @@
-#ifndef MRP_BEHAVIOR_TREE__PLUGINS__ACTION__MOVE_TO_TARGET_ACTION_HPP_
-#define MRP_BEHAVIOR_TREE__PLUGINS__ACTION__MOVE_TO_TARGET_ACTION_HPP_
+#ifndef MRP_BEHAVIOR_TREE__PLUGINS__ACTION__FOLLOW_PATH_ACTION_HPP_
+#define MRP_BEHAVIOR_TREE__PLUGINS__ACTION__FOLLOW_PATH_ACTION_HPP_
 
 #include <string>
 
 #include "mrp_behavior_tree/bt_action_client_node.hpp"
-#include "nav2_msgs/action/follow_path.hpp"
+#include "mrp_msgs/action/follow_path.hpp"
 
 namespace mrp_behavior_tree
 {
-  class MoveToTargetAction : public BtActionNode<nav2_msgs::action::FollowPath>
+  class FollowPathAction : public BtActionNode<mrp_msgs::action::FollowPath>
   {
   public:
-    MoveToTargetAction(
+    FollowPathAction(
         const std::string &xml_tag_name,
         const std::string &action_name,
         const BT::NodeConfiguration &conf);
 
-    virtual ~MoveToTargetAction(){};
+    virtual ~FollowPathAction(){};
 
-    void onTick() override;
+    void onTick() {};
 
     static BT::PortsList providedPorts()
     {

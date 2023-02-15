@@ -23,6 +23,7 @@
   <depend>mrp_motion_planner_msgs</depend>
   <depend>behaviortree_cpp_v3</depend>
   <depend>mrp_comms_msgs</depend>
+  <depend>mrp_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

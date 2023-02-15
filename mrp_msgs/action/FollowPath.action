@@ -1,0 +1,22 @@
+# Error codes
+# Note: The expected priority order of the errors should match the message order
+uint8 NONE=0
+uint8 UNKNOWN=1
+uint8 INVALID_CONTROLLER=2
+uint8 TF_ERROR=3
+uint8 INVALID_PATH=4
+uint8 PATIENCE_EXCEEDED=5
+uint8 FAILED_TO_MAKE_PROGRESS=6
+uint8 NO_VALID_CONTROL=7
+
+#goal definition
+geometry_msgs/PoseStamped[] path
+string motion_planner
+---
+#result definition
+std_msgs/Empty result
+uint8 error_code
+---
+#feedback definition
+float32 distance_to_goal
+float32 speed
